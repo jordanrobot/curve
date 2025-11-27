@@ -539,6 +539,7 @@ public interface IFileService
 {
     Task<MotorData?> LoadAsync(string filePath);
     Task SaveAsync(MotorData data, string filePath);
+    Task SaveCopyAsync(MotorData data, string filePath); // Saves without changing CurrentFilePath
     string? CurrentFilePath { get; }
     bool IsDirty { get; }
     void MarkDirty();
@@ -559,15 +560,27 @@ public class FileService : IFileService
         return data;
     }
     
+    /// <summary>Save to file and update CurrentFilePath (overwrites existing file)</summary>
     public async Task SaveAsync(MotorData data, string filePath)
     {
         var json = JsonSerializer.Serialize(data, new JsonSerializerOptions 
         { 
             WriteIndented = true 
         });
-        await File.WriteAllTextAsync(filePath, json); // Always overwrites
+        await File.WriteAllTextAsync(filePath, json); // Overwrites, no append
         CurrentFilePath = filePath;
         IsDirty = false;
+    }
+    
+    /// <summary>Save copy without changing CurrentFilePath (for Save Copy As)</summary>
+    public async Task SaveCopyAsync(MotorData data, string filePath)
+    {
+        var json = JsonSerializer.Serialize(data, new JsonSerializerOptions 
+        { 
+            WriteIndented = true 
+        });
+        await File.WriteAllTextAsync(filePath, json); // Overwrites, no append
+        // CurrentFilePath and IsDirty unchanged - original file stays active
     }
     
     public void MarkDirty() => IsDirty = true;
@@ -614,11 +627,8 @@ public partial class MainWindowViewModel : ViewModelBase
         var path = await ShowSaveDialogAsync();
         if (path != null)
         {
-            var originalPath = _fileService.CurrentFilePath;
-            await _fileService.SaveAsync(_motorData, path);
-            // Restore original file as active
-            _fileService.CurrentFilePath = originalPath;
-            // Note: Dirty state preserved from original file
+            await _fileService.SaveCopyAsync(_motorData, path);
+            // Original file remains active, dirty state preserved
         }
     }
 }
