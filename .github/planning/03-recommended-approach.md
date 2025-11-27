@@ -146,6 +146,10 @@ CurveEditor/
   - Smooth animations
   - Good documentation
 
+### Additional UI Components
+- **SkiaSharp** - For background image rendering and scaling
+- Custom slider controls for Q value and axis scaling
+
 ### Dependencies (NuGet Packages)
 ```xml
 <ItemGroup>
@@ -164,27 +168,177 @@ CurveEditor/
 
 ## Key Features Implementation
 
-### 1. Interactive Chart Editing
+### 1. EQ-Style Interactive Chart Editing
 
-LiveCharts2 supports interactive point manipulation:
+LiveCharts2 supports interactive point manipulation with drag behavior:
 
 ```csharp
-// Example: Draggable points on chart
-public ISeries[] Series => new ISeries[]
+// Example: Draggable points on chart with Q-based smoothing
+public partial class CurveViewModel : ViewModelBase
 {
-    new LineSeries<ObservablePoint>
+    [ObservableProperty]
+    private double _qValue = 0.5; // Range 0.0 to 1.0
+    
+    public ISeries[] Series => new ISeries[]
     {
-        Values = CurvePoints,
-        Fill = null,
-        GeometrySize = 12,
-        LineSmoothness = 0.5,
-        // Enable point selection
-        DataPointerDown = OnPointClicked,
+        new LineSeries<ObservablePoint>
+        {
+            Values = CurvePoints,
+            Fill = null,
+            GeometrySize = 12,
+            LineSmoothness = QValue, // Q affects smoothness
+            DataPointerDown = OnPointClicked,
+        }
+    };
+    
+    // Apply Q-based influence to adjacent points when dragging
+    private void ApplyQInfluence(int pointIndex, double deltaY)
+    {
+        // Lower Q = sharper changes (affects fewer neighbors)
+        // Higher Q = gradual changes (affects more neighbors)
+        int influence = (int)(QValue * 5); // 0-5 adjacent points
+        for (int i = 1; i <= influence; i++)
+        {
+            double factor = 1.0 - (i / (influence + 1.0));
+            // Apply scaled delta to neighboring points
+        }
+    }
+}
+```
+
+### 2. Background Image Overlay
+
+Load and scale reference images behind the chart:
+
+```csharp
+public partial class ChartViewModel : ViewModelBase
+{
+    [ObservableProperty]
+    private string? _backgroundImagePath;
+    
+    [ObservableProperty]
+    private double _imageScaleX = 1.0;
+    
+    [ObservableProperty]
+    private double _imageScaleY = 1.0;
+    
+    public async Task LoadBackgroundImageAsync()
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "Load Background Image",
+            Filters = new List<FileDialogFilter>
+            {
+                new() { Name = "Images", Extensions = { "png", "jpg", "jpeg", "bmp" } }
+            }
+        };
+        
+        var result = await dialog.ShowAsync(_window);
+        if (result?.Length > 0)
+        {
+            BackgroundImagePath = result[0];
+        }
+    }
+}
+```
+
+### 3. Axis Scaling with Sliders
+
+```csharp
+public partial class ChartViewModel : ViewModelBase
+{
+    [ObservableProperty]
+    private double _xAxisMin = 0;
+    
+    [ObservableProperty]
+    private double _xAxisMax = 5000;
+    
+    [ObservableProperty]
+    private double _yAxisMin = 0;
+    
+    [ObservableProperty]
+    private double _yAxisMax = 100;
+    
+    public Axis[] XAxes => new Axis[]
+    {
+        new Axis
+        {
+            Name = "RPM",
+            MinLimit = XAxisMin,
+            MaxLimit = XAxisMax,
+            // Auto-calculate nice step values
+            MinStep = CalculateNiceStep(XAxisMax - XAxisMin),
+            LabelsPaint = new SolidColorPaint(SKColors.DarkGray),
+            SeparatorsPaint = new SolidColorPaint(SKColors.LightGray.WithAlpha(100))
+        }
+    };
+    
+    private double CalculateNiceStep(double range)
+    {
+        // Return nice round numbers: 100, 250, 500, 1000, etc.
+        double rough = range / 10;
+        double magnitude = Math.Pow(10, Math.Floor(Math.Log10(rough)));
+        double normalized = rough / magnitude;
+        
+        if (normalized < 2) return magnitude;
+        if (normalized < 5) return 2 * magnitude;
+        return 5 * magnitude;
+    }
+}
+```
+
+### 4. Grid Lines and Labels
+
+LiveCharts2 automatically creates grid lines with the separator paint:
+
+```csharp
+public Axis[] YAxes => new Axis[]
+{
+    new Axis
+    {
+        Name = "Torque (Nm)",
+        MinLimit = YAxisMin,
+        MaxLimit = YAxisMax,
+        MinStep = CalculateNiceStep(YAxisMax - YAxisMin),
+        // Faded grid lines
+        SeparatorsPaint = new SolidColorPaint(
+            new SKColor(200, 200, 200, 80) // Light gray with transparency
+        ),
+        // Axis labels
+        LabelsPaint = new SolidColorPaint(SKColors.DarkGray),
+        LabelsRotation = 0
     }
 };
 ```
 
-### 2. File Operations
+### 5. Hover Tooltip
+
+```csharp
+public partial class ChartViewModel : ViewModelBase
+{
+    [ObservableProperty]
+    private bool _showHoverTooltip = true; // User preference
+    
+    public SolidColorPaint? TooltipBackgroundPaint => ShowHoverTooltip 
+        ? new SolidColorPaint(new SKColor(240, 240, 240, 220))
+        : null;
+    
+    public Func<ChartPoint, string> TooltipFormatter => point =>
+        $"RPM: {point.SecondaryValue:N0}\nTorque: {point.PrimaryValue:N1} Nm";
+}
+```
+
+XAML for tooltip positioning:
+```xml
+<lvc:CartesianChart 
+    Series="{Binding Series}"
+    TooltipPosition="Top"
+    TooltipBackgroundPaint="{Binding TooltipBackgroundPaint}"
+    TooltipTextPaint="{Binding TooltipTextPaint}">
+</lvc:CartesianChart>
+```
+
+### 6. File Operations
 
 Standard file dialog integration:
 
@@ -209,7 +363,7 @@ public async Task OpenFileAsync()
 }
 ```
 
-### 3. Unit Conversion (Future)
+### 7. Unit Conversion (Future)
 
 Prepared for Tare integration:
 

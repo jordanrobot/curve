@@ -7,12 +7,15 @@ Phase 1: Foundation (Week 1-2)
     └── Project setup, basic UI shell, file operations
 
 Phase 2: Core Features (Week 3-4)
-    └── Chart visualization, data binding, basic editing
+    └── Chart visualization, data binding, grid lines, hover tooltip
 
-Phase 3: Advanced Editing (Week 5-6)
-    └── Interactive chart editing, validation, polish
+Phase 3: Advanced Editing (Week 5-7)
+    └── EQ-style editing, Q slider, background images, axis scaling
 
-Phase 4: Units System (Future)
+Phase 4: Polish & User Preferences (Week 8)
+    └── User settings, keyboard shortcuts, undo/redo
+
+Phase 5: Units System (Future)
     └── Tare integration, unit conversion, preferences
 ```
 
@@ -57,23 +60,36 @@ Phase 4: Units System (Future)
 - [ ] Add LiveCharts2 NuGet package
 - [ ] Create ChartView component
 - [ ] Bind chart to TorqueCurve data
-- [ ] Configure axis labels (RPM, Torque)
+- [ ] Configure default axes (RPM = X, Torque = Y)
 - [ ] Style chart appearance
 
-### 2.2 Properties Panel
+### 2.2 Grid Lines and Axis Labels
+- [ ] Configure axis labels at rounded increments
+  - RPM: 500, 1000, 1500, 2000, etc.
+  - Torque: 5, 10, 15, 20, etc.
+- [ ] Add faded grid lines extending across graph
+- [ ] Implement auto-calculation for label spacing (avoid crowding)
+- [ ] Labels update smoothly when axis range changes
+
+### 2.3 Hover Tooltip
+- [ ] Show RPM and torque values on hover near curve
+- [ ] Position tooltip to not obscure cursor
+- [ ] Style tooltip for readability
+
+### 2.4 Properties Panel
 - [ ] Create PropertiesPanel component
 - [ ] Display curve metadata (name, manufacturer)
 - [ ] Display data grid of points
 - [ ] Bind grid to curve data
 - [ ] Enable editing in grid cells
 
-### 2.3 Two-Way Binding
+### 2.5 Two-Way Binding
 - [ ] Chart updates when grid values change
 - [ ] Grid updates when chart is modified (future)
 - [ ] Implement INotifyPropertyChanged throughout
 - [ ] Handle dirty state tracking (unsaved changes)
 
-### 2.4 Basic Validation
+### 2.6 Basic Validation
 - [ ] Validate RPM values (positive, ascending)
 - [ ] Validate torque values (non-negative)
 - [ ] Show validation errors in UI
@@ -85,57 +101,91 @@ Phase 4: Units System (Future)
 
 ## Phase 3: Advanced Editing
 
-### 3.1 Interactive Chart Editing
-- [ ] Enable point selection on chart
-- [ ] Implement point dragging
-- [ ] Sync dragged values back to data model
-- [ ] Add/remove points via chart context menu
+### 3.1 EQ-Style Curve Editing
+- [ ] Enable point selection on chart (click to select)
+- [ ] Implement point dragging (drag up/down to adjust torque)
+- [ ] Visual feedback when point is selected
+- [ ] Sync dragged values back to data model in real-time
 
-### 3.2 Add/Remove Data Points
+### 3.2 Q Value Control
+- [ ] Add Q slider (range 0.0 to 1.0)
+- [ ] Q affects curve sharpness when editing
+  - Low Q = sharp/abrupt changes (affects fewer neighbors)
+  - High Q = gradual changes (affects more adjacent points)
+- [ ] Visual indication of affected zone when dragging
+- [ ] Q value persists during editing session
+
+### 3.3 Background Image Overlay
+- [ ] Add "Load Background Image" menu/button
+- [ ] Support PNG, JPG, BMP image formats
+- [ ] Render image behind chart (z-order below curve)
+- [ ] X-axis scale slider for image
+- [ ] Y-axis scale slider for image (independent)
+- [ ] Position offset controls (optional)
+- [ ] Toggle image visibility on/off
+
+### 3.4 Axis Scaling
+- [ ] X-axis range slider (min/max RPM)
+- [ ] Y-axis range slider (min/max Torque)
+- [ ] Smooth graph recalculation (no jitter)
+- [ ] Grid lines and labels update with scaling
+- [ ] Maintain nice rounded label increments
+
+### 3.5 Add/Remove Data Points
 - [ ] Add "Insert Point" button
 - [ ] Add "Delete Point" button
 - [ ] Handle insertion between existing points
 - [ ] Update chart and grid automatically
 
-### 3.3 Undo/Redo (Optional MVP)
+### 3.6 Undo/Redo (Optional MVP)
 - [ ] Implement command pattern for edits
 - [ ] Track edit history
 - [ ] Enable Ctrl+Z / Ctrl+Y shortcuts
 
-### 3.4 UI Polish
+**Deliverable:** Fully functional MVP with EQ-style editing and image overlay.
+
+---
+
+## Phase 4: Polish & User Preferences
+
+### 4.1 User Settings
+- [ ] Toggle hover tooltip on/off
+- [ ] Persist settings between sessions
+- [ ] Settings accessible via menu
+
+### 4.2 UI Polish
 - [ ] Add toolbar with common actions
 - [ ] Implement keyboard shortcuts
 - [ ] Add status bar
-- [ ] Improve chart tooltips
 - [ ] Add application icon
 
-### 3.5 Unsaved Changes Handling
+### 4.3 Unsaved Changes Handling
 - [ ] Prompt to save on close
 - [ ] Prompt to save on open new file
 - [ ] Show asterisk (*) in title for unsaved changes
 
-**Deliverable:** Fully functional MVP with interactive editing.
+**Deliverable:** Polished application with user preferences.
 
 ---
 
-## Phase 4: Units System (Future)
+## Phase 5: Units System (Future)
 
-### 4.1 Tare Integration
+### 5.1 Tare Integration
 - [ ] Add Tare NuGet package
 - [ ] Create UnitService using Tare
 - [ ] Define supported units (Nm, lbf-in)
 
-### 4.2 Unit Toggle UI
+### 5.2 Unit Toggle UI
 - [ ] Add unit selector in UI
 - [ ] Store current unit preference
 - [ ] Convert displayed values on toggle
 
-### 4.3 Conversion Logic
+### 5.3 Conversion Logic
 - [ ] Convert on display (not stored data)
 - [ ] Or: Convert stored data (with user confirmation)
 - [ ] Handle precision/rounding
 
-### 4.4 Persistence
+### 5.4 Persistence
 - [ ] Save unit preference
 - [ ] Remember last used unit
 - [ ] Store unit in JSON file (optional)
@@ -211,17 +261,25 @@ Create `samples/example-curve.json` for testing:
 - [ ] Can create new curve file
 - [ ] Can open existing JSON files
 - [ ] Displays torque curve as line graph
+- [ ] RPM on X axis, Torque on Y axis (default)
+- [ ] Grid lines at rounded value increments
+- [ ] Hover tooltip shows RPM/torque values
 - [ ] Can edit values in data grid
 - [ ] Chart updates in real-time
+- [ ] EQ-style point dragging works
+- [ ] Q slider affects curve sharpness
+- [ ] Can load background image
+- [ ] Background image scales independently (X/Y)
+- [ ] Axis scaling via sliders (smooth, no jitter)
 - [ ] Can save to JSON file
 - [ ] Runs as portable executable
 - [ ] Works on Windows 11
 
 ### Nice to Have for MVP:
-- [ ] Interactive chart point editing
 - [ ] Undo/redo support
 - [ ] Keyboard shortcuts
 - [ ] Recent files list
+- [ ] Axis swap toggle (RPM ↔ Torque)
 
 ---
 
@@ -250,6 +308,8 @@ Create `samples/example-curve.json` for testing:
 
 1. **JSON Schema**: Is the proposed schema suitable, or do you have an existing format?
 2. **Unit Default**: Should Nm or lbf-in be the default unit?
-3. **Charting Style**: Preference for line style, colors, grid appearance?
+3. ~~**Charting Style**: Preference for line style, colors, grid appearance?~~ ✅ Faded grid lines, rounded label increments
 4. **Additional Metadata**: Any other properties needed in the curve model?
 5. **Validation Rules**: Specific limits for RPM or torque values?
+6. **Q Algorithm**: Preferred algorithm for Q-influenced point editing? (Gaussian, linear falloff, etc.)
+7. **Image Formats**: Any specific image formats beyond PNG/JPG/BMP needed?
