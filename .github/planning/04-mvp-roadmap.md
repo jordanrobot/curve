@@ -1,10 +1,26 @@
 # Motor Torque Curve Editor - MVP Roadmap
 
+## Technology Stack Decision
+
+**Confirmed**: The Motor Torque Curve Editor will be built using:
+
+- **Framework**: Avalonia UI 11.x
+- **Runtime**: .NET 8 (LTS)
+- **Charting**: LiveCharts2
+- **MVVM**: CommunityToolkit.Mvvm
+- **Logging**: Serilog (structured logging)
+
+This provides a cross-platform capable, modern .NET desktop application with excellent charting support.
+
+---
+
 ## Phase Overview
 
 ```
 Phase 1: Foundation (Week 1-2)
     └── Project setup, basic UI shell, file operations, curve generator
+    └── Logging infrastructure (Serilog), exception handling
+    └── Undo/redo infrastructure (command pattern)
 
 Phase 2: Core Features (Week 3-4)
     └── Chart visualization, motor properties, data binding, grid lines
@@ -16,7 +32,7 @@ Phase 4: Advanced Editing (Week 6-8)
     └── EQ-style editing, Q slider, background images, axis scaling
 
 Phase 5: Polish & User Preferences (Week 9)
-    └── User settings, keyboard shortcuts, undo/redo
+    └── User settings, keyboard shortcuts
 
 Phase 6: Units System (Future)
     └── Tare integration, unit conversion, preferences
@@ -35,9 +51,11 @@ Phase 8: Power Curve Overlay (Future)
 ### 1.1 Project Setup
 - [ ] Create solution with Avalonia template
 - [ ] Configure project for .NET 8
-- [ ] Add NuGet packages (Avalonia, CommunityToolkit.Mvvm)
+- [ ] Add NuGet packages (Avalonia, CommunityToolkit.Mvvm, Serilog, Serilog.Sinks.File, Serilog.Sinks.Console)
 - [ ] Set up project structure (Models, Views, ViewModels, Services)
 - [ ] Configure single-file publishing
+- [ ] Set up Serilog logging infrastructure
+- [ ] Configure global exception handling
 
 ### 1.2 Basic Window Shell
 - [ ] Create MainWindow with menu bar
@@ -83,7 +101,25 @@ Phase 8: Power Curve Overlay (Future)
 - [ ] Generate initial Peak and Continuous curves
 - [ ] Create new file with generated data
 
-**Deliverable:** Application that can create new motor files, open, display JSON content, and save files.
+### 1.7 Logging and Exception Handling
+- [ ] Configure Serilog with file and console sinks
+- [ ] Add structured logging throughout services
+- [ ] Implement global unhandled exception handler
+- [ ] Create user-friendly error dialogs for exceptions
+- [ ] Log file location in user's AppData folder
+- [ ] Include context (file path, operation) in log entries
+
+### 1.8 Undo/Redo Infrastructure
+- [ ] Implement IUndoableCommand interface
+- [ ] Create UndoStack service for managing edit history
+- [ ] Define command classes for common operations:
+  - EditPointCommand
+  - EditSeriesCommand
+  - EditMotorPropertyCommand
+- [ ] Wire Ctrl+Z / Ctrl+Y keyboard shortcuts
+- [ ] Integrate undo/redo with dirty state tracking
+
+**Deliverable:** Application that can create, open, and save motor files with JSON content display. Includes full undo/redo support and structured logging.
 
 ---
 
@@ -233,11 +269,6 @@ Phase 8: Power Curve Overlay (Future)
 - [ ] Handle insertion between existing points
 - [ ] Update chart and grid automatically
 
-### 4.6 Undo/Redo (Optional MVP)
-- [ ] Implement command pattern for edits
-- [ ] Track edit history
-- [ ] Enable Ctrl+Z / Ctrl+Y shortcuts
-
 **Deliverable:** Fully functional MVP with EQ-style editing and image overlay.
 
 ---
@@ -353,6 +384,9 @@ dotnet new avalonia.mvvm -n CurveEditor -o src/CurveEditor
 cd src/CurveEditor
 dotnet add package LiveChartsCore.SkiaSharpView.Avalonia
 dotnet add package CommunityToolkit.Mvvm
+dotnet add package Serilog
+dotnet add package Serilog.Sinks.File
+dotnet add package Serilog.Sinks.Console
 ```
 
 ### Build and Run
@@ -480,9 +514,11 @@ The sample above shows 10% increments for brevity.
 - [ ] Can save to JSON file with all motor properties
 - [ ] Runs as portable executable
 - [ ] Works on Windows 11
+- [ ] Undo/redo support (Ctrl+Z / Ctrl+Y)
+- [ ] Structured logging with Serilog
+- [ ] Global exception handling with user-friendly error dialogs
 
 ### Nice to Have for MVP:
-- [ ] Undo/redo support
 - [ ] Keyboard shortcuts
 - [ ] Recent files list
 - [ ] Axis swap toggle (RPM ↔ Torque)
@@ -507,11 +543,12 @@ The sample above shows 10% increments for brevity.
 
 ## Next Steps
 
-1. Review this roadmap and architecture documents
-2. Decide on Avalonia vs WPF (or other option)
+1. ~~Review this roadmap and architecture documents~~ ✅ Complete
+2. ~~Decide on Avalonia vs WPF (or other option)~~ ✅ Avalonia + .NET 8 confirmed
 3. Set up development environment
-4. Create initial project scaffold
-5. Begin Phase 1 implementation
+4. Create initial project scaffold with Serilog logging
+5. Implement undo/redo infrastructure
+6. Begin Phase 1 implementation
 
 ---
 
