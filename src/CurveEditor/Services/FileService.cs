@@ -18,6 +18,24 @@ public class FileService : IFileService
         PropertyNameCaseInsensitive = true
     };
 
+    private readonly ICurveGeneratorService _curveGenerator;
+
+    /// <summary>
+    /// Creates a new FileService instance.
+    /// </summary>
+    /// <param name="curveGenerator">The curve generator service for creating new motor definitions.</param>
+    public FileService(ICurveGeneratorService curveGenerator)
+    {
+        _curveGenerator = curveGenerator ?? throw new ArgumentNullException(nameof(curveGenerator));
+    }
+
+    /// <summary>
+    /// Creates a new FileService instance with a default curve generator.
+    /// </summary>
+    public FileService() : this(new CurveGeneratorService())
+    {
+    }
+
     /// <inheritdoc />
     public string? CurrentFilePath { get; private set; }
 
@@ -125,10 +143,9 @@ public class FileService : IFileService
         var peakSeries = new CurveSeries("Peak");
         var continuousSeries = new CurveSeries("Continuous");
 
-        // Use curve generator logic - simplified version
-        var generator = new CurveGeneratorService();
-        peakSeries.Data = generator.InterpolateCurve(maxRpm, maxTorque, maxPower);
-        continuousSeries.Data = generator.InterpolateCurve(maxRpm, maxTorque * 0.8, maxPower * 0.8);
+        // Use injected curve generator
+        peakSeries.Data = _curveGenerator.InterpolateCurve(maxRpm, maxTorque, maxPower);
+        continuousSeries.Data = _curveGenerator.InterpolateCurve(maxRpm, maxTorque * 0.8, maxPower * 0.8);
 
         motor.Series.Add(peakSeries);
         motor.Series.Add(continuousSeries);

@@ -1,3 +1,5 @@
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CurveEditor.Models;
@@ -11,8 +13,8 @@ namespace CurveEditor.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
-    private readonly FileService _fileService;
-    private readonly CurveGeneratorService _curveGeneratorService;
+    private readonly IFileService _fileService;
+    private readonly ICurveGeneratorService _curveGeneratorService;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(WindowTitle))]
@@ -27,8 +29,14 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public MainWindowViewModel()
     {
-        _fileService = new FileService();
         _curveGeneratorService = new CurveGeneratorService();
+        _fileService = new FileService(_curveGeneratorService);
+    }
+
+    public MainWindowViewModel(IFileService fileService, ICurveGeneratorService curveGeneratorService)
+    {
+        _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
+        _curveGeneratorService = curveGeneratorService ?? throw new ArgumentNullException(nameof(curveGeneratorService));
     }
 
     public string WindowTitle
@@ -67,14 +75,11 @@ public partial class MainWindowViewModel : ViewModelBase
 
         try
         {
-            // For now, we'll load a sample file - in a real implementation,
-            // this would open a file dialog
-            var samplePath = Path.Combine(
-                AppDomain.CurrentDomain.BaseDirectory,
-                "..", "..", "..", "..", "..",
-                "samples", "example-motor.json");
+            // TODO: In a full implementation, this would open a file dialog.
+            // For now, we search for the sample file in common locations.
+            var samplePath = FindSampleFile();
 
-            if (File.Exists(samplePath))
+            if (samplePath is not null && File.Exists(samplePath))
             {
                 CurrentMotor = await _fileService.LoadAsync(samplePath);
                 IsDirty = _fileService.IsDirty;
@@ -83,7 +88,7 @@ public partial class MainWindowViewModel : ViewModelBase
             }
             else
             {
-                StatusMessage = "Sample file not found";
+                StatusMessage = "Sample file not found. Use File > New to create a motor.";
             }
         }
         catch (Exception ex)
@@ -91,6 +96,31 @@ public partial class MainWindowViewModel : ViewModelBase
             Log.Error(ex, "Failed to open file");
             StatusMessage = $"Error: {ex.Message}";
         }
+    }
+
+    private static string? FindSampleFile()
+    {
+        // Search for the sample file in multiple locations
+        var possiblePaths = new[]
+        {
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "samples", "example-motor.json"),
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "samples", "example-motor.json"),
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "samples", "example-motor.json"),
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "samples", "example-motor.json"),
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "samples", "example-motor.json"),
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "..", "samples", "example-motor.json"),
+        };
+
+        foreach (var path in possiblePaths)
+        {
+            var normalizedPath = Path.GetFullPath(path);
+            if (File.Exists(normalizedPath))
+            {
+                return normalizedPath;
+            }
+        }
+
+        return null;
     }
 
     [RelayCommand(CanExecute = nameof(CanSave))]
@@ -165,7 +195,12 @@ public partial class MainWindowViewModel : ViewModelBase
     private static void Exit()
     {
         Log.Information("Exiting application");
-        Environment.Exit(0);
+
+        // Use Avalonia's proper shutdown mechanism
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            desktop.Shutdown();
+        }
     }
 
     /// <summary>

@@ -83,7 +83,7 @@ public class DataPointTests
 
     [Theory]
     [InlineData(1000.4, 1000)]
-    [InlineData(1000.5, 1000)] // .NET Math.Round uses banker's rounding (rounds .5 to nearest even)
+    [InlineData(1000.5, 1000)] // Math.Round uses banker's rounding (1000.5 rounds to 1000, the nearest even)
     [InlineData(1000.6, 1001)]
     [InlineData(2500.49, 2500)]
     [InlineData(2500.51, 2501)]
