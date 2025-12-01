@@ -85,6 +85,13 @@ public class MotorDefinition
     [JsonPropertyName("rotorInertia")]
     public double RotorInertia { get; set; }
 
+    /// <summary>
+    /// The feedback device pulses per revolution (PPR).
+    /// Used for encoder or resolver feedback resolution.
+    /// </summary>
+    [JsonPropertyName("feedbackPpr")]
+    public int FeedbackPpr { get; set; }
+
     // Brake Properties
     /// <summary>
     /// Indicates whether the motor includes an integral holding brake.

@@ -279,6 +279,11 @@
                             <TextBlock Grid.Column="1" Text="{Binding CurrentMotor.RotorInertia, StringFormat=N4}" Classes="PropertyValue"/>
                         </Grid>
                         
+                        <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
+                            <TextBlock Grid.Column="0" Text="Feedback PPR" Classes="PropertyLabel"/>
+                            <TextBlock Grid.Column="1" Text="{Binding CurrentMotor.FeedbackPpr, StringFormat=N0}" Classes="PropertyValue"/>
+                        </Grid>
+                        
                         <!-- BRAKE SECTION -->
                         <TextBlock Text="Brake" Classes="PropertyHeader"/>
                         

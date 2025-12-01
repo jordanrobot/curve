@@ -10,6 +10,7 @@
   "ratedPeakTorque": 55.0,
   "weight": 8.5,
   "rotorInertia": 0.0025,
+  "feedbackPpr": 131072,
   "hasBrake": true,
   "brakeTorque": 12.0,
   "brakeAmperage": 0.5,
