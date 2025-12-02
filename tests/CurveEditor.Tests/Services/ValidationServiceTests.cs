@@ -9,6 +9,11 @@ namespace CurveEditor.Tests.Services;
 public class ValidationServiceTests
 {
     private readonly ValidationService _service = new();
+    
+    /// <summary>
+    /// Expected number of data points in a valid curve series.
+    /// </summary>
+    private const int ExpectedDataPointCount = 101;
 
     #region ValidateDataPoint Tests
 
@@ -67,7 +72,7 @@ public class ValidationServiceTests
 
         // Assert
         Assert.NotEmpty(errors);
-        Assert.Contains(errors, e => e.Contains("101 data points"));
+        Assert.Contains(errors, e => e.Contains($"{ExpectedDataPointCount} data points"));
     }
 
     [Fact]
@@ -82,7 +87,7 @@ public class ValidationServiceTests
 
         // Assert
         Assert.NotEmpty(errors);
-        Assert.Contains(errors, e => e.Contains("101 data points"));
+        Assert.Contains(errors, e => e.Contains($"{ExpectedDataPointCount} data points"));
     }
 
     #endregion

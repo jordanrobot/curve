@@ -266,11 +266,13 @@ public partial class ChartViewModel : ViewModelBase
 
         if (roundUp)
         {
-            result = niceValues.First(n => n >= normalized) * magnitude;
+            // Always use FirstOrDefault with fallback to handle edge cases
+            result = (niceValues.FirstOrDefault(n => n >= normalized, 10) * magnitude);
         }
         else
         {
-            result = niceValues.Last(n => n <= normalized) * magnitude;
+            // Always use LastOrDefault with fallback to handle edge cases
+            result = (niceValues.LastOrDefault(n => n <= normalized, 1) * magnitude);
         }
 
         return result;
