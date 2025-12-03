@@ -50,6 +50,18 @@ public class UnitSettings
     public string Inertia { get; set; } = "kg-m^2";
 
     /// <summary>
+    /// Torque constant unit: "Nm/A".
+    /// </summary>
+    [JsonPropertyName("torqueConstant")]
+    public string TorqueConstant { get; set; } = "Nm/A";
+
+    /// <summary>
+    /// Backlash unit: "arcmin" or "arcsec".
+    /// </summary>
+    [JsonPropertyName("backlash")]
+    public string Backlash { get; set; } = "arcmin";
+
+    /// <summary>
     /// Gets the supported speed units.
     /// </summary>
     public static string[] SupportedSpeedUnits => ["rpm"];
@@ -83,4 +95,14 @@ public class UnitSettings
     /// Gets the supported inertia units.
     /// </summary>
     public static string[] SupportedInertiaUnits => ["kg-m^2", "g-cm^2"];
+
+    /// <summary>
+    /// Gets the supported torque constant units.
+    /// </summary>
+    public static string[] SupportedTorqueConstantUnits => ["Nm/A"];
+
+    /// <summary>
+    /// Gets the supported backlash units.
+    /// </summary>
+    public static string[] SupportedBacklashUnits => ["arcmin", "arcsec"];
 }

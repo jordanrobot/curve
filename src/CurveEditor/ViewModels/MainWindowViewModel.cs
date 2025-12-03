@@ -130,6 +130,16 @@ public partial class MainWindowViewModel : ViewModelBase
     /// </summary>
     public static string[] InertiaUnits => UnitSettings.SupportedInertiaUnits;
 
+    /// <summary>
+    /// Supported torque constant units for dropdowns.
+    /// </summary>
+    public static string[] TorqueConstantUnits => UnitSettings.SupportedTorqueConstantUnits;
+
+    /// <summary>
+    /// Supported backlash units for dropdowns.
+    /// </summary>
+    public static string[] BacklashUnits => UnitSettings.SupportedBacklashUnits;
+
     public MainWindowViewModel()
     {
         _curveGeneratorService = new CurveGeneratorService();
@@ -167,7 +177,18 @@ public partial class MainWindowViewModel : ViewModelBase
     partial void OnSelectedDriveChanged(DriveConfiguration? value)
     {
         // When drive changes, update voltage selection
-        SelectedVoltage = value?.Voltages.FirstOrDefault();
+        // Notify that available voltages changed
+        OnPropertyChanged(nameof(AvailableVoltages));
+        
+        if (value is null)
+        {
+            SelectedVoltage = null;
+            return;
+        }
+        
+        // Prefer 208V if available, otherwise use the first voltage
+        var preferred = value.Voltages.FirstOrDefault(v => Math.Abs(v.Voltage - 208) < 0.1);
+        SelectedVoltage = preferred ?? value.Voltages.FirstOrDefault();
     }
 
     partial void OnSelectedVoltageChanged(VoltageConfiguration? value)
@@ -375,39 +396,60 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    // Drive management commands
+    /// <summary>
+    /// Shows the Add Drive/Voltage dialog and creates the drive with curve series.
+    /// </summary>
     [RelayCommand]
-    private void AddDrive()
+    private async Task AddDriveAsync()
     {
         if (CurrentMotor is null) return;
 
         try
         {
-            var newDriveName = GenerateUniqueName(
-                CurrentMotor.Drives.Select(d => d.Name),
-                "New Drive");
-            
-            var drive = CurrentMotor.AddDrive(newDriveName);
-            
-            // Add a default voltage configuration
-            var voltage = drive.AddVoltageConfiguration(220);
-            voltage.MaxSpeed = CurrentMotor.MaxSpeed;
-            voltage.Power = CurrentMotor.Power;
-            voltage.RatedPeakTorque = CurrentMotor.RatedPeakTorque;
-            voltage.RatedContinuousTorque = CurrentMotor.RatedContinuousTorque;
-            
-            // Add default series
+            var dialog = new Views.AddDriveVoltageDialog();
+            dialog.Initialize(
+                CurrentMotor.MaxSpeed,
+                CurrentMotor.RatedPeakTorque,
+                CurrentMotor.RatedContinuousTorque,
+                CurrentMotor.Power);
+
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                await dialog.ShowDialog(desktop.MainWindow!);
+            }
+
+            if (dialog.Result is null) return;
+
+            var result = dialog.Result;
+            var driveName = string.IsNullOrWhiteSpace(result.Name)
+                ? GenerateUniqueName(CurrentMotor.Drives.Select(d => d.Name), "New Drive")
+                : result.Name;
+
+            var drive = CurrentMotor.AddDrive(driveName);
+            drive.PartNumber = result.PartNumber;
+            drive.Manufacturer = result.Manufacturer;
+
+            // Add the voltage configuration
+            var voltage = drive.AddVoltageConfiguration(result.Voltage);
+            voltage.MaxSpeed = result.MaxSpeed;
+            voltage.Power = result.Power;
+            voltage.RatedPeakTorque = result.PeakTorque;
+            voltage.RatedContinuousTorque = result.ContinuousTorque;
+            voltage.ContinuousAmperage = result.ContinuousCurrent;
+            voltage.PeakAmperage = result.PeakCurrent;
+
+            // Create Peak and Continuous torque series
             var peakSeries = new CurveSeries("Peak");
             var continuousSeries = new CurveSeries("Continuous");
             peakSeries.InitializeData(voltage.MaxSpeed, voltage.RatedPeakTorque);
             continuousSeries.InitializeData(voltage.MaxSpeed, voltage.RatedContinuousTorque);
             voltage.Series.Add(peakSeries);
             voltage.Series.Add(continuousSeries);
-            
+
             SelectedDrive = drive;
             OnPropertyChanged(nameof(CurrentMotor));
             MarkDirty();
-            StatusMessage = $"Added drive: {newDriveName}";
+            StatusMessage = $"Added drive: {driveName}";
         }
         catch (Exception ex)
         {
@@ -446,42 +488,60 @@ public partial class MainWindowViewModel : ViewModelBase
     // Common voltage values used in industrial motor applications
     private static readonly double[] CommonVoltages = [110, 115, 120, 200, 208, 220, 230, 240, 277, 380, 400, 415, 440, 460, 480, 500, 575, 600, 690];
 
-    // Voltage management commands
+    /// <summary>
+    /// Shows the Add Drive/Voltage dialog for adding a new voltage configuration.
+    /// </summary>
     [RelayCommand]
-    private void AddVoltage()
+    private async Task AddVoltageAsync()
     {
         if (SelectedDrive is null) return;
 
         try
         {
-            // Find the first common voltage not already in use
-            var existingVoltages = SelectedDrive.Voltages.Select(v => v.Voltage).ToHashSet();
-            var newVoltage = CommonVoltages.FirstOrDefault(v => !existingVoltages.Any(ev => Math.Abs(ev - v) < DriveConfiguration.DefaultVoltageTolerance));
-            
-            if (newVoltage == 0)
+            var dialog = new Views.AddDriveVoltageDialog();
+            dialog.Title = "Add New Voltage Configuration";
+            dialog.Initialize(
+                CurrentMotor?.MaxSpeed ?? 5000,
+                CurrentMotor?.RatedPeakTorque ?? 50,
+                CurrentMotor?.RatedContinuousTorque ?? 40,
+                CurrentMotor?.Power ?? 1500);
+
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
-                // All common voltages in use, generate a unique one
-                newVoltage = existingVoltages.Max() + 10;
+                await dialog.ShowDialog(desktop.MainWindow!);
             }
+
+            if (dialog.Result is null) return;
+
+            var result = dialog.Result;
             
-            var voltage = SelectedDrive.AddVoltageConfiguration(newVoltage);
-            voltage.MaxSpeed = CurrentMotor?.MaxSpeed ?? 5000;
-            voltage.Power = CurrentMotor?.Power ?? 1500;
-            voltage.RatedPeakTorque = CurrentMotor?.RatedPeakTorque ?? 50;
-            voltage.RatedContinuousTorque = CurrentMotor?.RatedContinuousTorque ?? 40;
-            
-            // Add default series
+            // Check if voltage already exists
+            if (SelectedDrive.Voltages.Any(v => Math.Abs(v.Voltage - result.Voltage) < DriveConfiguration.DefaultVoltageTolerance))
+            {
+                StatusMessage = $"Voltage {result.Voltage}V already exists for this drive.";
+                return;
+            }
+
+            var voltage = SelectedDrive.AddVoltageConfiguration(result.Voltage);
+            voltage.MaxSpeed = result.MaxSpeed;
+            voltage.Power = result.Power;
+            voltage.RatedPeakTorque = result.PeakTorque;
+            voltage.RatedContinuousTorque = result.ContinuousTorque;
+            voltage.ContinuousAmperage = result.ContinuousCurrent;
+            voltage.PeakAmperage = result.PeakCurrent;
+
+            // Create Peak and Continuous torque series
             var peakSeries = new CurveSeries("Peak");
             var continuousSeries = new CurveSeries("Continuous");
             peakSeries.InitializeData(voltage.MaxSpeed, voltage.RatedPeakTorque);
             continuousSeries.InitializeData(voltage.MaxSpeed, voltage.RatedContinuousTorque);
             voltage.Series.Add(peakSeries);
             voltage.Series.Add(continuousSeries);
-            
+
             SelectedVoltage = voltage;
             OnPropertyChanged(nameof(AvailableVoltages));
             MarkDirty();
-            StatusMessage = $"Added voltage: {newVoltage}V";
+            StatusMessage = $"Added voltage: {result.Voltage}V";
         }
         catch (Exception ex)
         {
@@ -638,6 +698,25 @@ public partial class MainWindowViewModel : ViewModelBase
         ValidationErrors = errors.Count > 0
             ? string.Join("\n", errors)
             : string.Empty;
+    }
+
+    /// <summary>
+    /// Shows a confirmation dialog for max speed change.
+    /// </summary>
+    public async Task<bool> ConfirmMaxSpeedChangeAsync()
+    {
+        var dialog = new Views.MessageDialog();
+        dialog.SetMessage("Changing the maximum speed will affect existing curve data. " +
+                          "The curve data points are based on speed percentages, so changing the " +
+                          "maximum speed will shift the RPM values of all data points.\n\n" +
+                          "Do you want to proceed with this change?");
+
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            await dialog.ShowDialog(desktop.MainWindow!);
+        }
+
+        return dialog.IsConfirmed;
     }
 
     private static IStorageProvider? GetStorageProvider()
