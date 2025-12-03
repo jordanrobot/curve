@@ -30,7 +30,6 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(WindowTitle))]
-    [NotifyPropertyChangedFor(nameof(AvailableDrives))]
     private MotorDefinition? _currentMotor;
 
     [ObservableProperty]
@@ -55,13 +54,10 @@ public partial class MainWindowViewModel : ViewModelBase
 
     // Drive selection
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(AvailableVoltages))]
-    [NotifyPropertyChangedFor(nameof(AvailableDrives))]
     private DriveConfiguration? _selectedDrive;
 
     // Voltage selection
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(AvailableSeries))]
     private VoltageConfiguration? _selectedVoltage;
 
     // Series selection
@@ -86,17 +82,23 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isCurveDataExpanded;
 
-    public ObservableCollection<VoltageConfiguration> AvailableVoltages =>
-        new(SelectedDrive?.Voltages ?? []);
-
-    public ObservableCollection<CurveSeries> AvailableSeries =>
-        new(SelectedVoltage?.Series ?? []);
+    /// <summary>
+    /// Cached list of available voltages for the selected drive.
+    /// </summary>
+    [ObservableProperty]
+    private ObservableCollection<VoltageConfiguration> _availableVoltages = [];
 
     /// <summary>
-    /// Available drives from current motor definition.
+    /// Cached list of available series for the selected voltage.
     /// </summary>
-    public ObservableCollection<DriveConfiguration> AvailableDrives =>
-        new(CurrentMotor?.Drives ?? []);
+    [ObservableProperty]
+    private ObservableCollection<CurveSeries> _availableSeries = [];
+
+    /// <summary>
+    /// Cached list of available drives from current motor definition.
+    /// </summary>
+    [ObservableProperty]
+    private ObservableCollection<DriveConfiguration> _availableDrives = [];
 
     /// <summary>
     /// Whether save is enabled (motor exists and no validation errors).
@@ -176,17 +178,64 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
+    /// <summary>
+    /// Refreshes the available drives collection from the current motor.
+    /// </summary>
+    private void RefreshAvailableDrives()
+    {
+        AvailableDrives.Clear();
+        if (CurrentMotor is not null)
+        {
+            foreach (var drive in CurrentMotor.Drives)
+            {
+                AvailableDrives.Add(drive);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Refreshes the available voltages collection from the selected drive.
+    /// </summary>
+    private void RefreshAvailableVoltages()
+    {
+        AvailableVoltages.Clear();
+        if (SelectedDrive is not null)
+        {
+            foreach (var voltage in SelectedDrive.Voltages)
+            {
+                AvailableVoltages.Add(voltage);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Refreshes the available series collection from the selected voltage.
+    /// </summary>
+    private void RefreshAvailableSeries()
+    {
+        AvailableSeries.Clear();
+        if (SelectedVoltage is not null)
+        {
+            foreach (var series in SelectedVoltage.Series)
+            {
+                AvailableSeries.Add(series);
+            }
+        }
+    }
+
     partial void OnCurrentMotorChanged(MotorDefinition? value)
     {
-        // When motor changes, update selections
+        // Refresh the drives collection
+        RefreshAvailableDrives();
+        
+        // When motor changes, select the first drive
         SelectedDrive = value?.Drives.FirstOrDefault();
     }
 
     partial void OnSelectedDriveChanged(DriveConfiguration? value)
     {
-        // When drive changes, update voltage selection
-        // Notify that available voltages changed
-        OnPropertyChanged(nameof(AvailableVoltages));
+        // Refresh the available voltages collection
+        RefreshAvailableVoltages();
         
         if (value is null)
         {
@@ -201,6 +250,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
     partial void OnSelectedVoltageChanged(VoltageConfiguration? value)
     {
+        // Refresh the available series collection
+        RefreshAvailableSeries();
+        
         // When voltage changes, update series selection
         SelectedSeries = value?.Series.FirstOrDefault();
         
@@ -490,8 +542,8 @@ public partial class MainWindowViewModel : ViewModelBase
             voltage.Series.Add(peakSeries);
             voltage.Series.Add(continuousSeries);
 
-            // Force refresh the drive list in UI
-            OnPropertyChanged(nameof(AvailableDrives));
+            // Refresh the drive list in UI
+            RefreshAvailableDrives();
             
             // Select the new drive and update chart
             SelectedDrive = drive;
@@ -510,17 +562,31 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void RemoveDrive()
+    private async Task RemoveDriveAsync()
     {
         if (CurrentMotor is null || SelectedDrive is null) return;
+
+        // Show confirmation dialog
+        var dialog = new Views.MessageDialog
+        {
+            Title = "Confirm Delete",
+            Message = $"Are you sure you want to delete the selected drive '{SelectedDrive.Name}'?"
+        };
+
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            await dialog.ShowDialog(desktop.MainWindow!);
+        }
+
+        if (!dialog.IsConfirmed) return;
 
         try
         {
             var driveName = SelectedDrive.Name;
             if (CurrentMotor.RemoveDrive(driveName))
             {
+                RefreshAvailableDrives();
                 SelectedDrive = CurrentMotor.Drives.FirstOrDefault();
-                OnPropertyChanged(nameof(CurrentMotor));
                 MarkDirty();
                 StatusMessage = $"Removed drive: {driveName}";
             }
@@ -590,7 +656,7 @@ public partial class MainWindowViewModel : ViewModelBase
             voltage.Series.Add(continuousSeries);
 
             // Refresh the available voltages and select the new one
-            OnPropertyChanged(nameof(AvailableVoltages));
+            RefreshAvailableVoltages();
             SelectedVoltage = voltage;
             
             // Force chart refresh to update axes based on new max speed
@@ -607,9 +673,23 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void RemoveVoltage()
+    private async Task RemoveVoltageAsync()
     {
         if (SelectedDrive is null || SelectedVoltage is null) return;
+
+        // Show confirmation dialog
+        var dialog = new Views.MessageDialog
+        {
+            Title = "Confirm Delete",
+            Message = $"Are you sure you want to delete the selected voltage '{SelectedVoltage.Voltage}V'?"
+        };
+
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            await dialog.ShowDialog(desktop.MainWindow!);
+        }
+
+        if (!dialog.IsConfirmed) return;
 
         try
         {
@@ -621,8 +701,8 @@ public partial class MainWindowViewModel : ViewModelBase
 
             var voltage = SelectedVoltage.Voltage;
             SelectedDrive.Voltages.Remove(SelectedVoltage);
+            RefreshAvailableVoltages();
             SelectedVoltage = SelectedDrive.Voltages.FirstOrDefault();
-            OnPropertyChanged(nameof(AvailableVoltages));
             MarkDirty();
             StatusMessage = $"Removed voltage: {voltage}V";
         }
@@ -646,8 +726,8 @@ public partial class MainWindowViewModel : ViewModelBase
                 "New Series");
             
             var series = SelectedVoltage.AddSeries(newSeriesName, SelectedVoltage.RatedContinuousTorque);
+            RefreshAvailableSeries();
             SelectedSeries = series;
-            OnPropertyChanged(nameof(AvailableSeries));
             MarkDirty();
             StatusMessage = $"Added series: {newSeriesName}";
         }
@@ -659,9 +739,23 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void RemoveSeries()
+    private async Task RemoveSeriesAsync()
     {
         if (SelectedVoltage is null || SelectedSeries is null) return;
+
+        // Show confirmation dialog
+        var dialog = new Views.MessageDialog
+        {
+            Title = "Confirm Delete",
+            Message = $"Are you sure you want to delete the selected series '{SelectedSeries.Name}'?"
+        };
+
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            await dialog.ShowDialog(desktop.MainWindow!);
+        }
+
+        if (!dialog.IsConfirmed) return;
 
         try
         {
@@ -673,8 +767,8 @@ public partial class MainWindowViewModel : ViewModelBase
 
             var seriesName = SelectedSeries.Name;
             SelectedVoltage.Series.Remove(SelectedSeries);
+            RefreshAvailableSeries();
             SelectedSeries = SelectedVoltage.Series.FirstOrDefault();
-            OnPropertyChanged(nameof(AvailableSeries));
             MarkDirty();
             StatusMessage = $"Removed series: {seriesName}";
         }
