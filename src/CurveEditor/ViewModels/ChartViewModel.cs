@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CurveEditor.Models;
 using LiveChartsCore;
@@ -11,6 +7,10 @@ using LiveChartsCore.SkiaSharpView.Painting;
 using LiveChartsCore.SkiaSharpView.Painting.Effects;
 using Serilog;
 using SkiaSharp;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace CurveEditor.ViewModels;
 
@@ -91,7 +91,7 @@ public partial class ChartViewModel : ViewModelBase
     public void SetSeriesVisibility(string seriesName, bool isVisible)
     {
         _seriesVisibility[seriesName] = isVisible;
-        
+
         // Find the series and update its visibility
         var series = Series.FirstOrDefault(s => s.Name == seriesName);
         if (series is not null)
@@ -167,11 +167,11 @@ public partial class ChartViewModel : ViewModelBase
             {
                 Name = curveSeries.Name,
                 Values = points,
-                Fill = null,
-                GeometrySize = 6,
-                GeometryStroke = new SolidColorPaint(color) { StrokeThickness = 2 },
+                Fill = new SolidColorPaint(color.WithAlpha(40)),
+                GeometrySize = 3,
+                GeometryStroke = new SolidColorPaint(color) { StrokeThickness = 1 },
                 GeometryFill = new SolidColorPaint(SKColors.White),
-                Stroke = new SolidColorPaint(color) { StrokeThickness = 2 },
+                Stroke = new SolidColorPaint(color) { StrokeThickness = 1 },
                 LineSmoothness = 0.3,
                 IsVisible = isVisible
             };
