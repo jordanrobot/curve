@@ -109,10 +109,28 @@ public partial class CurveDataPanel : UserControl
     {
         if (DataContext is not MainWindowViewModel vm) return;
 
+        // First, reset all registered borders to unselected state
+        // This handles cases where a border was selected but is no longer in the selection
+        var bordersToRemove = new List<CellPosition>();
+        
         foreach (var kvp in _cellBorders)
         {
+            // Check if the border is still valid (has a visual parent)
+            if (kvp.Value.GetVisualParent() is null)
+            {
+                // Border is no longer in the visual tree, mark for removal
+                bordersToRemove.Add(kvp.Key);
+                continue;
+            }
+            
             var isSelected = vm.CurveDataTableViewModel.IsCellSelected(kvp.Key.RowIndex, kvp.Key.ColumnIndex);
             UpdateCellBorderVisual(kvp.Value, isSelected);
+        }
+        
+        // Clean up stale entries
+        foreach (var pos in bordersToRemove)
+        {
+            _cellBorders.Remove(pos);
         }
     }
 
@@ -404,13 +422,19 @@ public partial class CurveDataPanel : UserControl
         if (properties.IsLeftButtonPressed)
         {
             // Check for double-click to enter edit mode
-            if (e.ClickCount == 2)
+            // Must be checked BEFORE single-click handling to ensure proper priority
+            if (e.ClickCount >= 2)
             {
+                // Cancel any ongoing drag operation
+                _isDragging = false;
+                _dragStartCell = null;
+                
                 // Select the row in the DataGrid to enable editing
                 SelectDataGridRow(pos.RowIndex);
                 
                 // Enter edit mode
                 DataTable.BeginEdit();
+                e.Handled = true;
                 return; // Don't handle as regular click
             }
             
@@ -426,7 +450,7 @@ public partial class CurveDataPanel : UserControl
             }
             else
             {
-                // Normal click: Start new selection and begin drag tracking
+                // Normal single click: Start new selection and begin drag tracking
                 vm.CurveDataTableViewModel.SelectCell(pos.RowIndex, pos.ColumnIndex);
                 _isDragging = true;
                 _dragStartCell = pos;
