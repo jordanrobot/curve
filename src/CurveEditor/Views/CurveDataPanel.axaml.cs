@@ -21,17 +21,43 @@ public partial class CurveDataPanel : UserControl
     {
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
+        Unloaded += OnUnloaded;
+    }
+
+    private MainWindowViewModel? _subscribedViewModel;
+
+    private void OnUnloaded(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        // Unsubscribe from events to prevent memory leaks
+        if (_subscribedViewModel is not null)
+        {
+            _subscribedViewModel.CurveDataTableViewModel.PropertyChanged -= OnCurveDataTablePropertyChanged;
+            _subscribedViewModel.AvailableSeries.CollectionChanged -= OnAvailableSeriesCollectionChanged;
+            _subscribedViewModel = null;
+        }
     }
 
     private void OnDataContextChanged(object? sender, EventArgs e)
     {
+        // Unsubscribe from old view model
+        if (_subscribedViewModel is not null)
+        {
+            _subscribedViewModel.CurveDataTableViewModel.PropertyChanged -= OnCurveDataTablePropertyChanged;
+            _subscribedViewModel.AvailableSeries.CollectionChanged -= OnAvailableSeriesCollectionChanged;
+        }
+
         if (DataContext is MainWindowViewModel vm)
         {
             // Subscribe to series changes to rebuild columns
             vm.CurveDataTableViewModel.PropertyChanged += OnCurveDataTablePropertyChanged;
             // Subscribe to the AvailableSeries collection changes
             vm.AvailableSeries.CollectionChanged += OnAvailableSeriesCollectionChanged;
+            _subscribedViewModel = vm;
             RebuildDataGridColumns();
+        }
+        else
+        {
+            _subscribedViewModel = null;
         }
     }
 

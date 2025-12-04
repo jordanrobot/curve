@@ -44,8 +44,9 @@ public partial class MainWindow : Window
     {
         if (DataContext is MainWindowViewModel viewModel && viewModel.CurrentMotor is not null)
         {
-            // Update the motor max speed in the chart view model
+            // Update the motor max speed in the chart view model (triggers OnMotorMaxSpeedChanged which updates axes)
             viewModel.ChartViewModel.MotorMaxSpeed = viewModel.CurrentMotor.MaxSpeed;
+            viewModel.MarkDirty();
         }
     }
 }
