@@ -115,47 +115,55 @@ public partial class CurveDataPanel : UserControl
             // Add a column for each series
             foreach (var series in vm.AvailableSeries)
             {
+                // Capture series name to avoid closure issues
+                var seriesName = series.Name;
+                var isLocked = series.Locked;
+                
                 var column = new DataGridTemplateColumn
                 {
-                    Header = series.Name,
+                    Header = seriesName,
                     Width = new DataGridLength(80),
-                    IsReadOnly = series.Locked
+                    IsReadOnly = isLocked
                 };
 
-                // Create cell template
+                // Create cell template - directly set text instead of using binding with indexer
+                // Avalonia's binding parser cannot handle series names with spaces in indexer syntax
                 var cellTemplate = new FuncDataTemplate<CurveDataRow>((row, _) =>
                 {
                     var textBlock = new TextBlock
                     {
                         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                        Margin = new Avalonia.Thickness(4, 2)
+                        Margin = new Avalonia.Thickness(4, 2),
+                        Text = row?.GetTorque(seriesName).ToString("N2") ?? "0.00"
                     };
-                    textBlock.Bind(TextBlock.TextProperty, 
-                        new Avalonia.Data.Binding($"[{series.Name}]") 
-                        { 
-                            Mode = Avalonia.Data.BindingMode.OneWay,
-                            StringFormat = "N2"
-                        });
                     return textBlock;
                 });
                 column.CellTemplate = cellTemplate;
 
                 // Create editing template
-                if (!series.Locked)
+                if (!isLocked)
                 {
                     var editingTemplate = new FuncDataTemplate<CurveDataRow>((row, _) =>
                     {
                         var textBox = new TextBox
                         {
                             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                            Margin = new Avalonia.Thickness(2)
+                            Margin = new Avalonia.Thickness(2),
+                            Text = row?.GetTorque(seriesName).ToString("N2") ?? "0.00"
                         };
-                        textBox.Bind(TextBox.TextProperty,
-                            new Avalonia.Data.Binding($"[{series.Name}]")
+                        
+                        // Handle text changes to update the underlying data
+                        textBox.LostFocus += (sender, e) =>
+                        {
+                            if (sender is TextBox tb && row is not null)
                             {
-                                Mode = Avalonia.Data.BindingMode.TwoWay,
-                                StringFormat = "N2"
-                            });
+                                if (double.TryParse(tb.Text, out var newValue))
+                                {
+                                    row.SetTorque(seriesName, newValue);
+                                }
+                            }
+                        };
+                        
                         return textBox;
                     });
                     column.CellEditingTemplate = editingTemplate;
