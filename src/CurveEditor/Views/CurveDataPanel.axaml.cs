@@ -422,20 +422,22 @@ public partial class CurveDataPanel : UserControl
         if (properties.IsLeftButtonPressed)
         {
             // Check for double-click to enter edit mode
-            // Must be checked BEFORE single-click handling to ensure proper priority
+            // Let the event bubble through to DataGrid for native edit mode handling
             if (e.ClickCount >= 2)
             {
                 // Cancel any ongoing drag operation
                 _isDragging = false;
                 _dragStartCell = null;
                 
+                // Select the cell in our tracking
+                vm.CurveDataTableViewModel.SelectCell(pos.RowIndex, pos.ColumnIndex);
+                
                 // Select the row in the DataGrid to enable editing
                 SelectDataGridRow(pos.RowIndex);
                 
-                // Enter edit mode
-                DataTable.BeginEdit();
-                e.Handled = true;
-                return; // Don't handle as regular click
+                // DON'T set e.Handled = true - let the DataGrid handle the double-click
+                // for its native edit mode functionality
+                return;
             }
             
             if (e.KeyModifiers.HasFlag(KeyModifiers.Control))
@@ -736,9 +738,10 @@ public partial class CurveDataPanel : UserControl
             {
                 var firstCell = selectedCells.First();
                 SelectDataGridRow(firstCell.RowIndex);
-                dataGrid.BeginEdit();
+                // DON'T set e.Handled = true - let the DataGrid's native F2 handler work
+                // The BeginEdit() call doesn't work properly when using tunnel routing
             }
-            e.Handled = true;
+            return; // Early return to prevent other handlers from running
         }
 
         // Handle arrow keys for navigation and selection extension
