@@ -854,9 +854,36 @@ public partial class CurveDataPanel : UserControl
         }
 
         // Handle arrow keys for navigation and selection extension
-        if (e.KeyModifiers.HasFlag(KeyModifiers.Shift))
+        if (e.KeyModifiers.HasFlag(KeyModifiers.Control) && e.KeyModifiers.HasFlag(KeyModifiers.Shift))
         {
-            // Shift+Arrow: Extend selection
+            // Ctrl+Shift+Arrow: Extend selection to end of row/column
+            switch (e.Key)
+            {
+                case Key.Up:
+                    vm.CurveDataTableViewModel.ExtendSelectionToEnd(-1, 0);
+                    ScrollToSelection(dataGrid);
+                    e.Handled = true;
+                    break;
+                case Key.Down:
+                    vm.CurveDataTableViewModel.ExtendSelectionToEnd(1, 0);
+                    ScrollToSelection(dataGrid);
+                    e.Handled = true;
+                    break;
+                case Key.Left:
+                    vm.CurveDataTableViewModel.ExtendSelectionToEnd(0, -1);
+                    ScrollToSelection(dataGrid);
+                    e.Handled = true;
+                    break;
+                case Key.Right:
+                    vm.CurveDataTableViewModel.ExtendSelectionToEnd(0, 1);
+                    ScrollToSelection(dataGrid);
+                    e.Handled = true;
+                    break;
+            }
+        }
+        else if (e.KeyModifiers.HasFlag(KeyModifiers.Shift))
+        {
+            // Shift+Arrow: Extend selection by one cell
             switch (e.Key)
             {
                 case Key.Up:
@@ -1129,6 +1156,13 @@ public partial class CurveDataPanel : UserControl
                 if (double.TryParse(values[valueIndex], out var value))
                 {
                     row.SetTorque(seriesName, value);
+                    
+                    // Directly update the TextBlock in the cell for immediate visual feedback
+                    var cellPos = new CellPosition(rowIndex, colIndex);
+                    if (_cellBorders.TryGetValue(cellPos, out var border) && border.Child is TextBlock textBlock)
+                    {
+                        textBlock.Text = value.ToString("N2");
+                    }
                 }
             }
         }

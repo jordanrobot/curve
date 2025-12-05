@@ -448,4 +448,66 @@ public partial class CurveDataTableViewModel : ViewModelBase
         }
         return -1;
     }
+
+    /// <summary>
+    /// Extends selection to the end of the row or column in the specified direction (for Ctrl+Shift+Arrow keys).
+    /// </summary>
+    public void ExtendSelectionToEnd(int rowDelta, int columnDelta)
+    {
+        if (SelectedCells.Count == 0) return;
+
+        // Find the current bounds of the selection
+        var minRow = SelectedCells.Min(c => c.RowIndex);
+        var maxRow = SelectedCells.Max(c => c.RowIndex);
+        var minCol = SelectedCells.Min(c => c.ColumnIndex);
+        var maxCol = SelectedCells.Max(c => c.ColumnIndex);
+
+        // Extend to the end in the specified direction
+        if (rowDelta < 0)
+        {
+            // Extend upward to row 0
+            for (var row = minRow - 1; row >= 0; row--)
+            {
+                for (var col = minCol; col <= maxCol; col++)
+                {
+                    SelectedCells.Add(new CellPosition(row, col));
+                }
+            }
+        }
+        else if (rowDelta > 0)
+        {
+            // Extend downward to last row
+            for (var row = maxRow + 1; row < Rows.Count; row++)
+            {
+                for (var col = minCol; col <= maxCol; col++)
+                {
+                    SelectedCells.Add(new CellPosition(row, col));
+                }
+            }
+        }
+        else if (columnDelta < 0)
+        {
+            // Extend left to first column
+            for (var col = minCol - 1; col >= 0; col--)
+            {
+                for (var row = minRow; row <= maxRow; row++)
+                {
+                    SelectedCells.Add(new CellPosition(row, col));
+                }
+            }
+        }
+        else if (columnDelta > 0)
+        {
+            // Extend right to last column
+            for (var col = maxCol + 1; col < ColumnCount; col++)
+            {
+                for (var row = minRow; row <= maxRow; row++)
+                {
+                    SelectedCells.Add(new CellPosition(row, col));
+                }
+            }
+        }
+
+        SelectionChanged?.Invoke(this, EventArgs.Empty);
+    }
 }
