@@ -1287,6 +1287,12 @@ public partial class CurveDataPanel : UserControl
                 if (cellPos.RowIndex >= 0 && cellPos.RowIndex < vm.CurveDataTableViewModel.Rows.Count)
                 {
                     vm.CurveDataTableViewModel.Rows[cellPos.RowIndex].SetTorque(seriesName, value);
+                    
+                    // Directly update the TextBlock in the cell for immediate visual feedback
+                    if (_cellBorders.TryGetValue(cellPos, out var border) && border.Child is TextBlock textBlock)
+                    {
+                        textBlock.Text = value.ToString("N2");
+                    }
                 }
             }
             
@@ -1313,6 +1319,12 @@ public partial class CurveDataPanel : UserControl
             if (cellPos.RowIndex >= 0 && cellPos.RowIndex < vm.CurveDataTableViewModel.Rows.Count)
             {
                 vm.CurveDataTableViewModel.Rows[cellPos.RowIndex].SetTorque(seriesName, originalValue);
+                
+                // Directly update the TextBlock in the cell for immediate visual feedback
+                if (_cellBorders.TryGetValue(cellPos, out var border) && border.Child is TextBlock textBlock)
+                {
+                    textBlock.Text = originalValue.ToString("N2");
+                }
             }
         }
         
