@@ -887,6 +887,63 @@ public partial class CurveDataPanel : UserControl
                     break;
             }
         }
+        
+        // Handle character input for Override Mode
+        // If the key is a digit, minus, or decimal point, enter/continue Override Mode
+        var character = GetCharacterFromKey(e.Key, e.KeyModifiers);
+        if (character is not null && vm.CurveDataTableViewModel.SelectedCells.Count > 0)
+        {
+            if (!_isInOverrideMode)
+            {
+                _isInOverrideMode = true;
+                _overrideText = "";
+            }
+            
+            _overrideText += character;
+            e.Handled = true;
+        }
+    }
+    
+    /// <summary>
+    /// Converts a key to a character for Override Mode input.
+    /// Returns null if the key is not a valid input character (digit, minus, decimal point).
+    /// </summary>
+    private static char? GetCharacterFromKey(Key key, KeyModifiers modifiers)
+    {
+        // Only handle unmodified keys (Ctrl, Alt, and Shift all produce different characters)
+        if (modifiers.HasFlag(KeyModifiers.Control) || 
+            modifiers.HasFlag(KeyModifiers.Alt) ||
+            modifiers.HasFlag(KeyModifiers.Shift))
+            return null;
+            
+        return key switch
+        {
+            Key.D0 => '0',
+            Key.D1 => '1',
+            Key.D2 => '2',
+            Key.D3 => '3',
+            Key.D4 => '4',
+            Key.D5 => '5',
+            Key.D6 => '6',
+            Key.D7 => '7',
+            Key.D8 => '8',
+            Key.D9 => '9',
+            Key.NumPad0 => '0',
+            Key.NumPad1 => '1',
+            Key.NumPad2 => '2',
+            Key.NumPad3 => '3',
+            Key.NumPad4 => '4',
+            Key.NumPad5 => '5',
+            Key.NumPad6 => '6',
+            Key.NumPad7 => '7',
+            Key.NumPad8 => '8',
+            Key.NumPad9 => '9',
+            Key.OemMinus => '-',
+            Key.Subtract => '-',
+            Key.OemPeriod => '.',
+            Key.Decimal => '.',
+            _ => null
+        };
     }
 
     private void ScrollToSelection(DataGrid dataGrid)
