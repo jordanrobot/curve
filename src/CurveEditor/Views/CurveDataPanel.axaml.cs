@@ -810,6 +810,7 @@ public partial class CurveDataPanel : UserControl
                 CommitOverrideMode();
                 vm.CurveDataTableViewModel.MoveSelection(1, 0);
                 ScrollToSelection(dataGrid);
+                UpdateCellSelectionVisuals();
                 e.Handled = true;
                 return;
             }
@@ -872,7 +873,17 @@ public partial class CurveDataPanel : UserControl
                 e.Handled = true;
                 return;
             }
-            
+
+            // While in Override Mode, ignore navigation keys so we don't
+            // create a second visual selection that disagrees with the
+            // active override selection. The user can finish or cancel
+            // the override before moving.
+            if (e.Key is Key.Left or Key.Right or Key.Up or Key.Down)
+            {
+                e.Handled = true;
+                return;
+            }
+
             // Ignore other keys while in Override Mode
             return;
         }
@@ -1208,38 +1219,76 @@ public partial class CurveDataPanel : UserControl
         var selectedCells = vm.CurveDataTableViewModel.SelectedCells;
         if (selectedCells.Count == 0) return;
 
-        // Find the top-left selected cell as the paste anchor
+        // Normalize clipboard into lines/values
+        var lines = text.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+
+        // Special case: single scalar value should be replicated to all selected cells
+        if (lines.Length == 1)
+        {
+            var parts = lines[0].Split('\t', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 1 && double.TryParse(parts[0], out var scalar))
+            {
+                foreach (var cellPos in selectedCells)
+                {
+                    // Skip % and RPM columns (read-only)
+                    if (cellPos.ColumnIndex < 2) continue;
+
+                    var seriesName = vm.CurveDataTableViewModel.GetSeriesNameForColumn(cellPos.ColumnIndex);
+                    if (seriesName is null) continue;
+
+                    // Respect locked series
+                    if (vm.CurveDataTableViewModel.IsSeriesLocked(seriesName)) continue;
+
+                    if (cellPos.RowIndex < 0 || cellPos.RowIndex >= vm.CurveDataTableViewModel.Rows.Count)
+                    {
+                        continue;
+                    }
+
+                    var row = vm.CurveDataTableViewModel.Rows[cellPos.RowIndex];
+                    row.SetTorque(seriesName, scalar);
+
+                    if (_cellBorders.TryGetValue(cellPos, out var border) && border.Child is TextBlock textBlock)
+                    {
+                        textBlock.Text = scalar.ToString("N2");
+                    }
+                }
+
+                vm.MarkDirty();
+                vm.ChartViewModel.RefreshChart();
+                return;
+            }
+        }
+
+        // General rectangular paste starting from top-left selected cell
         var minRow = selectedCells.Min(c => c.RowIndex);
         var minCol = selectedCells.Min(c => c.ColumnIndex);
 
-        var lines = text.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
-        
         for (var lineIndex = 0; lineIndex < lines.Length; lineIndex++)
         {
             var values = lines[lineIndex].Split('\t');
             var rowIndex = minRow + lineIndex;
-            
+
             if (rowIndex >= vm.CurveDataTableViewModel.Rows.Count) break;
-            
+
             var row = vm.CurveDataTableViewModel.Rows[rowIndex];
-            
+
             for (var valueIndex = 0; valueIndex < values.Length; valueIndex++)
             {
                 var colIndex = minCol + valueIndex;
-                
+
                 // Skip % and RPM columns (read-only)
                 if (colIndex < 2) continue;
-                
+
                 var seriesName = vm.CurveDataTableViewModel.GetSeriesNameForColumn(colIndex);
                 if (seriesName is null) continue;
-                
+
                 // Check if series is locked
                 if (vm.CurveDataTableViewModel.IsSeriesLocked(seriesName)) continue;
-                
+
                 if (double.TryParse(values[valueIndex], out var value))
                 {
                     row.SetTorque(seriesName, value);
-                    
+
                     // Directly update the TextBlock in the cell for immediate visual feedback
                     var cellPos = new CellPosition(rowIndex, colIndex);
                     if (_cellBorders.TryGetValue(cellPos, out var border) && border.Child is TextBlock textBlock)
