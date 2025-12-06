@@ -481,9 +481,28 @@ public partial class CurveDataTableViewModel : ViewModelBase
 
     /// <summary>
     /// Attempts to set the torque value at a specific cell.
-    /// Returns true if the value was changed; otherwise false.
-    /// Respects table bounds, read-only columns, and locked series.
     /// </summary>
+    /// <remarks>
+    /// This method centralizes all per-cell mutation rules for the curve table and is the
+    /// preferred way for views or higher-level helpers to change a single torque value.
+    /// It performs the following checks before updating any data:
+    /// <list type="bullet">
+    /// <item><description>Validates that a current voltage, rows, and series columns are available.</description></item>
+    /// <item><description>Ensures the row index is within the bounds of <see cref="Rows"/>.</description></item>
+    /// <item><description>Rejects writes to the fixed % and RPM columns (column indices 0 and 1).</description></item>
+    /// <item><description>Maps the column to a series and aborts if no matching series exists.</description></item>
+    /// <item><description>Honors <see cref="IsSeriesLocked(string)"/> and will not modify locked series.</description></item>
+    /// <item><description>Skips updates when the new value is numerically equal to the current value.</description></item>
+    /// </list>
+    /// Callers that need to update multiple cells (for example, override mode, clipboard
+    /// paste, or delete/backspace clearing) should either:
+    /// <list type="number">
+    /// <item><description>Use <see cref="ApplyTorqueToCells(System.Collections.Generic.IEnumerable{CurveEditor.ViewModels.CellPosition}, double)"/> to apply a single value to many cells and raise <see cref="DataChanged"/> once, or</description></item>
+    /// <item><description>Invoke <see cref="TrySetTorqueAtCell(CurveEditor.ViewModels.CellPosition, double)"/> in a loop and handle any additional UI updates (such as text rendering) on success.</description></item>
+    /// </list>
+    /// The method returns <see langword="true"/> only when a torque value was actually changed;
+    /// otherwise it returns <see langword="false"/> and leaves the model untouched.
+    /// </remarks>
     public bool TrySetTorqueAtCell(CellPosition cell, double value)
     {
         if (_currentVoltage is null || Rows.Count == 0 || SeriesColumns.Count == 0)

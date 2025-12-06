@@ -471,79 +471,134 @@ public class CurveDataTableViewModelTests
         Assert.Equal(originalContinuous, viewModel.GetTorque(0, "Continuous"));
     }
 
-        [Fact]
-        public void ApplyTorqueToCells_UpdatesEditableTorqueCells()
+    [Fact]
+    public void TrySetTorqueAtCell_UpdatesValidTorqueCell()
+    {
+        // Arrange
+        var viewModel = CreateViewModelWithData();
+        var cell = new CellPosition(0, viewModel.GetColumnIndexForSeries("Peak"));
+        var original = viewModel.GetTorque(0, "Peak");
+
+        // Act
+        var changed = viewModel.TrySetTorqueAtCell(cell, original + 5.0);
+
+        // Assert
+        Assert.True(changed);
+        Assert.Equal(original + 5.0, viewModel.GetTorque(0, "Peak"));
+    }
+
+    [Fact]
+    public void TrySetTorqueAtCell_DoesNotChangeLockedSeries()
+    {
+        // Arrange
+        var viewModel = CreateViewModelWithData();
+        var peakSeries = viewModel.SeriesColumns.First(s => s.Name == "Peak");
+        peakSeries.Locked = true;
+        var cell = new CellPosition(0, viewModel.GetColumnIndexForSeries("Peak"));
+        var original = viewModel.GetTorque(0, "Peak");
+
+        // Act
+        var changed = viewModel.TrySetTorqueAtCell(cell, original + 5.0);
+
+        // Assert
+        Assert.False(changed);
+        Assert.Equal(original, viewModel.GetTorque(0, "Peak"));
+    }
+
+    [Fact]
+    public void TrySetTorqueAtCell_DoesNotChangePercentOrRpmColumns()
+    {
+        // Arrange
+        var viewModel = CreateViewModelWithData();
+        var percentCell = new CellPosition(0, 0);
+        var rpmCell = new CellPosition(0, 1);
+        var originalPercent = viewModel.Rows[0].Percent;
+        var originalRpm = viewModel.Rows[0].DisplayRpm;
+
+        // Act
+        var percentChanged = viewModel.TrySetTorqueAtCell(percentCell, 123.45);
+        var rpmChanged = viewModel.TrySetTorqueAtCell(rpmCell, 123.45);
+
+        // Assert
+        Assert.False(percentChanged);
+        Assert.False(rpmChanged);
+        Assert.Equal(originalPercent, viewModel.Rows[0].Percent);
+        Assert.Equal(originalRpm, viewModel.Rows[0].DisplayRpm);
+    }
+
+    [Fact]
+    public void ApplyTorqueToCells_UpdatesEditableTorqueCells()
+    {
+        // Arrange
+        var viewModel = CreateViewModelWithData();
+        var cells = new[]
         {
-            // Arrange
-            var viewModel = CreateViewModelWithData();
-            var cells = new[]
-            {
-                new CellPosition(0, 2), // Peak torque at row 0
-                new CellPosition(1, 3)  // Continuous torque at row 1
-            };
+            new CellPosition(0, 2), // Peak torque at row 0
+            new CellPosition(1, 3)  // Continuous torque at row 1
+        };
 
-            // Act
-            viewModel.ApplyTorqueToCells(cells, 12.34);
+        // Act
+        viewModel.ApplyTorqueToCells(cells, 12.34);
 
-            // Assert
-            Assert.Equal(12.34, viewModel.GetTorque(0, "Peak"));
-            Assert.Equal(12.34, viewModel.GetTorque(1, "Continuous"));
-        }
+        // Assert
+        Assert.Equal(12.34, viewModel.GetTorque(0, "Peak"));
+        Assert.Equal(12.34, viewModel.GetTorque(1, "Continuous"));
+    }
 
-        [Fact]
-        public void ApplyTorqueToCells_DoesNotAffectPercentOrRpmColumns()
+    [Fact]
+    public void ApplyTorqueToCells_DoesNotAffectPercentOrRpmColumns()
+    {
+        // Arrange
+        var viewModel = CreateViewModelWithData();
+        var originalPercent = viewModel.Rows[0].Percent;
+        var originalRpm = viewModel.Rows[0].DisplayRpm;
+        var cells = new[]
         {
-            // Arrange
-            var viewModel = CreateViewModelWithData();
-            var originalPercent = viewModel.Rows[0].Percent;
-            var originalRpm = viewModel.Rows[0].DisplayRpm;
-            var cells = new[]
-            {
-                new CellPosition(0, 0), // % column
-                new CellPosition(0, 1)  // RPM column
-            };
+            new CellPosition(0, 0), // % column
+            new CellPosition(0, 1)  // RPM column
+        };
 
-            // Act
-            viewModel.ApplyTorqueToCells(cells, 99.99);
+        // Act
+        viewModel.ApplyTorqueToCells(cells, 99.99);
 
-            // Assert - fixed columns unchanged
-            Assert.Equal(originalPercent, viewModel.Rows[0].Percent);
-            Assert.Equal(originalRpm, viewModel.Rows[0].DisplayRpm);
-        }
+        // Assert - fixed columns unchanged
+        Assert.Equal(originalPercent, viewModel.Rows[0].Percent);
+        Assert.Equal(originalRpm, viewModel.Rows[0].DisplayRpm);
+    }
 
-        [Fact]
-        public void ApplyTorqueToCells_DoesNotModifyLockedSeries()
-        {
-            // Arrange
-            var viewModel = CreateViewModelWithData();
-            // Lock the Peak series
-            var peakSeries = viewModel.SeriesColumns.First(s => s.Name == "Peak");
-            peakSeries.Locked = true;
-            var originalPeak = viewModel.GetTorque(0, "Peak");
-            var cells = new[] { new CellPosition(0, 2) };
+    [Fact]
+    public void ApplyTorqueToCells_DoesNotModifyLockedSeries()
+    {
+        // Arrange
+        var viewModel = CreateViewModelWithData();
+        // Lock the Peak series
+        var peakSeries = viewModel.SeriesColumns.First(s => s.Name == "Peak");
+        peakSeries.Locked = true;
+        var originalPeak = viewModel.GetTorque(0, "Peak");
+        var cells = new[] { new CellPosition(0, 2) };
 
-            // Act
-            viewModel.ApplyTorqueToCells(cells, originalPeak + 10);
+        // Act
+        viewModel.ApplyTorqueToCells(cells, originalPeak + 10);
 
-            // Assert - locked series unchanged
-            Assert.Equal(originalPeak, viewModel.GetTorque(0, "Peak"));
-        }
+        // Assert - locked series unchanged
+        Assert.Equal(originalPeak, viewModel.GetTorque(0, "Peak"));
+    }
 
-        [Fact]
-        public void ApplyTorqueToCells_RaisesDataChangedWhenAnyCellUpdated()
-        {
-            // Arrange
-            var viewModel = CreateViewModelWithData();
-            var cells = new[] { new CellPosition(0, 2) };
-            var eventRaised = false;
-            viewModel.DataChanged += (s, e) => eventRaised = true;
+    [Fact]
+    public void ApplyTorqueToCells_RaisesDataChangedWhenAnyCellUpdated()
+    {
+        // Arrange
+        var viewModel = CreateViewModelWithData();
+        var cells = new[] { new CellPosition(0, 2) };
+        var eventRaised = false;
+        viewModel.DataChanged += (s, e) => eventRaised = true;
 
-            // Act
-            viewModel.ApplyTorqueToCells(cells, viewModel.GetTorque(0, "Peak") + 1);
+        // Act
+        viewModel.ApplyTorqueToCells(cells, viewModel.GetTorque(0, "Peak") + 1);
 
-            // Assert
-            Assert.True(eventRaised);
-        }
+        // Assert
+        Assert.True(eventRaised);
+    }
 
     [Fact]
     public void SelectionChanged_RaisedWhenSelecting()

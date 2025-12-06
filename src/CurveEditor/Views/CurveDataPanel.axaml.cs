@@ -1424,21 +1424,15 @@ public partial class CurveDataPanel : UserControl
         {
             foreach (var cellPos in selectedCells)
             {
-                if (cellPos.ColumnIndex < 2) continue;
-                
-                var seriesName = vm.CurveDataTableViewModel.GetSeriesNameForColumn(cellPos.ColumnIndex);
-                if (seriesName is null) continue;
-                if (vm.CurveDataTableViewModel.IsSeriesLocked(seriesName)) continue;
-                
-                if (cellPos.RowIndex >= 0 && cellPos.RowIndex < vm.CurveDataTableViewModel.Rows.Count)
+                if (!vm.CurveDataTableViewModel.TrySetTorqueAtCell(cellPos, value))
                 {
-                    vm.CurveDataTableViewModel.Rows[cellPos.RowIndex].SetTorque(seriesName, value);
-                    
-                    // Directly update the TextBlock in the cell for immediate visual feedback
-                    if (_cellBorders.TryGetValue(cellPos, out var border) && border.Child is TextBlock textBlock)
-                    {
-                        textBlock.Text = value.ToString("N2");
-                    }
+                    continue;
+                }
+
+                // Directly update the TextBlock in the cell for immediate visual feedback
+                if (_cellBorders.TryGetValue(cellPos, out var border) && border.Child is TextBlock textBlock)
+                {
+                    textBlock.Text = value.ToString("N2");
                 }
             }
             
@@ -1459,18 +1453,15 @@ public partial class CurveDataPanel : UserControl
             var cellPos = kvp.Key;
             var originalValue = kvp.Value;
             
-            var seriesName = vm.CurveDataTableViewModel.GetSeriesNameForColumn(cellPos.ColumnIndex);
-            if (seriesName is null) continue;
-            
-            if (cellPos.RowIndex >= 0 && cellPos.RowIndex < vm.CurveDataTableViewModel.Rows.Count)
+            if (!vm.CurveDataTableViewModel.TrySetTorqueAtCell(cellPos, originalValue))
             {
-                vm.CurveDataTableViewModel.Rows[cellPos.RowIndex].SetTorque(seriesName, originalValue);
-                
-                // Directly update the TextBlock in the cell for immediate visual feedback
-                if (_cellBorders.TryGetValue(cellPos, out var border) && border.Child is TextBlock textBlock)
-                {
-                    textBlock.Text = originalValue.ToString("N2");
-                }
+                continue;
+            }
+
+            // Directly update the TextBlock in the cell for immediate visual feedback
+            if (_cellBorders.TryGetValue(cellPos, out var border) && border.Child is TextBlock textBlock)
+            {
+                textBlock.Text = originalValue.ToString("N2");
             }
         }
         
@@ -1490,19 +1481,7 @@ public partial class CurveDataPanel : UserControl
 
         foreach (var cellPos in selectedCells)
         {
-            // Skip % and RPM columns (read-only)
-            if (cellPos.ColumnIndex < 2) continue;
-            
-            var seriesName = vm.CurveDataTableViewModel.GetSeriesNameForColumn(cellPos.ColumnIndex);
-            if (seriesName is null) continue;
-            
-            // Check if series is locked
-            if (vm.CurveDataTableViewModel.IsSeriesLocked(seriesName)) continue;
-            
-            if (cellPos.RowIndex >= 0 && cellPos.RowIndex < vm.CurveDataTableViewModel.Rows.Count)
-            {
-                vm.CurveDataTableViewModel.Rows[cellPos.RowIndex].SetTorque(seriesName, value);
-            }
+            vm.CurveDataTableViewModel.TrySetTorqueAtCell(cellPos, value);
         }
 
         vm.MarkDirty();
