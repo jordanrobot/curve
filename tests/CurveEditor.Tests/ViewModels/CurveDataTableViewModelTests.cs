@@ -308,6 +308,90 @@ public class CurveDataTableViewModelTests
     }
 
     [Fact]
+    public void ExtendSelectionToEnd_ExtendsDownToLastRow()
+    {
+        // Arrange
+        var viewModel = CreateViewModelWithData();
+        viewModel.SelectCell(5, 2);
+
+        // Act
+        viewModel.ExtendSelectionToEnd(1, 0);
+
+        // Assert
+        var maxRow = viewModel.Rows.Count - 1;
+        Assert.True(viewModel.IsCellSelected(5, 2));
+        Assert.True(viewModel.IsCellSelected(maxRow, 2));
+        Assert.All(viewModel.SelectedCells, cell =>
+        {
+            Assert.Equal(2, cell.ColumnIndex);
+            Assert.InRange(cell.RowIndex, 5, maxRow);
+        });
+    }
+
+    [Fact]
+    public void ExtendSelectionToEnd_ExtendsUpToFirstRow()
+    {
+        // Arrange
+        var viewModel = CreateViewModelWithData();
+        var lastRow = viewModel.Rows.Count - 1;
+        viewModel.SelectCell(lastRow - 2, 2);
+
+        // Act
+        viewModel.ExtendSelectionToEnd(-1, 0);
+
+        // Assert
+        Assert.True(viewModel.IsCellSelected(0, 2));
+        Assert.True(viewModel.IsCellSelected(lastRow - 2, 2));
+        Assert.All(viewModel.SelectedCells, cell =>
+        {
+            Assert.Equal(2, cell.ColumnIndex);
+            Assert.InRange(cell.RowIndex, 0, lastRow - 2);
+        });
+    }
+
+    [Fact]
+    public void ExtendSelectionToEnd_ExtendsRightToLastColumn()
+    {
+        // Arrange
+        var viewModel = CreateViewModelWithData();
+        viewModel.SelectCell(5, 2);
+
+        // Act
+        viewModel.ExtendSelectionToEnd(0, 1);
+
+        // Assert
+        var maxCol = viewModel.ColumnCount - 1;
+        Assert.True(viewModel.IsCellSelected(5, 2));
+        Assert.True(viewModel.IsCellSelected(5, maxCol));
+        Assert.All(viewModel.SelectedCells, cell =>
+        {
+            Assert.Equal(5, cell.RowIndex);
+            Assert.InRange(cell.ColumnIndex, 2, maxCol);
+        });
+    }
+
+    [Fact]
+    public void ExtendSelectionToEnd_ExtendsLeftToFirstColumn()
+    {
+        // Arrange
+        var viewModel = CreateViewModelWithData();
+        var lastCol = viewModel.ColumnCount - 1;
+        viewModel.SelectCell(5, lastCol - 1);
+
+        // Act
+        viewModel.ExtendSelectionToEnd(0, -1);
+
+        // Assert
+        Assert.True(viewModel.IsCellSelected(5, 0));
+        Assert.True(viewModel.IsCellSelected(5, lastCol - 1));
+        Assert.All(viewModel.SelectedCells, cell =>
+        {
+            Assert.Equal(5, cell.RowIndex);
+            Assert.InRange(cell.ColumnIndex, 0, lastCol - 1);
+        });
+    }
+
+    [Fact]
     public void GetSeriesNameForColumn_ReturnsNullForFixedColumns()
     {
         // Arrange
@@ -367,6 +451,24 @@ public class CurveDataTableViewModelTests
 
         // Assert - 2 fixed columns (%, RPM) + 2 series columns (Peak, Continuous)
         Assert.Equal(4, viewModel.ColumnCount);
+    }
+
+    [Fact]
+    public void ClearSelection_DoesNotChangeTorqueValues()
+    {
+        // Arrange
+        var viewModel = CreateViewModelWithData();
+        var originalPeak = viewModel.GetTorque(0, "Peak");
+        var originalContinuous = viewModel.GetTorque(0, "Continuous");
+        viewModel.SelectCell(0, 2); // Peak at row 0
+        viewModel.ToggleCellSelection(0, 3); // Continuous at row 0
+
+        // Act
+        viewModel.ClearSelection();
+
+        // Assert - clearing selection alone should not modify data
+        Assert.Equal(originalPeak, viewModel.GetTorque(0, "Peak"));
+        Assert.Equal(originalContinuous, viewModel.GetTorque(0, "Continuous"));
     }
 
     [Fact]
