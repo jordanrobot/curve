@@ -462,6 +462,14 @@ public partial class CurveDataPanel : UserControl
 
         if (properties.IsLeftButtonPressed)
         {
+            // If a TextBox editor currently has focus inside the DataGrid, commit
+            // its edit before we change the selection via mouse. This keeps the
+            // DataGrid, view model selection, and border visuals in sync.
+            if (TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is TextBox)
+            {
+                DataTable.CommitEdit();
+            }
+
             // Check for double-click to enter edit mode
             // Let the event bubble through to DataGrid for native edit mode handling
             if (e.ClickCount >= 2)
@@ -472,6 +480,8 @@ public partial class CurveDataPanel : UserControl
                 
                 // Select the cell in our tracking
                 vm.CurveDataTableViewModel.SelectCell(pos.RowIndex, pos.ColumnIndex);
+                // Ensure visuals are in sync before DataGrid enters edit mode
+                UpdateCellSelectionVisuals();
                 
                 // Select the row and column in the DataGrid to enable editing the correct cell
                 SelectDataGridCell(pos.RowIndex, pos.ColumnIndex);
@@ -495,6 +505,7 @@ public partial class CurveDataPanel : UserControl
             {
                 // Normal single click: Start new selection and begin drag tracking
                 vm.CurveDataTableViewModel.SelectCell(pos.RowIndex, pos.ColumnIndex);
+                UpdateCellSelectionVisuals();
                 _isDragging = true;
                 _dragStartCell = pos;
                 
@@ -722,19 +733,70 @@ public partial class CurveDataPanel : UserControl
         
         if (isInEditMode)
         {
-            // In edit mode, only handle Escape to cancel and Enter to commit
-            if (e.Key == Key.Escape)
+            // In edit mode, explicitly handle navigation keys so our
+            // selection model and visuals stay in sync with DataGrid focus.
+            switch (e.Key)
             {
-                dataGrid.CancelEdit();
-                e.Handled = true;
+                case Key.Escape:
+                    dataGrid.CancelEdit();
+                    // Do not move selection; just refresh visuals to clear edit artifacts
+                    UpdateCellSelectionVisuals();
+                    e.Handled = true;
+                    return;
+
+                case Key.Enter:
+                    dataGrid.CommitEdit();
+                    vm.CurveDataTableViewModel.MoveSelection(1, 0);
+                    ScrollToSelection(dataGrid);
+                    UpdateCellSelectionVisuals();
+                    e.Handled = true;
+                    return;
+
+                case Key.Tab:
+                {
+                    // Commit edit and move horizontally, honoring Shift for reverse tab
+                    dataGrid.CommitEdit();
+                    var deltaCol = e.KeyModifiers.HasFlag(KeyModifiers.Shift) ? -1 : 1;
+                    vm.CurveDataTableViewModel.MoveSelection(0, deltaCol);
+                    ScrollToSelection(dataGrid);
+                    UpdateCellSelectionVisuals();
+                    e.Handled = true;
+                    return;
+                }
+
+                case Key.Left:
+                    dataGrid.CommitEdit();
+                    vm.CurveDataTableViewModel.MoveSelection(0, -1);
+                    ScrollToSelection(dataGrid);
+                    UpdateCellSelectionVisuals();
+                    e.Handled = true;
+                    return;
+
+                case Key.Right:
+                    dataGrid.CommitEdit();
+                    vm.CurveDataTableViewModel.MoveSelection(0, 1);
+                    ScrollToSelection(dataGrid);
+                    UpdateCellSelectionVisuals();
+                    e.Handled = true;
+                    return;
+
+                case Key.Up:
+                    dataGrid.CommitEdit();
+                    vm.CurveDataTableViewModel.MoveSelection(-1, 0);
+                    ScrollToSelection(dataGrid);
+                    UpdateCellSelectionVisuals();
+                    e.Handled = true;
+                    return;
+
+                case Key.Down:
+                    dataGrid.CommitEdit();
+                    vm.CurveDataTableViewModel.MoveSelection(1, 0);
+                    ScrollToSelection(dataGrid);
+                    UpdateCellSelectionVisuals();
+                    e.Handled = true;
+                    return;
             }
-            else if (e.Key == Key.Enter)
-            {
-                dataGrid.CommitEdit();
-                vm.CurveDataTableViewModel.MoveSelection(1, 0);
-                ScrollToSelection(dataGrid);
-                e.Handled = true;
-            }
+
             // Let all other keys pass through to the TextBox for normal editing
             return;
         }
@@ -764,6 +826,8 @@ public partial class CurveDataPanel : UserControl
                     vm.CurveDataTableViewModel.MoveSelection(0, 1);
                 }
                 ScrollToSelection(dataGrid);
+                // Keep selection border visuals in sync after tab navigation
+                UpdateCellSelectionVisuals();
                 e.Handled = true;
                 return;
             }
@@ -820,14 +884,17 @@ public partial class CurveDataPanel : UserControl
             {
                 case Key.C:
                     CopySelectedCells(dataGrid);
+                    UpdateCellSelectionVisuals();
                     e.Handled = true;
                     break;
                 case Key.V:
                     PasteToSelectedCells(dataGrid);
+                    UpdateCellSelectionVisuals();
                     e.Handled = true;
                     break;
                 case Key.X:
                     CutSelectedCells(dataGrid);
+                    UpdateCellSelectionVisuals();
                     e.Handled = true;
                     break;
             }
@@ -837,6 +904,7 @@ public partial class CurveDataPanel : UserControl
         if (e.Key == Key.Delete || e.Key == Key.Back)
         {
             ClearSelectedCells(dataGrid);
+            UpdateCellSelectionVisuals();
             e.Handled = true;
         }
 
@@ -845,6 +913,7 @@ public partial class CurveDataPanel : UserControl
         {
             vm.CurveDataTableViewModel.MoveSelection(1, 0);
             ScrollToSelection(dataGrid);
+            UpdateCellSelectionVisuals();
             e.Handled = true;
         }
 
@@ -926,21 +995,25 @@ public partial class CurveDataPanel : UserControl
                 case Key.Up:
                     vm.CurveDataTableViewModel.MoveSelection(-1, 0);
                     ScrollToSelection(dataGrid);
+                    UpdateCellSelectionVisuals();
                     e.Handled = true;
                     break;
                 case Key.Down:
                     vm.CurveDataTableViewModel.MoveSelection(1, 0);
                     ScrollToSelection(dataGrid);
+                    UpdateCellSelectionVisuals();
                     e.Handled = true;
                     break;
                 case Key.Left:
                     vm.CurveDataTableViewModel.MoveSelection(0, -1);
                     ScrollToSelection(dataGrid);
+                    UpdateCellSelectionVisuals();
                     e.Handled = true;
                     break;
                 case Key.Right:
                     vm.CurveDataTableViewModel.MoveSelection(0, 1);
                     ScrollToSelection(dataGrid);
+                    UpdateCellSelectionVisuals();
                     e.Handled = true;
                     break;
             }
