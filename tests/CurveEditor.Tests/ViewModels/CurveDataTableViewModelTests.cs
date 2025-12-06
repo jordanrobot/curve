@@ -561,6 +561,86 @@ public class CurveDataTableViewModelTests
     }
 
     [Fact]
+    public void BuildClipboardText_ProducesRectangularTabSeparatedShape()
+    {
+        // Arrange
+        var viewModel = CreateViewModelWithData();
+        // Select a 2x2 rectangle: rows 0-1, columns 2-3 (Peak, Continuous)
+        var selected = new HashSet<CellPosition>
+        {
+            new(0, 2), new(0, 3),
+            new(1, 2), new(1, 3)
+        };
+
+        // Act
+        var text = viewModel.BuildClipboardText(selected);
+        var lines = text.Split(Environment.NewLine);
+
+        // Assert
+        Assert.Equal(2, lines.Length);
+        foreach (var line in lines)
+        {
+            var parts = line.Split('\t');
+            Assert.Equal(2, parts.Length);
+        }
+    }
+
+    [Fact]
+    public void TryApplyClipboardText_AppliesWithinBounds()
+    {
+        // Arrange
+        var viewModel = CreateViewModelWithData();
+        const string clipboardText = "1.11\t2.22" + "\n" + "3.33\t4.44";
+        var topLeft = new CellPosition(0, 2); // Peak/Continuous at row 0
+
+        // Act
+        var result = viewModel.TryApplyClipboardText(topLeft, clipboardText);
+
+        // Assert
+        Assert.True(result);
+        Assert.Equal(1.11, viewModel.GetTorque(0, "Peak"));
+        Assert.Equal(2.22, viewModel.GetTorque(0, "Continuous"));
+        Assert.Equal(3.33, viewModel.GetTorque(1, "Peak"));
+        Assert.Equal(4.44, viewModel.GetTorque(1, "Continuous"));
+    }
+
+    [Fact]
+    public void TryApplyClipboardText_ReturnsFalseWhenShapeExceedsTable()
+    {
+        // Arrange
+        var viewModel = CreateViewModelWithData();
+        const string clipboardText = "1.11\t2.22" + "\n" + "3.33\t4.44";
+        var lastRow = viewModel.Rows.Count - 1;
+        var lastCol = viewModel.ColumnCount - 1;
+        var topLeft = new CellPosition(lastRow, lastCol); // cannot fit 2x2
+
+        // Act
+        var result = viewModel.TryApplyClipboardText(topLeft, clipboardText);
+
+        // Assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    public void TryApplyClipboardText_RespectsLockedSeries()
+    {
+        // Arrange
+        var viewModel = CreateViewModelWithData();
+        var peakSeries = viewModel.SeriesColumns.First(s => s.Name == "Peak");
+        peakSeries.Locked = true;
+        var originalPeak = viewModel.GetTorque(0, "Peak");
+        const string clipboardText = "9.99"; // single value targeting Peak at (0,2)
+        var topLeft = new CellPosition(0, 2);
+
+        // Act
+        var result = viewModel.TryApplyClipboardText(topLeft, clipboardText);
+
+        // Assert - no change because series is locked
+        Assert.False(result);
+        Assert.Equal(originalPeak, viewModel.GetTorque(0, "Peak"));
+    }
+
+    [Fact]
     public void SelectionChanged_RaisedWhenToggling()
     {
         // Arrange

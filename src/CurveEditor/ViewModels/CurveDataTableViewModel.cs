@@ -567,4 +567,158 @@ public partial class CurveDataTableViewModel : ViewModelBase
 
         SelectionChanged?.Invoke(this, EventArgs.Empty);
     }
+
+    /// <summary>
+    /// Builds a tab/newline-separated clipboard representation of the given selected cells.
+    /// The shape is rectangular, defined by the min/max row and column indices in the set.
+    /// </summary>
+    public string BuildClipboardText(IReadOnlyCollection<CellPosition> selectedCells)
+    {
+        ArgumentNullException.ThrowIfNull(selectedCells);
+        if (selectedCells.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var minRow = selectedCells.Min(c => c.RowIndex);
+        var maxRow = selectedCells.Max(c => c.RowIndex);
+        var minCol = selectedCells.Min(c => c.ColumnIndex);
+        var maxCol = selectedCells.Max(c => c.ColumnIndex);
+
+        var lines = new List<string>();
+        for (var rowIndex = minRow; rowIndex <= maxRow; rowIndex++)
+        {
+            var values = new List<string>();
+            for (var colIndex = minCol; colIndex <= maxCol; colIndex++)
+            {
+                var cell = new CellPosition(rowIndex, colIndex);
+                if (!selectedCells.Contains(cell))
+                {
+                    values.Add(string.Empty);
+                    continue;
+                }
+
+                if (rowIndex < 0 || rowIndex >= Rows.Count)
+                {
+                    values.Add(string.Empty);
+                    continue;
+                }
+
+                var row = Rows[rowIndex];
+
+                if (colIndex == 0)
+                {
+                    values.Add(row.Percent.ToString());
+                }
+                else if (colIndex == 1)
+                {
+                    values.Add(row.DisplayRpm.ToString());
+                }
+                else
+                {
+                    var seriesName = GetSeriesNameForColumn(colIndex);
+                    if (seriesName is not null)
+                    {
+                        values.Add(row.GetTorque(seriesName).ToString("F2"));
+                    }
+                    else
+                    {
+                        values.Add(string.Empty);
+                    }
+                }
+            }
+            lines.Add(string.Join("\t", values));
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    /// <summary>
+    /// Applies clipboard text to the table starting at the specified top-left cell.
+    /// Respects fixed columns and locked series. Returns false and does not modify
+    /// data if the clipboard shape does not fit within the table.
+    /// </summary>
+    public bool TryApplyClipboardText(CellPosition topLeft, string clipboardText)
+    {
+        if (string.IsNullOrWhiteSpace(clipboardText))
+        {
+            return false;
+        }
+
+        var lines = clipboardText
+            .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+        if (lines.Length == 0)
+        {
+            return false;
+        }
+
+        var parsed = lines
+            .Select(line => line.Split('\t'))
+            .ToArray();
+
+        var rowCount = parsed.Length;
+        var colCount = parsed.Max(v => v.Length);
+
+        // Ensure the rectangle fits inside the table
+        if (topLeft.RowIndex < 0 || topLeft.ColumnIndex < 0)
+        {
+            return false;
+        }
+
+        if (topLeft.RowIndex + rowCount > Rows.Count ||
+            topLeft.ColumnIndex + colCount > ColumnCount)
+        {
+            return false;
+        }
+
+        var anyChanged = false;
+
+        for (var r = 0; r < rowCount; r++)
+        {
+            var values = parsed[r];
+            for (var c = 0; c < values.Length; c++)
+            {
+                var targetRow = topLeft.RowIndex + r;
+                var targetCol = topLeft.ColumnIndex + c;
+
+                // Skip % and RPM columns
+                if (targetCol < 2)
+                {
+                    continue;
+                }
+
+                var seriesName = GetSeriesNameForColumn(targetCol);
+                if (seriesName is null)
+                {
+                    continue;
+                }
+
+                if (IsSeriesLocked(seriesName))
+                {
+                    continue;
+                }
+
+                if (!double.TryParse(values[c], out var torque))
+                {
+                    continue;
+                }
+
+                var row = Rows[targetRow];
+                var current = row.GetTorque(seriesName);
+                if (Math.Abs(current - torque) > double.Epsilon)
+                {
+                    row.SetTorque(seriesName, torque);
+                    anyChanged = true;
+                }
+            }
+        }
+
+        if (anyChanged)
+        {
+            DataChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        return anyChanged;
+    }
 }
