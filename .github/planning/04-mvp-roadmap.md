@@ -110,14 +110,14 @@ Phase 8: Power Curve Overlay (Future)
 - [x] Include context (file path, operation) in log entries
 
 ### 1.8 Undo/Redo Infrastructure
-- [ ] Implement IUndoableCommand interface
-- [ ] Create UndoStack service for managing edit history
-- [ ] Define command classes for common operations:
+- [x] Implement IUndoableCommand interface
+- [x] Create UndoStack service for managing per-document edit history and exposing CanUndo/CanRedo and UndoDepth
+- [x] Define command classes for common operations with reliable Execute/Undo semantics and logging on failure:
   - EditPointCommand
   - EditSeriesCommand
   - EditMotorPropertyCommand
-- [ ] Wire Ctrl+Z / Ctrl+Y keyboard shortcuts
-- [ ] Integrate undo/redo with dirty state tracking
+- [x] Wire Ctrl+Z / Ctrl+Y keyboard shortcuts
+- [x] Integrate undo/redo with dirty state tracking, including a clean checkpoint tied to saves so undoing back to the saved state clears the dirty flag
 
 **Deliverable:** Application that can create, open, and save motor files with JSON content display. Includes full undo/redo support and structured logging.
 

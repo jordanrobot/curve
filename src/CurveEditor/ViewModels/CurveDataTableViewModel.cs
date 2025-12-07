@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CurveEditor.Models;
+using CurveEditor.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -130,6 +131,18 @@ public partial class CurveDataTableViewModel : ViewModelBase
     [ObservableProperty]
     private string? _selectedSeriesName;
 
+    private UndoStack? _undoStack;
+
+    /// <summary>
+    /// Optional undo stack associated with the active document. When set,
+    /// torque edits are executed via commands so they can be undone.
+    /// </summary>
+    public UndoStack? UndoStack
+    {
+        get => _undoStack;
+        set => _undoStack = value;
+    }
+
     /// <summary>
     /// Optional editing coordinator used to share logical point selection
     /// with other views such as the chart.
@@ -249,11 +262,33 @@ public partial class CurveDataTableViewModel : ViewModelBase
     /// </summary>
     public void UpdateTorque(int rowIndex, string seriesName, double value)
     {
-        if (rowIndex >= 0 && rowIndex < Rows.Count)
+        if (rowIndex < 0 || rowIndex >= Rows.Count)
         {
+            return;
+        }
+
+        if (_currentVoltage is null)
+        {
+            return;
+        }
+
+        var series = _currentVoltage.Series.FirstOrDefault(s => s.Name == seriesName);
+        if (series is null)
+        {
+            return;
+        }
+
+        if (_undoStack is null)
+        {
+            // Fallback legacy behavior when no undo stack is available.
             Rows[rowIndex].SetTorque(seriesName, value);
             DataChanged?.Invoke(this, EventArgs.Empty);
+            return;
         }
+
+        var command = new EditPointCommand(series, rowIndex, series.Data[rowIndex].Rpm, value);
+        _undoStack.PushAndExecute(command);
+        DataChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>

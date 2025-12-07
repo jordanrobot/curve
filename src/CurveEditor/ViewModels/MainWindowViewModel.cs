@@ -23,6 +23,8 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly IValidationService _validationService;
     private readonly IDriveVoltageSeriesService _driveVoltageSeriesService;
     private readonly IMotorConfigurationWorkflow _motorConfigurationWorkflow;
+    private readonly UndoStack _undoStack = new();
+    private int _cleanCheckpoint;
 
     private static readonly FilePickerFileType JsonFileType = new("JSON Files")
     {
@@ -113,6 +115,16 @@ public partial class MainWindowViewModel : ViewModelBase
     /// </summary>
     [ObservableProperty]
     private ObservableCollection<DriveConfiguration> _availableDrives = [];
+
+    /// <summary>
+    /// Gets whether there is at least one operation to undo.
+    /// </summary>
+    public bool CanUndo => _undoStack.CanUndo;
+
+    /// <summary>
+    /// Gets whether there is at least one operation to redo.
+    /// </summary>
+    public bool CanRedo => _undoStack.CanRedo;
 
     /// <summary>
     /// Whether save is enabled (motor exists and no validation errors).
@@ -212,6 +224,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _curveDataTableViewModel = new CurveDataTableViewModel();
         _motorConfigurationWorkflow = new MotorConfigurationWorkflow(_driveVoltageSeriesService);
         WireEditingCoordinator();
+        WireUndoInfrastructure();
     }
 
     public MainWindowViewModel(IFileService fileService, ICurveGeneratorService curveGeneratorService)
@@ -224,6 +237,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _curveDataTableViewModel = new CurveDataTableViewModel();
         _motorConfigurationWorkflow = new MotorConfigurationWorkflow(_driveVoltageSeriesService);
         WireEditingCoordinator();
+        WireUndoInfrastructure();
     }
 
     /// <summary>
@@ -249,6 +263,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _curveDataTableViewModel = curveDataTableViewModel ?? throw new ArgumentNullException(nameof(curveDataTableViewModel));
 
         WireEditingCoordinator();
+        WireUndoInfrastructure();
     }
 
     private void WireEditingCoordinator()
@@ -257,6 +272,19 @@ public partial class MainWindowViewModel : ViewModelBase
         CurveDataTableViewModel.DataChanged += OnDataTableDataChanged;
         ChartViewModel.EditingCoordinator = EditingCoordinator;
         CurveDataTableViewModel.EditingCoordinator = EditingCoordinator;
+    }
+
+    private void WireUndoInfrastructure()
+    {
+        ChartViewModel.UndoStack = _undoStack;
+        CurveDataTableViewModel.UndoStack = _undoStack;
+
+        _undoStack.UndoStackChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(CanUndo));
+            OnPropertyChanged(nameof(CanRedo));
+            UpdateDirtyFromUndoDepth();
+        };
     }
 
     public string WindowTitle
@@ -269,6 +297,35 @@ public partial class MainWindowViewModel : ViewModelBase
 
             var dirtyIndicator = IsDirty ? " *" : "";
             return $"{fileName}{dirtyIndicator} - Curve Editor";
+        }
+    }
+
+    /// <summary>
+    /// Marks the current undo history position as the clean checkpoint
+    /// corresponding to the last successful save.
+    /// </summary>
+    public void MarkCleanCheckpoint()
+    {
+        _cleanCheckpoint = GetUndoDepth();
+        IsDirty = false;
+    }
+
+    private int GetUndoDepth()
+    {
+        return _undoStack.UndoDepth;
+    }
+
+    private void UpdateDirtyFromUndoDepth()
+    {
+        var depth = GetUndoDepth();
+
+        if (depth == _cleanCheckpoint && !_fileService.IsDirty)
+        {
+            IsDirty = false;
+        }
+        else if (depth != _cleanCheckpoint || _fileService.IsDirty)
+        {
+            IsDirty = true;
         }
     }
 
@@ -378,6 +435,28 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         MarkDirty();
         ChartViewModel.RefreshChart();
+    }
+
+    /// <summary>
+    /// Undoes the most recent editing operation, if any.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanUndo))]
+    private void Undo()
+    {
+        _undoStack.Undo();
+        ChartViewModel.RefreshChart();
+        CurveDataTableViewModel.RefreshData();
+    }
+
+    /// <summary>
+    /// Re-applies the most recently undone editing operation, if any.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanRedo))]
+    private void Redo()
+    {
+        _undoStack.Redo();
+        ChartViewModel.RefreshChart();
+        CurveDataTableViewModel.RefreshData();
     }
 
     [RelayCommand]
@@ -498,6 +577,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
             await _fileService.SaveAsync(CurrentMotor);
             IsDirty = false;
+            MarkCleanCheckpoint();
             StatusMessage = "File saved successfully";
             OnPropertyChanged(nameof(WindowTitle));
         }
@@ -553,6 +633,7 @@ public partial class MainWindowViewModel : ViewModelBase
             var filePath = file.Path.LocalPath;
             await _fileService.SaveAsAsync(CurrentMotor, filePath);
             IsDirty = false;
+            MarkCleanCheckpoint();
             StatusMessage = $"Saved to: {Path.GetFileName(filePath)}";
             OnPropertyChanged(nameof(WindowTitle));
         }

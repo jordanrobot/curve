@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CurveEditor.Models;
+using CurveEditor.Services;
 using LiveChartsCore;
 using LiveChartsCore.Defaults;
 using LiveChartsCore.SkiaSharpView;
@@ -37,6 +38,7 @@ public partial class ChartViewModel : ViewModelBase
     private VoltageConfiguration? _currentVoltage;
     private readonly Dictionary<string, ObservableCollection<ObservablePoint>> _seriesDataCache = [];
     private readonly Dictionary<string, bool> _seriesVisibility = [];
+    private UndoStack? _undoStack;
 
     [ObservableProperty]
     private ObservableCollection<ISeries> _series = [];
@@ -61,6 +63,16 @@ public partial class ChartViewModel : ViewModelBase
 
     [ObservableProperty]
     private double _brakeTorque;
+
+    /// <summary>
+    /// Optional undo stack associated with the active document. When set,
+    /// data mutations are routed through commands so they can be undone.
+    /// </summary>
+    public UndoStack? UndoStack
+    {
+        get => _undoStack;
+        set => _undoStack = value;
+    }
 
     /// <summary>
     /// Optional editing coordinator used to share selection state with other views.
@@ -205,12 +217,37 @@ public partial class ChartViewModel : ViewModelBase
     /// <param name="torque">New torque value.</param>
     public void UpdateDataPoint(string seriesName, int index, double rpm, double torque)
     {
-        if (_seriesDataCache.TryGetValue(seriesName, out var points) && index >= 0 && index < points.Count)
+        if (_currentVoltage is null)
         {
-            points[index].X = rpm;
-            points[index].Y = torque;
-            DataChanged?.Invoke(this, EventArgs.Empty);
+            return;
         }
+
+        var series = _currentVoltage.Series.FirstOrDefault(s => s.Name == seriesName);
+        if (series is null)
+        {
+            return;
+        }
+
+        if (index < 0 || index >= series.Data.Count)
+        {
+            return;
+        }
+
+        if (_undoStack is null)
+        {
+            // Fallback legacy behavior: update the cached points directly.
+            if (_seriesDataCache.TryGetValue(seriesName, out var points) && index >= 0 && index < points.Count)
+            {
+                points[index].X = rpm;
+                points[index].Y = torque;
+                DataChanged?.Invoke(this, EventArgs.Empty);
+            }
+            return;
+        }
+
+        var command = new EditPointCommand(series, index, rpm, torque);
+        _undoStack.PushAndExecute(command);
+        DataChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>

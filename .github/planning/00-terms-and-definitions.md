@@ -160,9 +160,18 @@ Write a copy of the current motor definition to a new file; the original file re
 ### Validation Errors
 Problems detected in the current motor definition by the `ValidationService` (for example, missing drives, voltages, or invalid numeric ranges). When validation errors are present, the UI indicates them in a status area and disables the primary Save command.
 
+### Clean Checkpoint
+The last saved state of the current motor definition as tracked by the undo/redo system. When the user undoes changes back to this checkpoint, the dirty state is cleared and the window title no longer shows the unsaved indicator.
+
 ---
 
 ## Editing Concepts
+
+### Undoable Command
+An individual editing operation (such as changing a data point, renaming a series, or editing a motor property) that can be executed and then later undone. Commands implement a simple interface with `Execute` and `Undo` methods and are recorded in the undo history.
+
+### Undo Stack
+An in-memory history of undoable commands associated with the active motor definition. The stack supports undo and redo operations, exposes `CanUndo` and `CanRedo` for UI enablement, and is reset when a new motor definition is created or opened.
 
 ### Q Value
 A parameter (0.0 to 1.0) that controls how changes to one point affect adjacent points when editing curves:
