@@ -22,6 +22,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly ICurveGeneratorService _curveGeneratorService;
     private readonly IValidationService _validationService;
     private readonly IDriveVoltageSeriesService _driveVoltageSeriesService;
+    private readonly IMotorConfigurationWorkflow _motorConfigurationWorkflow;
 
     private static readonly FilePickerFileType JsonFileType = new("JSON Files")
     {
@@ -171,6 +172,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _driveVoltageSeriesService = new DriveVoltageSeriesService();
         _chartViewModel = new ChartViewModel();
         _curveDataTableViewModel = new CurveDataTableViewModel();
+        _motorConfigurationWorkflow = new MotorConfigurationWorkflow(_driveVoltageSeriesService);
         WireEditingCoordinator();
     }
 
@@ -182,6 +184,32 @@ public partial class MainWindowViewModel : ViewModelBase
         _driveVoltageSeriesService = new DriveVoltageSeriesService();
         _chartViewModel = new ChartViewModel();
         _curveDataTableViewModel = new CurveDataTableViewModel();
+        _motorConfigurationWorkflow = new MotorConfigurationWorkflow(_driveVoltageSeriesService);
+        WireEditingCoordinator();
+    }
+
+    /// <summary>
+    /// Public constructor intended for tests and advanced composition scenarios
+    /// where all dependencies, including workflow services, are supplied
+    /// explicitly.
+    /// </summary>
+    public MainWindowViewModel(
+        IFileService fileService,
+        ICurveGeneratorService curveGeneratorService,
+        IValidationService validationService,
+        IDriveVoltageSeriesService driveVoltageSeriesService,
+        IMotorConfigurationWorkflow motorConfigurationWorkflow,
+        ChartViewModel chartViewModel,
+        CurveDataTableViewModel curveDataTableViewModel)
+    {
+        _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
+        _curveGeneratorService = curveGeneratorService ?? throw new ArgumentNullException(nameof(curveGeneratorService));
+        _validationService = validationService ?? throw new ArgumentNullException(nameof(validationService));
+        _driveVoltageSeriesService = driveVoltageSeriesService ?? throw new ArgumentNullException(nameof(driveVoltageSeriesService));
+        _motorConfigurationWorkflow = motorConfigurationWorkflow ?? throw new ArgumentNullException(nameof(motorConfigurationWorkflow));
+        _chartViewModel = chartViewModel ?? throw new ArgumentNullException(nameof(chartViewModel));
+        _curveDataTableViewModel = curveDataTableViewModel ?? throw new ArgumentNullException(nameof(curveDataTableViewModel));
+
         WireEditingCoordinator();
     }
 
@@ -685,18 +713,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
             var result = dialog.Result;
 
-            var (drive, _) = _driveVoltageSeriesService.CreateDriveWithVoltage(
-                CurrentMotor,
-                result.Name,
-                result.PartNumber,
-                result.Manufacturer,
-                result.Voltage,
-                result.MaxSpeed,
-                result.Power,
-                result.PeakTorque,
-                result.ContinuousTorque,
-                result.ContinuousCurrent,
-                result.PeakCurrent);
+            var (drive, _) = _motorConfigurationWorkflow.CreateDriveWithVoltage(CurrentMotor, result);
 
             // Add the new drive directly to the collection (don't clear/refresh)
             AvailableDrives.Add(drive);
@@ -755,22 +772,15 @@ public partial class MainWindowViewModel : ViewModelBase
 
             var result = dialog.Result;
 
-            // Check if voltage already exists
-            if (SelectedDrive.Voltages.Any(v => Math.Abs(v.Voltage - result.Voltage) < DriveConfiguration.DefaultVoltageTolerance))
+            // Delegate duplicate check and creation to the workflow
+            var voltageResult = _motorConfigurationWorkflow.CreateVoltageWithSeries(SelectedDrive, result);
+            if (voltageResult.IsDuplicate)
             {
                 StatusMessage = $"Voltage {result.Voltage}V already exists for this drive.";
                 return;
             }
 
-            var voltage = _driveVoltageSeriesService.CreateVoltageWithSeries(
-                SelectedDrive,
-                result.Voltage,
-                result.MaxSpeed,
-                result.Power,
-                result.PeakTorque,
-                result.ContinuousTorque,
-                result.ContinuousCurrent,
-                result.PeakCurrent);
+            var voltage = voltageResult.Voltage;
 
             // Refresh the available voltages and select the new one
             RefreshAvailableVoltages();
@@ -828,13 +838,8 @@ public partial class MainWindowViewModel : ViewModelBase
             }
 
             var result = dialog.Result;
-            var seriesName = _driveVoltageSeriesService.GenerateUniqueName(
-                SelectedVoltage.Series.Select(s => s.Name),
-                result.Name);
 
-            var series = SelectedVoltage.AddSeries(seriesName, result.BaseTorque);
-            series.IsVisible = result.IsVisible;
-            series.Locked = result.IsLocked;
+            var series = _motorConfigurationWorkflow.CreateSeries(SelectedVoltage, result);
 
             // IMPORTANT: RefreshData BEFORE RefreshAvailableSeries to prevent DataGrid column sync issues
             // The column rebuild is triggered by AvailableSeries collection change, so data must be ready first
@@ -843,7 +848,7 @@ public partial class MainWindowViewModel : ViewModelBase
             SelectedSeries = series;
             ChartViewModel.RefreshChart();
             MarkDirty();
-            StatusMessage = $"Added series: {seriesName}";
+            StatusMessage = $"Added series: {series.Name}";
         }
         catch (Exception ex)
         {

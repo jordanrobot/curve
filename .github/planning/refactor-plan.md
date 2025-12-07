@@ -76,17 +76,21 @@ We don't want to loose functionality, but I'd like to tidy up if we can.
     - Rubber-band select on graph updates table.
     - Dragging points updates torque values consistently.
 
-### 5. Thin `MainWindowViewModel` (partially addressed)
+### 5. Thin `MainWindowViewModel` ✅ (Completed)
 - **Goal**: Keep `MainWindowViewModel` focused on application shell responsibilities (file commands, high-level selections, status/validation).
+- **What we implemented**:
+  - Introduced an `IMotorConfigurationWorkflow` service with a default `MotorConfigurationWorkflow` implementation that composes `IDriveVoltageSeriesService`.
+  - Refactored `AddDriveAsync`, `AddVoltageAsync`, and `AddSeriesAsync` so their internal workflows delegate to `MotorConfigurationWorkflow` for:
+    - Creating a new drive + initial voltage from `DriveVoltageDialogResult`.
+    - Creating a new voltage + series set from `DriveVoltageDialogResult` with duplicate-voltage detection.
+    - Creating a new series from `AddCurveSeriesResult`, including unique-name generation and visibility/lock flags.
+  - Kept selection updates, chart/table refreshes, and status messaging in `MainWindowViewModel` so it remains the composition root and coordinator.
+  - Added a public constructor overload for `MainWindowViewModel` that takes `IMotorConfigurationWorkflow` (and related services) as explicit dependencies to improve testability and advanced composition.
 - **Ideas / next steps**:
-  - Move detailed drive/voltage/series creation logic (including dialogs) into dedicated services or smaller view models.
-  - Introduce small domain services for:
-    - Drive/voltage creation from dialog results.
-    - Initial default selections (first drive, preferred 208 V, first series).
-  - Keep `MainWindowViewModel` mostly as a composition root and coordinator.
+  - Consider moving additional file/drive/voltage selection defaults (first drive, preferred 208 V, first series) into small helper services or the workflow.
 - **Benefits**:
-  - Improves readability and testability of file/drive/voltage workflows.
-  - Reduces risk of regressions when adding more commands or dialogs.
+  - Improves readability and testability of drive/voltage/series workflows by isolating orchestration from the main shell view model.
+  - Reduces risk of regressions when adding more commands or dialogs, since creation logic is centralized behind a dedicated service.
 
 ### 6. Improve Testability and Surface Areas
 - **Goal**: Make more behavior reachable through public, non-UI types rather than private event handlers in views.
