@@ -21,6 +21,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly IFileService _fileService;
     private readonly ICurveGeneratorService _curveGeneratorService;
     private readonly IValidationService _validationService;
+    private readonly IDriveVoltageSeriesService _driveVoltageSeriesService;
 
     private static readonly FilePickerFileType JsonFileType = new("JSON Files")
     {
@@ -167,6 +168,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _curveGeneratorService = new CurveGeneratorService();
         _fileService = new FileService(_curveGeneratorService);
         _validationService = new ValidationService();
+        _driveVoltageSeriesService = new DriveVoltageSeriesService();
         _chartViewModel = new ChartViewModel();
         _curveDataTableViewModel = new CurveDataTableViewModel();
         WireEditingCoordinator();
@@ -177,6 +179,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
         _curveGeneratorService = curveGeneratorService ?? throw new ArgumentNullException(nameof(curveGeneratorService));
         _validationService = new ValidationService();
+        _driveVoltageSeriesService = new DriveVoltageSeriesService();
         _chartViewModel = new ChartViewModel();
         _curveDataTableViewModel = new CurveDataTableViewModel();
         WireEditingCoordinator();
@@ -568,30 +571,19 @@ public partial class MainWindowViewModel : ViewModelBase
             if (dialog.Result is null) return;
 
             var result = dialog.Result;
-            var driveName = string.IsNullOrWhiteSpace(result.Name)
-                ? GenerateUniqueName(CurrentMotor.Drives.Select(d => d.Name), "New Drive")
-                : result.Name;
 
-            var drive = CurrentMotor.AddDrive(driveName);
-            drive.PartNumber = result.PartNumber;
-            drive.Manufacturer = result.Manufacturer;
-
-            // Add the voltage configuration
-            var voltage = drive.AddVoltageConfiguration(result.Voltage);
-            voltage.MaxSpeed = result.MaxSpeed;
-            voltage.Power = result.Power;
-            voltage.RatedPeakTorque = result.PeakTorque;
-            voltage.RatedContinuousTorque = result.ContinuousTorque;
-            voltage.ContinuousAmperage = result.ContinuousCurrent;
-            voltage.PeakAmperage = result.PeakCurrent;
-
-            // Create Peak and Continuous torque series
-            var peakSeries = new CurveSeries("Peak");
-            var continuousSeries = new CurveSeries("Continuous");
-            peakSeries.InitializeData(voltage.MaxSpeed, voltage.RatedPeakTorque);
-            continuousSeries.InitializeData(voltage.MaxSpeed, voltage.RatedContinuousTorque);
-            voltage.Series.Add(peakSeries);
-            voltage.Series.Add(continuousSeries);
+            var (drive, voltage) = _driveVoltageSeriesService.CreateDriveWithVoltage(
+                CurrentMotor,
+                result.Name,
+                result.PartNumber,
+                result.Manufacturer,
+                result.Voltage,
+                result.MaxSpeed,
+                result.Power,
+                result.PeakTorque,
+                result.ContinuousTorque,
+                result.ContinuousCurrent,
+                result.PeakCurrent);
 
             // Add the new drive directly to the collection (don't clear/refresh)
             AvailableDrives.Add(drive);
@@ -603,7 +595,7 @@ public partial class MainWindowViewModel : ViewModelBase
             ChartViewModel.RefreshChart();
             
             MarkDirty();
-            StatusMessage = $"Added drive: {driveName}";
+            StatusMessage = $"Added drive: {drive.Name}";
         }
         catch (Exception ex)
         {
@@ -682,7 +674,7 @@ public partial class MainWindowViewModel : ViewModelBase
             if (dialog.Result is null) return;
 
             var result = dialog.Result;
-            
+
             // Check if voltage already exists
             if (SelectedDrive.Voltages.Any(v => Math.Abs(v.Voltage - result.Voltage) < DriveConfiguration.DefaultVoltageTolerance))
             {
@@ -690,21 +682,15 @@ public partial class MainWindowViewModel : ViewModelBase
                 return;
             }
 
-            var voltage = SelectedDrive.AddVoltageConfiguration(result.Voltage);
-            voltage.MaxSpeed = result.MaxSpeed;
-            voltage.Power = result.Power;
-            voltage.RatedPeakTorque = result.PeakTorque;
-            voltage.RatedContinuousTorque = result.ContinuousTorque;
-            voltage.ContinuousAmperage = result.ContinuousCurrent;
-            voltage.PeakAmperage = result.PeakCurrent;
-
-            // Create Peak and Continuous torque series
-            var peakSeries = new CurveSeries("Peak");
-            var continuousSeries = new CurveSeries("Continuous");
-            peakSeries.InitializeData(voltage.MaxSpeed, voltage.RatedPeakTorque);
-            continuousSeries.InitializeData(voltage.MaxSpeed, voltage.RatedContinuousTorque);
-            voltage.Series.Add(peakSeries);
-            voltage.Series.Add(continuousSeries);
+            var voltage = _driveVoltageSeriesService.CreateVoltageWithSeries(
+                SelectedDrive,
+                result.Voltage,
+                result.MaxSpeed,
+                result.Power,
+                result.PeakTorque,
+                result.ContinuousTorque,
+                result.ContinuousCurrent,
+                result.PeakCurrent);
 
             // Refresh the available voltages and select the new one
             RefreshAvailableVoltages();
@@ -799,7 +785,7 @@ public partial class MainWindowViewModel : ViewModelBase
             }
 
             var result = dialog.Result;
-            var seriesName = GenerateUniqueName(
+            var seriesName = _driveVoltageSeriesService.GenerateUniqueName(
                 SelectedVoltage.Series.Select(s => s.Name),
                 result.Name);
             
@@ -966,21 +952,4 @@ public partial class MainWindowViewModel : ViewModelBase
         return null;
     }
 
-    private static string GenerateUniqueName(IEnumerable<string> existingNames, string baseName)
-    {
-        var names = existingNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (!names.Contains(baseName))
-        {
-            return baseName;
-        }
-
-        var counter = 1;
-        string newName;
-        do
-        {
-            newName = $"{baseName} {counter++}";
-        } while (names.Contains(newName));
-
-        return newName;
-    }
 }
