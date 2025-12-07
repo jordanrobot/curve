@@ -28,6 +28,18 @@
             <lvc:CartesianChart.TooltipTextPaint>
                 <lvc:SolidColorPaint Color="#333333" />
             </lvc:CartesianChart.TooltipTextPaint>
+            
+            <!--
+                Minimal point-highlighting: the ChartViewModel exposes
+                IsPointHighlighted(seriesName, index). LiveCharts does not
+                support per-point templates directly in XAML bindings, but
+                raising PropertyChanged for Series when selection changes
+                allows the chart to be redrawn with any style changes that
+                may be applied in code. The visual differentiation itself is
+                kept subtle and is implemented in ChartViewModel by adjusting
+                GeometrySize/GeometryFill for highlighted points when the
+                highlighted index map changes.
+            -->
         </lvc:CartesianChart>
         
         <!-- Title Overlay -->

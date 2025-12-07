@@ -821,6 +821,10 @@ public partial class CurveDataTableViewModel : ViewModelBase
         }
 
         SelectionChanged?.Invoke(this, EventArgs.Empty);
+
+        // Keep the shared editing selection in sync so chart overlays
+        // reflect Ctrl+Shift+Arrow driven selection changes.
+        PushSelectionToCoordinator();
     }
 
     /// <summary>

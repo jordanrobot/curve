@@ -12,15 +12,18 @@ Given the current state, functionality, and future #file:04-mvp-roadmap.md plans
 
 We don't want to loose functionality, but I'd like to tidy up if we can.
 
-### 1. Centralize Editing Orchestration
+### 1. Centralize Editing Orchestration (in progress)
 - **Goal**: Reduce coupling between `MainWindowViewModel`, `CurveDataPanel`, `ChartViewModel`, and `CurveDataTableViewModel` by introducing a focused coordination layer.
-- **Idea**: Introduce a lightweight "editing controller" (service or view model) responsible for:
-  - Current selection context (series, rows, and graph/table linkage).
-  - Coordinating torque edits, clipboard operations, and override-mode semantics.
-  - Owning cross-cutting behaviors like dirty-state management and chart refresh triggers.
+- **What we implemented so far**:
+  - Added an `EditingCoordinator` class that owns selection as a model-level structure of `(CurveSeries Series, int Index)` pairs.
+  - `MainWindowViewModel` creates and wires a single `EditingCoordinator` instance into `ChartViewModel` and `CurveDataTableViewModel`.
+  - `CurveDataTableViewModel` now pushes all selection changes (click, drag, Shift+arrow, Ctrl+Shift+arrow, etc.) into the coordinator via a single `PushSelectionToCoordinator` helper.
+  - `ChartViewModel` listens to coordinator `SelectionChanged` and renders per-point selection overlays (extra marker-only series) so selected table cells immediately highlight corresponding curve points.
+- **Still to consider**:
+  - Whether to move additional cross-cutting behaviors (dirty-state decisions, some chart refresh triggers, future graph-drag editing) into this coordinator or a sibling orchestration service.
 - **Benefits**:
-  - Simplifies individual view models and views.
-  - Makes it easier to add Phase 3+ features: graph selection drives table selection, EQ-style editing, and multi-point operations.
+  - Simplifies individual view models and views by centralizing shared selection logic.
+  - Provides a clean foundation for Phase 3+ features: graph selection drives table selection, EQ-style editing, and multi-point operations.
 
 ### 2. Unify Torque Mutation Paths ✅ (Completed)
 - **Current State**: All per-cell torque mutations now go through `CurveDataTableViewModel.TrySetTorqueAtCell`, and batch updates use `ApplyTorqueToCells`.
@@ -52,23 +55,26 @@ We don't want to loose functionality, but I'd like to tidy up if we can.
   - Reduced duplication of torque mutation rules between view and view model.
   - Lower risk when adding new clipboard or override-mode behaviors, since they plug into centralized APIs.
 
-### 4. Strengthen Graph/Table Linking
+### 4. Strengthen Graph/Table Linking (partially completed)
 - **Goal**: Lay groundwork for Phase 3+ features that tie graph point selection to table selection and vice versa.
-- **Ideas**:
-  - Represent selection in a model-level structure (e.g., selected points as `(series, index)` pairs) that both `ChartViewModel` and `CurveDataTableViewModel` understand.
-  - Expose small, intention-revealing methods:
-    - `SelectPoints(IEnumerable<PointSelection> points)`
-    - `SelectCellsForPoints(IEnumerable<PointSelection> points)`
-  - Ensure that selection changes raise a shared event or use a shared coordinator so chart ↔ table updates remain consistent.
+- **Current state**:
+  - Selection is now represented in a model-level structure (`EditingCoordinator.PointSelection` as `(series, index)` pairs) understood by both `ChartViewModel` and `CurveDataTableViewModel`.
+  - Table → Graph is implemented:
+    - `CurveDataTableViewModel` translates its `SelectedCells` into `PointSelection`s and updates the coordinator.
+    - `ChartViewModel` listens to the coordinator and builds lightweight overlay series that highlight only the selected points (including multi-cell selection and Ctrl+Shift+arrow range selection).
+- **Planned (Phase 3)**:
+  - Graph → Table: add hit-testing and rubber-band selection on the chart that update the coordinator, and have `CurveDataTableViewModel` respond to coordinator changes by updating its `SelectedCells`.
+  - Use the existing centralized torque mutation APIs (`TrySetTorqueAtCell` / `ApplyTorqueToCells`) as the single path for graph-drag multi-point torque edits.
 - **Benefits**:
+  - Clear, testable selection model shared between graph and table.
   - Easier implementation of:
     - Selecting a point on the graph highlights the cell.
     - Rubber-band select on graph updates table.
     - Dragging points updates torque values consistently.
 
-### 5. Thin `MainWindowViewModel`
+### 5. Thin `MainWindowViewModel` (partially addressed)
 - **Goal**: Keep `MainWindowViewModel` focused on application shell responsibilities (file commands, high-level selections, status/validation).
-- **Ideas**:
+- **Ideas / next steps**:
   - Move detailed drive/voltage/series creation logic (including dialogs) into dedicated services or smaller view models.
   - Introduce small domain services for:
     - Drive/voltage creation from dialog results.

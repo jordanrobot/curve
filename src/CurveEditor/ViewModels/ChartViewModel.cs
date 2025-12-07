@@ -5,7 +5,6 @@ using LiveChartsCore.Defaults;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
 using LiveChartsCore.SkiaSharpView.Painting.Effects;
-using Serilog;
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
@@ -91,6 +90,18 @@ public partial class ChartViewModel : ViewModelBase
     }
 
     private EditingCoordinator? _editingCoordinator;
+
+    /// <summary>
+    /// Per-point highlighting state keyed by series name and data index.
+    /// This is driven by the shared EditingCoordinator selection.
+    /// </summary>
+    private readonly Dictionary<string, HashSet<int>> _highlightedIndices = [];
+
+    /// <summary>
+    /// Suffix used to identify selection overlay series in the Series
+    /// collection.
+    /// </summary>
+    private const string SelectionOverlaySuffix = " (SelectionOverlay)";
 
     /// <summary>
     /// Called when MotorMaxSpeed changes to update the chart axes.
@@ -212,9 +223,44 @@ public partial class ChartViewModel : ViewModelBase
 
     private void OnCoordinatorSelectionChanged(object? sender, EventArgs e)
     {
-        // Hook for future graph-point highlighting driven by shared selection.
-        // No-op for now to avoid changing UI behavior while still centralizing
-        // selection orchestration through EditingCoordinator.
+        if (_editingCoordinator is null)
+        {
+            return;
+        }
+
+        // Rebuild the highlighted index map from the coordinator's logical
+        // point selection. This is kept separate from the underlying data
+        // so we can control how the UI surfaces selection.
+        _highlightedIndices.Clear();
+
+        foreach (var point in _editingCoordinator.SelectedPoints)
+        {
+            var seriesName = point.Series.Name;
+            if (!_highlightedIndices.TryGetValue(seriesName, out var indices))
+            {
+                indices = [];
+                _highlightedIndices[seriesName] = indices;
+            }
+
+            if (point.Index >= 0)
+            {
+                indices.Add(point.Index);
+            }
+        }
+
+        // Rebuild the lightweight selection overlay series so highlighted
+        // points update immediately in response to table selection changes.
+        UpdateSelectionOverlays();
+    }
+
+    /// <summary>
+    /// Indicates whether a given series/index is currently highlighted
+    /// according to the shared editing selection.
+    /// </summary>
+    public bool IsPointHighlighted(string seriesName, int index)
+    {
+        return _highlightedIndices.TryGetValue(seriesName, out var indices)
+               && indices.Contains(index);
     }
 
     private void UpdateChart()
@@ -227,9 +273,6 @@ public partial class ChartViewModel : ViewModelBase
             Title = "No Data";
             return;
         }
-
-        Log.Debug("Updating chart with {SeriesCount} series from voltage {Voltage}V",
-            _currentVoltage.Series.Count, _currentVoltage.Voltage);
 
         Title = $"Torque Curve - {_currentVoltage.Voltage}V";
 
@@ -261,6 +304,10 @@ public partial class ChartViewModel : ViewModelBase
             Series.Add(lineSeries);
         }
 
+        // Rebuild selection overlays on top of the base series so that
+        // any existing selection remains visible after a full chart refresh.
+        UpdateSelectionOverlays();
+
         // Add brake torque line if motor has a brake
         if (HasBrake && BrakeTorque > 0)
         {
@@ -269,6 +316,78 @@ public partial class ChartViewModel : ViewModelBase
 
         // Update axes based on data
         UpdateAxes();
+    }
+
+    /// <summary>
+    /// Rebuilds lightweight overlay series that render markers only for
+    /// highlighted points. This gives per-point highlighting without
+    /// disturbing the base line series.
+    /// </summary>
+    private void UpdateSelectionOverlays()
+    {
+        // Remove any existing selection overlay series.
+        for (var i = Series.Count - 1; i >= 0; i--)
+        {
+            if (Series[i] is LineSeries<ObservablePoint> lineSeries &&
+                lineSeries.Name.EndsWith(SelectionOverlaySuffix, StringComparison.Ordinal))
+            {
+                Series.RemoveAt(i);
+            }
+        }
+
+        if (_currentVoltage is null || _highlightedIndices.Count == 0)
+        {
+            OnPropertyChanged(nameof(Series));
+            return;
+        }
+
+        foreach (var series in _currentVoltage.Series)
+        {
+            if (!_highlightedIndices.TryGetValue(series.Name, out var indices) || indices.Count == 0)
+            {
+                continue;
+            }
+
+            var color = SeriesColors[_currentVoltage.Series.IndexOf(series) % SeriesColors.Length];
+
+            // Build an overlay points collection containing only the
+            // highlighted indices for this series.
+            var overlayPoints = new ObservableCollection<ObservablePoint>();
+
+            foreach (var index in indices.OrderBy(i => i))
+            {
+                if (index < 0 || index >= series.Data.Count)
+                {
+                    continue;
+                }
+
+                var dp = series.Data[index];
+                overlayPoints.Add(new ObservablePoint(dp.Rpm, dp.Torque));
+            }
+
+            if (overlayPoints.Count == 0)
+            {
+                continue;
+            }
+
+            var overlaySeries = new LineSeries<ObservablePoint>
+            {
+                Name = series.Name + SelectionOverlaySuffix,
+                Values = overlayPoints,
+                // No filled area for overlays; just markers.
+                Fill = null,
+                Stroke = null,
+                GeometrySize = 7,
+                GeometryStroke = new SolidColorPaint(color) { StrokeThickness = 2 },
+                GeometryFill = new SolidColorPaint(color.WithAlpha(220)),
+                LineSmoothness = 0,
+                IsVisible = IsSeriesVisible(series.Name)
+            };
+
+            Series.Add(overlaySeries);
+        }
+
+        OnPropertyChanged(nameof(Series));
     }
 
     /// <summary>
