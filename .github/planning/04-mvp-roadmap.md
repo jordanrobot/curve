@@ -1,5 +1,9 @@
 # Motor Torque Curve Editor - MVP Roadmap
 
+**Related ADRs**
+
+- ADR-0003 Motor Property Undo Design (`.github/adr/adr-0003-motor-property-undo-design.md`)
+
 ## Technology Stack Decision
 
 **Confirmed**: The Motor Torque Curve Editor will be built using:
@@ -119,6 +123,22 @@ Phase 8: Power Curve Overlay (Future)
 - [x] Wire Ctrl+Z / Ctrl+Y keyboard shortcuts
 - [x] Integrate undo/redo with dirty state tracking, including a clean checkpoint tied to saves so undoing back to the saved state clears the dirty flag
 
+See ADR-0003 (`.github/adr/adr-0003-motor-property-undo-design.md`) for the architectural decision and migration plan for bringing motor-level text properties under the undo/redo system via a dedicated command-driven editing path.
+
+**Note on Motor Properties:**
+
+During integration work for motor-level text properties (e.g., Motor Name, Manufacturer), we discovered that layering command-based undo on top of existing two-way `TextBox` bindings is fragile: the bindings update `MotorDefinition` before commands can reliably capture the "old" value. A future enhancement will refactor these bindings to use a dedicated, command-driven edit path rather than attached behaviors. See ADR-0003 (`.github/adr/adr-0003-motor-property-undo-design.md`) for the chosen architectural direction and implementation guidance.
+
+**Future Refinements Using ADR-0003 Pattern:**
+
+To keep the codebase cohesive and efficient, a future agent should consider how ADR-0003's command-driven edit pattern can be applied more broadly:
+
+- **Motor text and scalar properties:** Route all edits (name, manufacturer, part number, numeric specs) through explicit view-model edit methods that create undoable commands, instead of direct two-way bindings to `MotorDefinition`.
+- **Curve data table and chart edits:** Ensure grid cell edits and (future) chart drag edits both go through shared edit methods (e.g., `EditPointTorque`) that push `EditPointCommand`s, rather than letting the UI mutate `DataPoint` instances directly.
+- **Selection and coordination logic:** Centralize selection changes (from chart and table) through coordinator/view-model APIs that record origin and avoid feedback loops, making it easier to reason about and test selection behavior.
+
+These refinements should be evaluated against the current codebase when planning advanced editing work (Phase 4) so that undo/redo behavior, selection coordination, and mutation paths remain consistent and maintainable.
+
 **Deliverable:** Application that can create, open, and save motor files with JSON content display. Includes full undo/redo support and structured logging.
 
 ---
@@ -174,6 +194,8 @@ Phase 8: Power Curve Overlay (Future)
 - [X] Unit selector for each property type
 - [X] Bind properties to MotorDefinition model
 - [X] Enable editing of all fields
+
+Note: Motor text property edits (e.g., name, manufacturer, part number) will ultimately be routed through explicit view-model edit methods and undoable commands as described in ADR-0003 (`.github/adr/adr-0003-motor-property-undo-design.md`).
 
 ### 2.7 Curve Data Panel
 - [X] Create CurveDataPanel component
