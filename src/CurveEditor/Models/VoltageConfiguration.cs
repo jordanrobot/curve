@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 
 namespace CurveEditor.Models;
@@ -8,7 +10,7 @@ namespace CurveEditor.Models;
 /// Represents voltage-specific configuration and performance data for a motor/drive combination.
 /// Contains the curve series for this specific voltage setting.
 /// </summary>
-public class VoltageConfiguration
+public class VoltageConfiguration : INotifyPropertyChanged
 {
     private double _voltage;
 
@@ -25,7 +27,13 @@ public class VoltageConfiguration
             {
                 throw new ArgumentOutOfRangeException(nameof(value), value, "Voltage must be positive.");
             }
+            if (Math.Abs(_voltage - value) < double.Epsilon)
+            {
+                return;
+            }
+
             _voltage = value;
+            OnPropertyChanged();
         }
     }
 
@@ -121,5 +129,19 @@ public class VoltageConfiguration
         series.InitializeData(MaxSpeed, initializeTorque);
         Series.Add(series);
         return series;
+    }
+
+    /// <summary>
+    /// Raised when a property value changes.
+    /// </summary>
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    /// <summary>
+    /// Notifies listeners that a property value has changed.
+    /// </summary>
+    /// <param name="propertyName">The name of the changed property.</param>
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
