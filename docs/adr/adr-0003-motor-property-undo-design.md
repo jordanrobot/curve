@@ -8,141 +8,147 @@
 
 - 2025-12-07
 
-### Context
+---
+title: "ADR-0003: Generalized Undo/Redo Command Pattern"
+status: "Accepted"
+date: "2025-12-10"
+authors: "mjordan"
+tags: ["architecture", "undo", "commands", "mvvm"]
+supersedes: "ADR-000X, ADR-000Y"
+superseded_by: ""
+---
 
-The Curve Editor uses a command-based undo/redo infrastructure (`IUndoableCommand`, `UndoStack`) that already covers chart edits (`EditPointCommand`), series metadata (`EditSeriesCommand`), and some motor-level operations (`EditMotorPropertyCommand`).
+## Status
 
-During Phase 2, we extended undo/redo to text-based motor properties (e.g., `MotorName`, `Manufacturer`, `PartNumber`) with the following goals:
+Accepted
 
-- Ctrl+Z / Ctrl+Y act at the document level, not just within a single `TextBox`.
-- Each edit to a motor property is a whole-field undo step (old value → new value), not per-character.
-- Undo/redo across text boxes behaves consistently with chart/grid edits.
+## Context
 
-Early experiments used an attached behavior (`UndoableTextBox`) layered on top of Avalonia's normal two-way bindings. That approach was rejected after we observed in practice that:
+The Curve Editor uses a command-based undo/redo infrastructure (`IUndoableCommand`, `UndoStack`) that now covers:
 
-- By the time a command executed, the underlying `MotorDefinition` had often already been updated by the existing two-way binding, so commands could not reliably capture the true old value.
-- `EditMotorPropertyCommand` frequently saw `old` and `new` as the same value, making undo a no-op.
-- Ctrl+Z/Ctrl+Y routing was subtle and depended on whether focus was in a textbox or elsewhere, leading to inconsistent behavior between per-textbox undo and document-level undo.
+- Motor text and scalar properties via `EditMotorPropertyCommand` and view-model edit methods.
+- Drive and voltage properties via `EditDrivePropertyCommand` and `EditVoltagePropertyCommand`.
+- Curve data table edits and chart-driven point edits via `EditPointCommand`.
+- Series metadata (name, visibility, lock state, color) via `EditSeriesCommand`.
 
-Those lessons confirmed the roadmap intent in `04-mvp-roadmap.md` and `phase-2-plan.md`: motor property edits must participate in the same command-driven infrastructure as chart and grid edits, and the command path must own all mutations for these properties.
+These capabilities were originally specified across multiple ADRs:
 
-### Decision
+- ADR-0003 (motor property undo design).
+- ADR-000X (voltage property undo design).
+- ADR-000Y (generalized undo/redo pattern).
 
-For motor-level text properties we will use a **dedicated, command-driven editing path** that owns the mutation and participates in undo/redo by design. We will not rely on attached behaviors that sit on top of fully active two-way bindings.
+Additionally, the roadmap (`.github/planning/04-mvp-roadmap.md`) and Phase 2 plan (`.github/planning/phase-2-plan.md`) describe requirements such as:
 
-Key aspects of the chosen direction:
+- A single per-document undo stack (`UndoStack`) with `CanUndo`/`CanRedo` and dirty-state integration.
+- Global Ctrl+Z / Ctrl+Y behavior at the window level, not per-control.
+- Whole-field, command-based undo steps for text fields (not per-character), consistent with chart/grid edits.
 
-1. **ViewModel-centric edit methods**
-   - Add explicit edit methods on `MainWindowViewModel` (or a dedicated `MotorPropertiesViewModel`), e.g.:
-     - `EditMotorName(string newName)`
-     - `EditMotorManufacturer(string newManufacturer)`
-     - `EditMotorPartNumber(string newPartNumber)`
-   - Each method will:
-     - Read the current value from the model (old value).
-     - Construct and push an `IUndoableCommand` with both `old` and `new` values.
-     - Apply the new value to the underlying `MotorDefinition` as part of command `Execute()`.
+As more undoable scenarios are added (EQ-style editing, additional configuration panels, etc.), we need one **authoritative, generalized pattern** so future work follows the same rules without re-discovering subtle details scattered across several documents.
 
-2. **UI bindings use the dedicated path instead of raw two-way binding**
-   - For motor text fields, we will stop binding `TextBox.Text` directly to `MotorDefinition` properties with unconstrained two-way bindings.
-   - Instead, we will either:
-     - Bind to simple VM properties (e.g., `MotorNameEditor`), and on commit (Enter key, focus loss, or explicit "Apply"), call the corresponding edit method, or
-     - Use command bindings (e.g., `TextBox` submit behavior) that pass the edited value into `EditMotorName`.
-   - The critical property: **only the command path mutates `MotorDefinition`**. The binding no longer writes directly to the model behind the command's back.
+## Decision
 
-3. **Command representation**
-   - Either refactor `EditMotorPropertyCommand` or introduce a specialized command, e.g., `EditMotorScalarPropertyCommand`, that:
-     - Stores both `oldValue` and `newValue` at construction time.
-     - In `Execute()`, sets the property to `newValue`.
-     - In `Undo()`, sets the property back to `oldValue`.
-   - The command should not attempt to infer `oldValue` from the model at execution time.
+We adopt a **single generalized undo/redo pattern** for all user-visible, undoable operations in the Curve Editor. Any new undoable operation must follow these rules:
 
-4. **Global Ctrl+Z / Ctrl+Y remain window-level**
-   - Keyboard shortcuts continue to route through `MainWindow` and `MainWindowViewModel.UndoCommand` / `RedoCommand`.
-   - Motor property edits become just another `IUndoableCommand` on the existing per-document `UndoStack`, so global undo/redo behavior is consistent across charts, grids, and motor fields.
+1. **All domain mutations go through commands**
+- The only code that mutates domain objects (`MotorDefinition`, `DriveConfiguration`, `VoltageConfiguration`, `CurveSeries`, `DataPoint`, etc.) is inside `IUndoableCommand.Execute()` and `Undo()` implementations.
+- Views and view models never set these properties directly in response to UI events; instead they construct and push commands via the shared `UndoStack`.
 
-### Consequences
+2. **Exactly one edit method per logical user operation**
+- Each logical user action that changes state has a single, named method on the relevant view model, e.g.:
+  - `EditMotorName`, `EditMotorMaxSpeed`, `EditMotorBrakeTorque`.
+  - `EditDriveName`, `EditSelectedVoltagePower`, `EditSelectedVoltageMaxSpeed`.
+  - `TryEditTorqueCell`, `ApplyTorqueDeltaToSelection`, `ToggleSeriesLock`.
+- That method is the **only** place that:
+  - Reads the current value from the model into `oldValue`.
+  - Parses/normalizes the user input into `newValue`.
+  - Applies business rules and guards (e.g., series is not locked, selection is valid).
+  - Constructs an `IUndoableCommand` with `oldValue` and `newValue` and calls `_undoStack.PushAndExecute(command)`.
 
-**Positive:**
+3. **Editor buffers for text-based input**
+- UI `TextBox` controls bind to simple editor properties (e.g., `MotorNameEditor`, `VoltagePowerEditor`, `VoltagePeakTorqueEditor`) instead of binding directly to domain-model properties.
+- These editor properties live on the view model and are updated via data binding.
+- On commit (typically `LostFocus`, Enter, or an explicit Apply button), view or code-behind calls the corresponding edit method, which:
+  - Parses the editor buffer text into the target type.
+  - Constructs and pushes an undoable command.
+  - Refreshes editor properties from the canonical model state.
 
-- **Robustness:**
-  - Undo/redo for motor properties is no longer sensitive to Avalonia's internal binding update order or focus event timing.
-  - All model mutations for these fields go through a single, explicit command path.
+4. **Commands always capture old and new values explicitly**
+- Command constructors receive `oldValue` and `newValue` (or equivalent) at creation time.
+- `Execute()` sets the model property/collection to `newValue`.
+- `Undo()` restores `oldValue` exactly, without needing to infer anything from current model state.
+- Commands do **not** compute `oldValue` by inspecting the model during `Execute()` or `Undo()`.
 
-- **Clarity:**
-  - Future contributors (or agents) can reason about motor property edits by looking at view-model edit methods and commands, not at subtle behaviors and attached properties.
-  - Unit tests can target view-model methods directly without requiring UI event orchestration.
+5. **Per-document shared undo stack**
+- `MainWindowViewModel` owns a single `UndoStack` per open motor/document.
+- Sub-view-models (`ChartViewModel`, `CurveDataTableViewModel`, etc.) receive a reference to the same stack.
+- All undoable operations that affect the current document push into this stack so undo/redo is linear and global for that document.
 
-- **Consistency:**
-  - Motor property edits behave like other undoable operations in the system: a user-visible action → command on `UndoStack` → model mutation → undo/redo.
+6. **Global undo/redo wiring at the window level**
+- `MainWindow` defines the keyboard bindings for `Ctrl+Z` / `Ctrl+Y` and menu items bound to `UndoCommand` / `RedoCommand` on `MainWindowViewModel`.
+- Per-control undo is disabled (`IsUndoEnabled="False"`) for text boxes that participate in the global command pattern so Ctrl+Z / Ctrl+Y always route to the document-level undo history.
+- Grid cells and other complex input controls forward undo/redo keystrokes to the global commands rather than using private stacks.
 
-**Negative / Trade-offs:**
+7. **Guards and locking enforced before commands are created**
+- Guards such as "no current motor", "no selected voltage", or "series is locked" are applied in the view-model edit methods **before** creating commands.
+- If a guard fails, the edit method exits without constructing or pushing a command.
+- This keeps command implementations simple and ensures invalid operations never appear in the undo history.
 
-- **Refactor cost:**
-  - Existing direct two-way bindings from `TextBox.Text` to `MotorDefinition` properties must be refactored to go through the dedicated edit path.
-  - Short-term implementation effort is higher than the behavior-only approach.
+8. **Centralized dirty-state tracking and refresh**
+- Any method that successfully pushes and executes a command must:
+  - Mark the document dirty (e.g., `MarkDirty()`), so dirty state and title asterisk are correct.
+  - Call shared refresh helpers, such as:
+    - `RefreshMotorEditorsFromCurrentMotor()`;
+    - `ChartViewModel.RefreshChart()`;
+    - `CurveDataTableViewModel.RefreshData()`.
+- Global `UndoCommand` / `RedoCommand` always:
+  - Call `_undoStack.Undo()` / `_undoStack.Redo()`;
+  - Then call the same refresh helpers.
 
-- **Slightly more view-model surface area:**
-  - Additional edit methods and/or small editor properties increase the size of `MainWindowViewModel` or introduce another VM layer.
+## Consequences
 
-### Implementation Notes / Migration Plan
+### Positive
 
-This ADR is the authoritative guide for future work described in:
+- **POS-001**: Provides a single, consistent pattern for all undoable operations, reducing the chance of ad-hoc mutations that bypass the undo stack.
+- **POS-002**: Makes the codebase easier for future engineers and agents to extend: each new undoable feature follows the same small set of rules.
+- **POS-003**: Simplifies reasoning and testing, since all domain changes originate from clearly named edit methods and well-scoped command objects.
+- **POS-004**: Ensures global keyboard shortcuts behave uniformly across charts, tables, and property panels, improving UX predictability.
+- **POS-005**: Integrates neatly with dirty-state tracking and layout of Phase 1.8/Phase 2 features as documented in the roadmap and phase plan.
 
-- `04-mvp-roadmap.md`, sections **1.8 Undo/Redo Infrastructure** and **2.6 Motor Properties Panel**.
-- `phase-2-plan.md`, sections **2.3 Command Types for Common Operations** and **4. Future Work: Motor Property Undo via Dedicated Command Path**.
+### Negative
 
-When an agent implements this design, they should:
+- **NEG-001**: Introduces more ceremony than direct bindings: new fields typically require an editor property, an edit method, and possibly a command type.
+- **NEG-002**: Requires discipline; casual direct property sets in view models or code-behind can easily violate the pattern if not reviewed.
+- **NEG-003**: Reflection-based command implementations (for generic scalar editing) rely on property-name strings, which are not refactor-safe without tests.
 
-1. **Refactor bindings for key motor fields**
-   - Start with the most important text fields (e.g., `MotorName`, `Manufacturer`, `PartNumber`).
-   - Replace direct `Text="{Binding CurrentMotor.MotorName}"` with either:
-     - A VM editor property (e.g., `Text="{Binding MotorNameEditor}"`) plus an explicit commit trigger, or
-     - A command-binding pattern where the edit is committed via `EditMotorName`.
+## Alternatives Considered
 
-2. **Add explicit edit methods**
-   - On the relevant view model (likely `MainWindowViewModel`):
-     - Implement `EditMotorName(string newName)` and similar methods.
-     - Inside each method:
-       - Get `var oldName = CurrentMotor.MotorName;`.
-       - If `oldName == newName`, do nothing.
-       - Construct an undoable command with `oldName` and `newName`.
-       - Call the existing `_undoStack.PushAndExecute(command);` and mark dirty.
+### ALT-001: Direct two-way bindings with ad-hoc undo
 
-3. **Use commands that store old/new explicitly**
-   - Update or add a command type so it has a constructor like:
-     - `EditMotorPropertyCommand(MotorDefinition motor, string propertyName, object? oldValue, object? newValue)`.
-   - Ensure `Execute()` and `Undo()` only ever read from these stored values.
+- **ALT-001**: **Description**: Bind `TextBox.Text` and other inputs directly to domain properties and rely on control-local undo stacks or manual snapshots.
+- **ALT-002**: **Rejection Reason**: Early prototypes showed race conditions between bindings and commands, inconsistent Ctrl+Z behavior (sometimes per-control, sometimes global), and difficulty grouping logically related changes.
 
-4. **Integrate with existing undo infrastructure**
-   - Reuse the existing `UndoStack` in `MainWindowViewModel`.
-   - No changes should be needed to `UndoStack` itself; motor edits simply become normal commands on that stack.
+### ALT-003: Observing `INotifyPropertyChanged` as an audit log
 
-5. **Testing**
-   - Add unit or integration tests that:
-     - Create a `MainWindowViewModel` with a test `MotorDefinition`.
-     - Call `EditMotorName("New Name")` and assert that the model updates.
-     - Call `Undo()` and assert that the model reverts to the original name.
-     - Call `Redo()` and assert that the model returns to the new name.
+- **ALT-003**: **Description**: Listen to model `PropertyChanged` events and retroactively create commands from observed changes.
+- **ALT-004**: **Rejection Reason**: Inverts control and breaks the link between user-intent and command creation; makes it hard to apply guards, coalesce operations, or avoid double mutations.
 
-### Alternatives Considered
+### ALT-005: Immutable snapshots for entire `MotorDefinition`
 
-1. **Keep attached behavior and try to capture values earlier**
-  - Capture `oldValue` on `GotFocus` and store it in the behavior.
-  - On `LostFocus`, construct a command using the stored `oldValue` and current `TextBox.Text`.
-  - **Rejected** because Avalonia bindings may still update the model before or during these events, leading to subtle race/timing issues and hard-to-test behavior.
+- **ALT-005**: **Description**: Treat each edit as replacing an entire `MotorDefinition` snapshot and push whole-document diffs onto the undo stack.
+- **ALT-006**: **Rejection Reason**: Overly heavy for the current app, complicates partial updates and selection coordination, and diverges from the existing mutable-model architecture.
 
-2. **Use two-way bindings but hook into property changed events on the view model**
-  - Observe `INotifyPropertyChanged` on `MotorDefinition` and create commands when properties change.
-  - **Rejected** because it inverts control (commands are an after-the-fact log) and makes it difficult to group related edits or avoid double-mutations. It also couples undo logic to model-level notifications rather than explicit user actions.
+## Implementation Notes
 
-3. **Make motor properties immutable snapshots and rebind on every change**
-  - Treat motor edits as replacing a whole `MotorDefinition` instance on each edit.
-  - **Rejected** as unnecessarily heavy for the current application scope and inconsistent with existing mutable model semantics.
+- **IMP-001**: When adding a new undoable operation, always start by identifying the owning domain type and property/collection, then design or reuse an appropriate command type that stores old/new values explicitly.
+- **IMP-002**: Add a single edit method on the appropriate view model that performs validation, computes `oldValue`/`newValue`, constructs the command, pushes it via `_undoStack.PushAndExecute`, marks dirty, and triggers shared refresh helpers.
+- **IMP-003**: For any text-based field, introduce an editor property (e.g., `NewPropertyEditor`) bound to the `TextBox`, and commit via `LostFocus` or an explicit user action that calls the edit method; set `IsUndoEnabled="False"` on such text boxes.
+- **IMP-004**: Ensure `UndoCommand` and `RedoCommand` in `MainWindowViewModel` always call both the undo stack and shared refresh helpers so all views (chart, grid, property panels) stay in sync with the current undo state.
+- **IMP-005**: When refactoring existing code, search for direct mutations of domain models in views or code-behind and route them through edit methods and commands instead.
 
-### References
+## References
 
-- `src/CurveEditor/Services/UndoStack.cs` – core undo/redo infrastructure.
-- `src/CurveEditor/Services/EditMotorPropertyCommand.cs` – existing motor property command implementation.
-- `src/CurveEditor/ViewModels/MainWindowViewModel.cs` – owner of the per-document `UndoStack` and motor definition.
-- `.github/planning/04-mvp-roadmap.md` – roadmap context for undo/redo and motor properties.
-- `.github/planning/phase-2-plan.md` – phase 2 follow-through and future work items that depend on this ADR.
+- **REF-001**: Undo/redo infrastructure and commands in `src/CurveEditor/Services/UndoStack.cs` and related command classes.
+- **REF-002**: Motor, drive, voltage, and curve models in `src/CurveEditor/Models`.
+- **REF-003**: View-model integration and editor buffers in `src/CurveEditor/ViewModels/MainWindowViewModel.cs` and related view models.
+- **REF-004**: Roadmap and phase plan: `.github/planning/04-mvp-roadmap.md` (section 1.8) and `.github/planning/phase-2-plan.md`.
+- **REF-005**: Superseded ADRs `adr-000X-voltage-property-undo-design.md` and `adr-000Y-undo-redo-general-pattern.md` (now consolidated into this document).

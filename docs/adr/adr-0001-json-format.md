@@ -1,16 +1,15 @@
----
-title: "ADR-0001: Motor JSON File Format"
-status: "Proposed"
+title: "ADR-0001: Motor JSON File Format (v1)"
+status: "Superseded"
 date: "2025-12-09"
 authors: "jordanrobot (Curve Editor maintainer)"
 tags: ["architecture", "persistence", "json", "schema"]
 supersedes: ""
-superseded_by: ""
+superseded_by: "ADR-0006"
 ---
 
 ## Status
 
-Proposed
+Superseded by ADR-0006 (Motor File Schema & Versioning Strategy).
 
 ## Context
 

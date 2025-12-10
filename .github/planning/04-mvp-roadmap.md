@@ -2,8 +2,13 @@
 
 **Related ADRs**
 
-- ADR-0003 Motor Property Undo Design (`.github/adr/adr-0003-motor-property-undo-design.md`)
-- ADR-000X Voltage Property Undo Design (`.github/adr/adr-000X-voltage-property-undo-design.md`)
+- ADR-0003 Generalized Undo/Redo Command Pattern (`../../docs/adr/adr-0003-motor-property-undo-design.md`)
+- ADR-0004 Layout and Panel Persistence Strategy (`../../docs/adr/adr-0004-layout-and-panel-persistence.md`)
+- ADR-0005 Keyboard Shortcuts and Input Routing Policy (`../../docs/adr/adr-0005-keyboard-shortcuts-and-input-routing.md`)
+- ADR-0006 Motor File Schema and Versioning Strategy (`../../docs/adr/adr-0006-motor-file-schema-and-versioning.md`)
+- ADR-0007 Status Bar, Validation, and User Feedback Conventions (`../../docs/adr/adr-0007-status-bar-and-validation-feedback.md`)
+- ADR-0008 Selection and Editing Coordination Between Chart and Grid (`../../docs/adr/adr-0008-selection-and-editing-coordination.md`)
+- ADR-0009 Logging and Error Handling Policy (`../../docs/adr/adr-0009-logging-and-error-handling-policy.md`)
 
 ## Technology Stack Decision
 
@@ -114,6 +119,8 @@ Phase 8: Power Curve Overlay (Future)
 - [x] Log file location in user's AppData folder
 - [x] Include context (file path, operation) in log entries
 
+See ADR-0009 (`../../docs/adr/adr-0009-logging-and-error-handling-policy.md`) for the logging and error handling policy.
+
 ### 1.8 Undo/Redo Infrastructure
 - [x] Implement IUndoableCommand interface
 - [x] Create UndoStack service for managing per-document edit history and exposing CanUndo/CanRedo and UndoDepth
@@ -124,15 +131,11 @@ Phase 8: Power Curve Overlay (Future)
 - [x] Wire Ctrl+Z / Ctrl+Y keyboard shortcuts
 - [x] Integrate undo/redo with dirty state tracking, including a clean checkpoint tied to saves so undoing back to the saved state clears the dirty flag
 
-See ADR-0003 (`.github/adr/adr-0003-motor-property-undo-design.md`) for the architectural decision and migration plan for bringing motor-level text properties under the undo/redo system via a dedicated command-driven editing path.
-
-See ADR-000X (`.github/adr/adr-000X-voltage-property-undo-design.md`) for the analogous design applied to drive/voltage properties, including the use of editor buffers, `EditVoltagePropertyCommand`, and LostFocus-based commit methods so that selected-voltage fields (scalars and series-related) participate in the same global undo/redo history.
+See ADR-0003 (`../../docs/adr/adr-0003-motor-property-undo-design.md`) for the generalized undo/redo command pattern applied across motor, drive, voltage, chart, and curve data edits.
 
 **Note on Motor, Drive, and Voltage Properties:**
 
-Motor-level text properties (e.g., Motor Name, Manufacturer, Part Number) are wired through explicit view-model edit methods and `EditMotorPropertyCommand` instances that store old and new values up front. The motor text boxes bind to simple editor properties (e.g., `MotorNameEditor`) and commit changes via these methods on focus loss, with `TextBox`-local undo disabled. Ctrl+Z / Ctrl+Y are handled at the window level and operate on the shared per-document `UndoStack`, so motor property edits participate in the same undo/redo history as chart and grid edits. See ADR-0003 (`.github/adr/adr-0003-motor-property-undo-design.md`) for the finalized design and rationale.
-
-Drive and selected-voltage properties (scalars and series-related) follow the same pattern using `EditDrivePropertyCommand` and `EditVoltagePropertyCommand`, plus editor buffers such as `DriveNameEditor`, `VoltagePowerEditor`, and `VoltagePeakTorqueEditor`. TextBoxes bind to these editor properties with `IsUndoEnabled = false` and commit on LostFocus via view-model methods (e.g., `EditDriveName`, `EditSelectedVoltagePower`) that push commands onto the shared `UndoStack`. See ADR-000X (`.github/adr/adr-000X-voltage-property-undo-design.md`) for details.
+Motor-level text properties (e.g., Motor Name, Manufacturer, Part Number) are wired through explicit view-model edit methods and `EditMotorPropertyCommand` instances that store old and new values up front. The motor text boxes bind to simple editor properties (e.g., `MotorNameEditor`) and commit changes via these methods on focus loss, with `TextBox`-local undo disabled. Ctrl+Z / Ctrl+Y are handled at the window level and operate on the shared per-document `UndoStack`, so motor property edits participate in the same undo/redo history as chart and grid edits. Drive and selected-voltage properties (scalars and series-related) follow the same pattern using `EditDrivePropertyCommand` and `EditVoltagePropertyCommand`, plus editor buffers such as `DriveNameEditor`, `VoltagePowerEditor`, and `VoltagePeakTorqueEditor`. TextBoxes bind to these editor properties with `IsUndoEnabled = false` and commit on LostFocus via view-model methods (e.g., `EditDriveName`, `EditSelectedVoltagePower`) that push commands onto the shared `UndoStack`. See ADR-0003 (`../../docs/adr/adr-0003-motor-property-undo-design.md`) for the finalized design and rationale.
 
 On undo/redo, the main view model calls back into a central refresh method (e.g., `RefreshMotorEditorsFromCurrentMotor`) and then refreshes the chart and data table so that all property textboxes, the chart axes, and the grid stay synchronized with the current undo state.
 
@@ -203,7 +206,7 @@ These refinements should be evaluated against the current codebase when planning
 - [X] Bind properties to MotorDefinition model
 - [X] Enable editing of all fields
 
-Note: Motor text property edits (e.g., name, manufacturer, part number) are routed through explicit view-model edit methods and undoable commands as described in ADR-0003 (`.github/adr/adr-0003-motor-property-undo-design.md`).
+Note: Motor text property edits (e.g., name, manufacturer, part number) are routed through explicit view-model edit methods and undoable commands as described in ADR-0003 (`../../docs/adr/adr-0003-motor-property-undo-design.md`).
 
 ### 2.7 Curve Data Panel
 - [X] Create CurveDataPanel component
@@ -211,6 +214,8 @@ Note: Motor text property edits (e.g., name, manufacturer, part number) are rout
 - [X] Bind grid to curve data
 - [X] Enable editing in grid cells
 - [X] RPM values displayed rounded to whole numbers
+
+See ADR-0008 (`../../docs/adr/adr-0008-selection-and-editing-coordination.md`) for the selection and editing coordination strategy between chart and grid.
 
 ### 2.8 Two-Way Binding
 - [X] Chart updates when grid values change
@@ -233,6 +238,8 @@ Note: Motor text property edits (e.g., name, manufacturer, part number) are rout
 ### 3.0 Update JSON schema
 - [X] Use new schema file provided by user for JSON schema for motor files
 - [X] Refactor existing JSON serialization/deserialization to match new schema
+
+See ADR-0006 (`../../docs/adr/adr-0006-motor-file-schema-and-versioning.md`) for the motor file schema and versioning strategy.
 - [ ] present options for consolidating series data within drive&voltage sections. This is to group series torque values together so that veiwing and editing raw json files is much easier. 
 - [ ] If the user chooses to adjust series data format within the json schema, implement this change.
 
@@ -318,6 +325,8 @@ Note: Motor text property edits (e.g., name, manufacturer, part number) are rout
 - [ ] Use origin information to avoid selection feedback loops between chart and table
 - [ ] Keep selection semantics (replace, extend, toggle) consistent between chart and table
 
+See ADR-0008 (`../../docs/adr/adr-0008-selection-and-editing-coordination.md`) for the detailed selection coordination design.
+
 **Deliverable:** Fully functional MVP with EQ-style editing and image overlay.
 
 ---
@@ -337,6 +346,12 @@ Note: Motor text property edits (e.g., name, manufacturer, part number) are rout
 - [X] Implement keyboard shortcuts
 - [X] Add status bar
 - [X] Add application icon
+
+See ADR-0004 (`../../docs/adr/adr-0004-layout-and-panel-persistence.md`) for the layout and panel persistence strategy used by the browser, properties, and curve data panels.
+
+See ADR-0005 (`../../docs/adr/adr-0005-keyboard-shortcuts-and-input-routing.md`) for the keyboard shortcuts and input routing policy.
+
+See ADR-0007 (`../../docs/adr/adr-0007-status-bar-and-validation-feedback.md`) for the status bar, validation, and user feedback conventions.
 
 ### 5.3 Unsaved Changes Handling
 - [ ] Prompt to save on close
