@@ -1,5 +1,6 @@
 using System;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using CurveEditor.ViewModels;
 
@@ -13,6 +14,19 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+    }
+
+    /// <summary>
+    /// Handles double-tap on file list to open the selected file.
+    /// </summary>
+    private void OnFileListDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel viewModel && 
+            viewModel.DirectoryBrowserViewModel.SelectedFile is not null)
+        {
+            viewModel.DirectoryBrowserViewModel.OpenFileCommand.Execute(
+                viewModel.DirectoryBrowserViewModel.SelectedFile);
+        }
     }
 
     /// <summary>

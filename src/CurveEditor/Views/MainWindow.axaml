@@ -130,23 +130,51 @@
         <!-- Main Content Area with resizable panels -->
         <Grid ColumnDefinitions="200,4,*,4,280">
             
-            <!-- Left: Directory Browser (placeholder) -->
+            <!-- Left: Directory Browser -->
             <Border Grid.Column="0" 
                     BorderBrush="{DynamicResource SystemControlBackgroundBaseMediumBrush}"
                     BorderThickness="0,0,1,0"
                     Padding="8">
-                <StackPanel>
-                    <TextBlock Text="Directory Browser" 
+                <Grid RowDefinitions="Auto,Auto,*,Auto">
+                    <!-- Title -->
+                    <TextBlock Grid.Row="0"
+                               Text="Directory Browser" 
                                FontWeight="Bold" 
                                Margin="0,0,0,8"/>
-                    <TextBlock Text="(Coming Soon)" 
+                    
+                    <!-- Current Directory Path -->
+                    <TextBlock Grid.Row="1"
+                               Text="{Binding DirectoryBrowserViewModel.CurrentDirectory, TargetNullValue='No folder selected'}"
+                               FontSize="10"
                                Foreground="Gray"
-                               FontStyle="Italic"/>
-                    <Button Content="Open Folder..." 
-                            Margin="0,8,0,0"
-                            HorizontalAlignment="Stretch"
-                            IsEnabled="False"/>
-                </StackPanel>
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,8"
+                               ToolTip.Tip="{Binding DirectoryBrowserViewModel.CurrentDirectory}"/>
+                    
+                    <!-- File List -->
+                    <ListBox Grid.Row="2"
+                             ItemsSource="{Binding DirectoryBrowserViewModel.Files}"
+                             SelectedItem="{Binding DirectoryBrowserViewModel.SelectedFile}"
+                             Margin="0,0,0,8"
+                             DoubleTapped="OnFileListDoubleTapped">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding FileName}" 
+                                           ToolTip.Tip="{Binding FullPath}"/>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    
+                    <!-- Action Buttons -->
+                    <StackPanel Grid.Row="3" Spacing="4">
+                        <Button Content="Open Folder..." 
+                                Command="{Binding DirectoryBrowserViewModel.OpenFolderCommand}"
+                                HorizontalAlignment="Stretch"/>
+                        <Button Content="Refresh" 
+                                Command="{Binding DirectoryBrowserViewModel.RefreshCommand}"
+                                HorizontalAlignment="Stretch"/>
+                    </StackPanel>
+                </Grid>
             </Border>
             
             <!-- Left GridSplitter -->
