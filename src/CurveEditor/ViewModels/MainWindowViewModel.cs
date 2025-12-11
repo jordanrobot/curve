@@ -77,6 +77,12 @@ public partial class MainWindowViewModel : ViewModelBase
     private CurveDataTableViewModel _curveDataTableViewModel = new();
 
     /// <summary>
+    /// ViewModel for the directory browser.
+    /// </summary>
+    [ObservableProperty]
+    private DirectoryBrowserViewModel _directoryBrowserViewModel = new();
+
+    /// <summary>
     /// Whether the units section is expanded.
     /// </summary>
     [ObservableProperty]
@@ -163,6 +169,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _validationService = new ValidationService();
         ChartViewModel.DataChanged += OnChartDataChanged;
         CurveDataTableViewModel.DataChanged += OnDataTableDataChanged;
+        DirectoryBrowserViewModel.FileSelected += OnDirectoryBrowserFileSelected;
     }
 
     public MainWindowViewModel(IFileService fileService, ICurveGeneratorService curveGeneratorService)
@@ -291,6 +298,60 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         MarkDirty();
         ChartViewModel.RefreshChart();
+    }
+
+    private async void OnDirectoryBrowserFileSelected(object? sender, string filePath)
+    {
+        Log.Information("File selected from directory browser: {FilePath}", filePath);
+
+        // Check if current file is dirty and prompt user
+        if (IsDirty)
+        {
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                var dialog = new Views.MessageDialog
+                {
+                    Title = "Unsaved Changes",
+                    Message = "You have unsaved changes. Would you like to save them before opening another file?",
+                    ShowCancelButton = true,
+                    OkButtonText = "Save",
+                    CancelButtonText = "Ignore"
+                };
+                await dialog.ShowDialog(desktop.MainWindow!);
+
+                if (dialog.Result == true)
+                {
+                    // User wants to save
+                    await SaveAsync();
+                    if (IsDirty)
+                    {
+                        // Save was cancelled or failed
+                        StatusMessage = "File open cancelled.";
+                        return;
+                    }
+                }
+                else if (dialog.Result is null)
+                {
+                    // User closed dialog without choosing
+                    StatusMessage = "File open cancelled.";
+                    return;
+                }
+                // If dialog.Result == false, user chose "Ignore", continue with opening file
+            }
+        }
+
+        try
+        {
+            CurrentMotor = await _fileService.LoadAsync(filePath);
+            IsDirty = _fileService.IsDirty;
+            StatusMessage = $"Loaded: {Path.GetFileName(filePath)}";
+            OnPropertyChanged(nameof(WindowTitle));
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to open file from directory browser: {FilePath}", filePath);
+            StatusMessage = $"Error: {ex.Message}";
+        }
     }
 
     [RelayCommand]
