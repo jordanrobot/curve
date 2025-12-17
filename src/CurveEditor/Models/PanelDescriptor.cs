@@ -12,9 +12,14 @@ public class PanelDescriptor
     public required string PanelId { get; init; }
 
     /// <summary>
-    /// Display name shown in panel headers and the Panel Bar.
+    /// Display name shown in panel headers.
     /// </summary>
     public required string DisplayName { get; init; }
+
+    /// <summary>
+    /// Text label shown in the Panel Bar (Phase 3.0 uses text labels).
+    /// </summary>
+    public required string PanelBarLabel { get; init; }
 
     /// <summary>
     /// Whether this panel should appear as an icon in the Panel Bar.

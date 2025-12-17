@@ -28,7 +28,8 @@ public static class PanelRegistry
         new PanelDescriptor
         {
             PanelId = PanelIds.DirectoryBrowser,
-            DisplayName = "Browser",
+            DisplayName = "Directory Browser",
+            PanelBarLabel = "Browser",
             EnableIcon = true,
             EnableCollapse = true,
             Zone = PanelZone.Left,
@@ -38,7 +39,8 @@ public static class PanelRegistry
         new PanelDescriptor
         {
             PanelId = PanelIds.CurveData,
-            DisplayName = "Data",
+            DisplayName = "Curve Data",
+            PanelBarLabel = "Data",
             EnableIcon = true,
             EnableCollapse = true,
             Zone = PanelZone.Left,
@@ -48,7 +50,8 @@ public static class PanelRegistry
         new PanelDescriptor
         {
             PanelId = PanelIds.MotorProperties,
-            DisplayName = "Properties",
+            DisplayName = "Motor Properties",
+            PanelBarLabel = "Properties",
             EnableIcon = true,
             EnableCollapse = true,
             Zone = PanelZone.Right,
@@ -59,6 +62,7 @@ public static class PanelRegistry
         {
             PanelId = PanelIds.CurveGraph,
             DisplayName = "Curve Graph",
+            PanelBarLabel = "",
             EnableIcon = false,
             EnableCollapse = false,
             Zone = PanelZone.Center,

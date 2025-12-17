@@ -180,7 +180,7 @@
                         BorderThickness="0,0,1,0"
                         Padding="8">
                     <StackPanel>
-                        <TextBlock Text="Browser" 
+                        <TextBlock Text="Directory Browser" 
                                    Classes="PanelHeader"/>
                         <TextBlock Text="(Coming Soon)" 
                                    Foreground="Gray"
@@ -199,13 +199,14 @@
                         BorderThickness="0,0,1,0"
                         Padding="8"
                         IsEnabled="{Binding CurrentMotor, Converter={x:Static ObjectConverters.IsNotNull}}">
-                    <StackPanel>
-                        <TextBlock Text="Data" 
+                    <Grid RowDefinitions="Auto,*">
+                        <TextBlock Grid.Row="0"
+                                   Text="Curve Data" 
                                    Classes="PanelHeader"/>
-                        <ScrollViewer MaxHeight="600">
+                        <ScrollViewer Grid.Row="1">
                             <views:CurveDataPanel DataContext="{Binding}"/>
                         </ScrollViewer>
-                    </StackPanel>
+                    </Grid>
                 </Border>
             </Grid>
             
