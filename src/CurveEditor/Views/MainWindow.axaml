@@ -150,8 +150,17 @@
             </Grid>
         </Border>
 
-        <!-- Main Content Area with resizable panels -->
-        <Grid x:Name="MainLayoutGrid" ColumnDefinitions="200,4,*,4,280">
+        <!-- Main Content Area with Panel Bar and resizable panels -->
+        <Grid x:Name="RootLayoutGrid" ColumnDefinitions="Auto,*">
+            
+            <!-- Panel Bar (left side by default) -->
+            <views:PanelBar Grid.Column="0" 
+                            x:Name="PanelBarControl"/>
+            
+            <!-- Main Layout Grid with all panels -->
+            <Grid x:Name="MainLayoutGrid" 
+                  Grid.Column="1"
+                  ColumnDefinitions="200,4,*,4,280">
             
             <!-- Left: Directory Browser (placeholder) -->
             <Border Grid.Column="0" 
@@ -724,6 +733,8 @@
                 </ScrollViewer>
             </Border>
         </Grid>
+        
+        </Grid> <!-- Close RootLayoutGrid -->
     </DockPanel>
 
 </Window>

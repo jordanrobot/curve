@@ -94,21 +94,39 @@ public partial class MainWindowViewModel : ViewModelBase
 
     /// <summary>
     /// Whether the curve data panel is expanded.
+    /// Derived from ActivePanelBarPanelId for backward compatibility.
     /// </summary>
-    [ObservableProperty]
-    private bool _isCurveDataExpanded;
+    public bool IsCurveDataExpanded => 
+        ActivePanelBarPanelId == PanelRegistry.PanelIds.CurveData;
 
     /// <summary>
     /// Whether the directory browser panel is expanded.
+    /// Derived from ActivePanelBarPanelId for backward compatibility.
     /// </summary>
-    [ObservableProperty]
-    private bool _isBrowserPanelExpanded = true;
+    public bool IsBrowserPanelExpanded => 
+        ActivePanelBarPanelId == PanelRegistry.PanelIds.DirectoryBrowser;
 
     /// <summary>
     /// Whether the properties panel is expanded.
+    /// Derived from ActivePanelBarPanelId for backward compatibility.
+    /// </summary>
+    public bool IsPropertiesPanelExpanded => 
+        ActivePanelBarPanelId == PanelRegistry.PanelIds.MotorProperties;
+
+    /// <summary>
+    /// The ID of the currently active panel in the Panel Bar, or null if all are collapsed.
     /// </summary>
     [ObservableProperty]
-    private bool _isPropertiesPanelExpanded = true;
+    [NotifyPropertyChangedFor(nameof(IsBrowserPanelExpanded))]
+    [NotifyPropertyChangedFor(nameof(IsPropertiesPanelExpanded))]
+    [NotifyPropertyChangedFor(nameof(IsCurveDataExpanded))]
+    private string? _activePanelBarPanelId;
+
+    /// <summary>
+    /// Which side of the window the Panel Bar is docked to.
+    /// </summary>
+    [ObservableProperty]
+    private PanelBarDockSide _panelBarDockSide = PanelBarDockSide.Left;
 
     /// <summary>
     /// Toggles the browser panel visibility.
@@ -116,7 +134,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private void ToggleBrowserPanel()
     {
-        IsBrowserPanelExpanded = !IsBrowserPanelExpanded;
+        TogglePanel(PanelRegistry.PanelIds.DirectoryBrowser);
     }
 
     /// <summary>
@@ -125,7 +143,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private void TogglePropertiesPanel()
     {
-        IsPropertiesPanelExpanded = !IsPropertiesPanelExpanded;
+        TogglePanel(PanelRegistry.PanelIds.MotorProperties);
     }
 
     /// <summary>
@@ -134,7 +152,24 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private void ToggleCurveDataPanel()
     {
-        IsCurveDataExpanded = !IsCurveDataExpanded;
+        TogglePanel(PanelRegistry.PanelIds.CurveData);
+    }
+
+    /// <summary>
+    /// Toggles a panel by its ID, implementing Panel Bar exclusivity.
+    /// </summary>
+    public void TogglePanel(string panelId)
+    {
+        if (ActivePanelBarPanelId == panelId)
+        {
+            // Clicking the active panel collapses it
+            ActivePanelBarPanelId = null;
+        }
+        else
+        {
+            // Clicking an inactive panel activates it (and collapses others)
+            ActivePanelBarPanelId = panelId;
+        }
     }
 
     // Motor text editor buffers used to drive command-based edits.

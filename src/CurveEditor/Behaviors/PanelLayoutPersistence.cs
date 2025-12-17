@@ -2,6 +2,8 @@ using System;
 using System.IO;
 using System.Text.Json;
 using Avalonia.Controls;
+using CurveEditor.Models;
+using Serilog;
 
 namespace CurveEditor.Behaviors;
 
@@ -18,6 +20,8 @@ public static class PanelLayoutPersistence
         public double? Width { get; set; }
         public double? Height { get; set; }
         public bool? IsExpanded { get; set; }
+        public string? StringValue { get; set; }
+        public string? Zone { get; set; }
     }
 
     /// <summary>
@@ -238,5 +242,111 @@ public static class PanelLayoutPersistence
             .Replace(Path.AltDirectorySeparatorChar, '_');
 
         return Path.Combine(GetSettingsDirectory(), $"layout-{safeKey}.json");
+    }
+
+    /// <summary>
+    /// Load a string value from settings (e.g., ActivePanelBarPanelId, PanelBarDockSide).
+    /// </summary>
+    public static string? LoadString(string settingsKey)
+    {
+        try
+        {
+            var settings = Load(settingsKey);
+            return settings?.StringValue;
+        }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "Failed to load string setting {SettingsKey}, using default", settingsKey);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Save a string value to settings.
+    /// </summary>
+    public static void SaveString(string settingsKey, string? value)
+    {
+        try
+        {
+            Save(settingsKey, s => s.StringValue = value);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to save string setting {SettingsKey}", settingsKey);
+        }
+    }
+
+    /// <summary>
+    /// Load a PanelZone enum value from settings.
+    /// </summary>
+    public static PanelZone? LoadZone(string settingsKey)
+    {
+        try
+        {
+            var settings = Load(settingsKey);
+            if (settings?.Zone is string zoneStr && 
+                Enum.TryParse<PanelZone>(zoneStr, out var zone))
+            {
+                return zone;
+            }
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "Failed to load zone setting {SettingsKey}, using default", settingsKey);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Save a PanelZone enum value to settings.
+    /// </summary>
+    public static void SaveZone(string settingsKey, PanelZone zone)
+    {
+        try
+        {
+            Save(settingsKey, s => s.Zone = zone.ToString());
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to save zone setting {SettingsKey}", settingsKey);
+        }
+    }
+
+    /// <summary>
+    /// Load a PanelBarDockSide enum value from settings.
+    /// </summary>
+    public static PanelBarDockSide? LoadDockSide(string settingsKey)
+    {
+        try
+        {
+            var settings = Load(settingsKey);
+            if (settings?.StringValue is string dockStr && 
+                Enum.TryParse<PanelBarDockSide>(dockStr, out var dockSide))
+            {
+                return dockSide;
+            }
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "Failed to load dock side setting {SettingsKey}, using default", settingsKey);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Save a PanelBarDockSide enum value to settings.
+    /// </summary>
+    public static void SaveDockSide(string settingsKey, PanelBarDockSide dockSide)
+    {
+        try
+        {
+            Save(settingsKey, s => s.StringValue = dockSide.ToString());
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to save dock side setting {SettingsKey}", settingsKey);
+        }
     }
 }

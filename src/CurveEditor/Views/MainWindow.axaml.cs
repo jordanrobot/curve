@@ -2,6 +2,7 @@ using System;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using CurveEditor.Behaviors;
+using CurveEditor.Models;
 using CurveEditor.ViewModels;
 
 namespace CurveEditor.Views;
@@ -30,10 +31,32 @@ public partial class MainWindow : Window
 
         var mainGrid = this.FindControl<Grid>("MainLayoutGrid");
         var centerGrid = this.FindControl<Grid>("CenterGrid");
+        var panelBar = this.FindControl<PanelBar>("PanelBarControl");
 
         if (mainGrid is null || centerGrid is null || DataContext is not MainWindowViewModel viewModel)
         {
             return;
+        }
+
+        // Wire up PanelBar to ViewModel
+        if (panelBar is not null)
+        {
+            panelBar.PanelClicked += (_, panelId) =>
+            {
+                viewModel.TogglePanel(panelId);
+            };
+
+            // Update PanelBar when active panel changes
+            viewModel.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(MainWindowViewModel.ActivePanelBarPanelId))
+                {
+                    panelBar.ActivePanelId = viewModel.ActivePanelBarPanelId;
+                }
+            };
+
+            // Set initial state
+            panelBar.ActivePanelId = viewModel.ActivePanelBarPanelId;
         }
 
         // Left browser panel (column 0)
@@ -50,26 +73,26 @@ public partial class MainWindow : Window
             "MainWindow.CurveDataPanel",
             () => viewModel.IsCurveDataExpanded);
 
-        // Browser panel expanded/collapsed state
-        PanelLayoutPersistence.AttachBoolean(
-            this,
-            () => viewModel.IsBrowserPanelExpanded,
-            value => viewModel.IsBrowserPanelExpanded = value,
-            "MainWindow.BrowserPanel");
+        // Attach persistence for ActivePanelBarPanelId
+        var activePanelId = PanelLayoutPersistence.LoadString("MainWindow.ActivePanelBarPanelId");
+        if (activePanelId is not null && PanelRegistry.GetById(activePanelId) is not null)
+        {
+            viewModel.ActivePanelBarPanelId = activePanelId;
+        }
 
-        // Properties panel expanded/collapsed state
-        PanelLayoutPersistence.AttachBoolean(
-            this,
-            () => viewModel.IsPropertiesPanelExpanded,
-            value => viewModel.IsPropertiesPanelExpanded = value,
-            "MainWindow.PropertiesPanel");
+        // Attach persistence for PanelBarDockSide
+        var dockSide = PanelLayoutPersistence.LoadDockSide("MainWindow.PanelBarDockSide");
+        if (dockSide.HasValue)
+        {
+            viewModel.PanelBarDockSide = dockSide.Value;
+        }
 
-        // Curve data panel expanded/collapsed state
-        PanelLayoutPersistence.AttachBoolean(
-            this,
-            () => viewModel.IsCurveDataExpanded,
-            value => viewModel.IsCurveDataExpanded = value,
-            "MainWindow.CurveDataPanel");
+        // Save panel state on window closing
+        Closing += (_, _) =>
+        {
+            PanelLayoutPersistence.SaveString("MainWindow.ActivePanelBarPanelId", viewModel.ActivePanelBarPanelId);
+            PanelLayoutPersistence.SaveDockSide("MainWindow.PanelBarDockSide", viewModel.PanelBarDockSide);
+        };
 
         // Capture initial sizes (after any persisted values are restored)
         _browserColumnWidth = mainGrid.ColumnDefinitions[0].Width.Value;
