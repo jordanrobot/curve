@@ -229,19 +229,32 @@ See ADR-0008 (`../../docs/adr/adr-0008-selection-and-editing-coordination.md`) f
 - [X] Show validation errors in UI
 - [X] Prevent saving invalid data
 
-**Deliverable:** Application with working multi-series chart, series visibility toggles, and editable data grid.
-
----
-
-## Phase 3: File Management
-
-### 3.0 Update JSON schema
+### 2.10 Update JSON schema
 - [X] Use new schema file provided by user for JSON schema for motor files
 - [X] Refactor existing JSON serialization/deserialization to match new schema
 
 See ADR-0006 (`../../docs/adr/adr-0006-motor-file-schema-and-versioning.md`) for the motor file schema and versioning strategy.
 - [ ] present options for consolidating series data within drive&voltage sections. This is to group series torque values together so that veiwing and editing raw json files is much easier. 
 - [ ] If the user chooses to adjust series data format within the json schema, implement this change.
+
+**Deliverable:** Application with working multi-series chart, series visibility toggles, and editable data grid.
+
+---
+
+## Phase 3: File Management
+
+
+### 3.0 Generic Panel Expand/Collapse
+- [ ] Implement generic expand/collapse mechanism for existing panels. Use relevant ADRs as reference, but do not be constrained by these ADRs as this functionality is not yet implemented. If we need to adjust ADRs to better fit the implementation, we can do so, please just let me know.
+  - [ ] Implement new panel system to meet the functional requirements detailed in `Phase 3.0 Functional Requirements: Generic Panel Expand/Collapse` in `.github/planning/phase-3-0-requirements.md`
+  - [ ] Add vertical bar with panel icons to control expansion/collapse
+  - [ ] Convert existing panels to use the new expand/collapse mechanism, but convert the panels one-at-a-time to ensure stability. Order:
+  - [ ] Directory Browser (empty panel, contents will be be implemented in Phase 3.1)
+  - [ ] Motor Properties
+  - [ ] Curve Data
+  - [ ] Curve Graph
+  - Note: after each conversion, we will do a full round of UI/Ux testing to ensure nothing is broken.
+
 
 ### 3.1 Directory Browser (VS Code-style)
 - [ ] Create side pane for directory browsing
