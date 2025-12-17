@@ -11,12 +11,10 @@ public partial class MainWindow : Window
 {
     private const double MaxSpeedChangeTolerance = 0.1;
     private double _previousMaxSpeed;
-    private double _browserColumnWidth;
+    private double _leftColumnWidth;
     private double _propertiesColumnWidth;
-    private double _curveDataRowHeight;
-    private bool _browserPanelExpanded;
+    private bool _leftPanelExpanded;
     private bool _propertiesPanelExpanded;
-    private bool _curveDataPanelExpanded;
 
     public MainWindow()
     {
@@ -46,38 +44,49 @@ public partial class MainWindow : Window
                 viewModel.TogglePanel(panelId);
             };
 
-            // Update PanelBar when active panel changes
+            // Update PanelBar when active panel changes in either zone
             viewModel.PropertyChanged += (_, args) =>
             {
-                if (args.PropertyName == nameof(MainWindowViewModel.ActivePanelBarPanelId))
+                if (args.PropertyName == nameof(MainWindowViewModel.ActivePanelBarPanelId) ||
+                    args.PropertyName == nameof(MainWindowViewModel.ActiveLeftPanelId))
                 {
-                    panelBar.ActivePanelId = viewModel.ActivePanelBarPanelId;
+                    // Update active panel ID for visual highlighting
+                    // PanelBar needs to know about both zones
+                    var activeId = viewModel.ActivePanelBarPanelId ?? viewModel.ActiveLeftPanelId;
+                    panelBar.ActivePanelId = activeId;
                 }
             };
 
             // Set initial state
-            panelBar.ActivePanelId = viewModel.ActivePanelBarPanelId;
+            var initialActiveId = viewModel.ActivePanelBarPanelId ?? viewModel.ActiveLeftPanelId;
+            panelBar.ActivePanelId = initialActiveId;
         }
 
-        // Left browser panel (column 0)
-        PanelLayoutPersistence.AttachColumn(this, mainGrid, 0, "MainWindow.BrowserPanel");
+        // Left zone panel (column 0)
+        PanelLayoutPersistence.AttachColumn(this, mainGrid, 0, "MainWindow.LeftPanel");
 
         // Right properties panel (column 4)
         PanelLayoutPersistence.AttachColumn(this, mainGrid, 4, "MainWindow.PropertiesPanel");
 
-        // Curve data panel row (row 2 inside center grid)
-        PanelLayoutPersistence.AttachRow(
-            this,
-            centerGrid,
-            2,
-            "MainWindow.CurveDataPanel",
-            () => viewModel.IsCurveDataExpanded);
-
-        // Attach persistence for ActivePanelBarPanelId
-        var activePanelId = PanelLayoutPersistence.LoadString("MainWindow.ActivePanelBarPanelId");
-        if (activePanelId is not null && PanelRegistry.GetById(activePanelId) is not null)
+        // Load persisted state for both zones
+        var activeRightPanelId = PanelLayoutPersistence.LoadString("MainWindow.ActivePanelBarPanelId");
+        if (activeRightPanelId is not null && PanelRegistry.GetById(activeRightPanelId) is not null)
         {
-            viewModel.ActivePanelBarPanelId = activePanelId;
+            var descriptor = PanelRegistry.GetById(activeRightPanelId);
+            if (descriptor?.Zone == PanelZone.Right)
+            {
+                viewModel.ActivePanelBarPanelId = activeRightPanelId;
+            }
+        }
+
+        var activeLeftPanelId = PanelLayoutPersistence.LoadString("MainWindow.ActiveLeftPanelId");
+        if (activeLeftPanelId is not null && PanelRegistry.GetById(activeLeftPanelId) is not null)
+        {
+            var descriptor = PanelRegistry.GetById(activeLeftPanelId);
+            if (descriptor?.Zone == PanelZone.Left)
+            {
+                viewModel.ActiveLeftPanelId = activeLeftPanelId;
+            }
         }
 
         // Attach persistence for PanelBarDockSide
@@ -91,75 +100,69 @@ public partial class MainWindow : Window
         Closing += (_, _) =>
         {
             PanelLayoutPersistence.SaveString("MainWindow.ActivePanelBarPanelId", viewModel.ActivePanelBarPanelId);
+            PanelLayoutPersistence.SaveString("MainWindow.ActiveLeftPanelId", viewModel.ActiveLeftPanelId);
             PanelLayoutPersistence.SaveDockSide("MainWindow.PanelBarDockSide", viewModel.PanelBarDockSide);
         };
 
         // Capture initial sizes (after any persisted values are restored)
-        _browserColumnWidth = mainGrid.ColumnDefinitions[0].Width.Value;
+        _leftColumnWidth = mainGrid.ColumnDefinitions[0].Width.Value;
         _propertiesColumnWidth = mainGrid.ColumnDefinitions[4].Width.Value;
-        _curveDataRowHeight = centerGrid.RowDefinitions[2].Height.Value;
 
-        _browserPanelExpanded = viewModel.IsBrowserPanelExpanded;
+        _leftPanelExpanded = viewModel.IsBrowserPanelExpanded || viewModel.IsCurveDataExpanded;
         _propertiesPanelExpanded = viewModel.IsPropertiesPanelExpanded;
-        _curveDataPanelExpanded = viewModel.IsCurveDataExpanded;
 
         // React to panel expanded/collapsed properties changing.
         viewModel.PropertyChanged += (_, args) =>
         {
-            if (args.PropertyName == nameof(MainWindowViewModel.IsBrowserPanelExpanded))
+            if (args.PropertyName == nameof(MainWindowViewModel.IsBrowserPanelExpanded) ||
+                args.PropertyName == nameof(MainWindowViewModel.IsCurveDataExpanded))
             {
-                ApplyBrowserPanelLayout(mainGrid, viewModel, _browserPanelExpanded);
-                _browserPanelExpanded = viewModel.IsBrowserPanelExpanded;
+                ApplyLeftPanelLayout(mainGrid, viewModel, _leftPanelExpanded);
+                _leftPanelExpanded = viewModel.IsBrowserPanelExpanded || viewModel.IsCurveDataExpanded;
             }
             else if (args.PropertyName == nameof(MainWindowViewModel.IsPropertiesPanelExpanded))
             {
                 ApplyPropertiesPanelLayout(mainGrid, viewModel, _propertiesPanelExpanded);
                 _propertiesPanelExpanded = viewModel.IsPropertiesPanelExpanded;
             }
-            else if (args.PropertyName == nameof(MainWindowViewModel.IsCurveDataExpanded))
-            {
-                ApplyCurveDataPanelLayout(centerGrid, viewModel, _curveDataPanelExpanded);
-                _curveDataPanelExpanded = viewModel.IsCurveDataExpanded;
-            }
         };
 
         // Apply initial layouts based on current expanded/collapsed state.
-        ApplyBrowserPanelLayout(mainGrid, viewModel, _browserPanelExpanded);
+        ApplyLeftPanelLayout(mainGrid, viewModel, _leftPanelExpanded);
         ApplyPropertiesPanelLayout(mainGrid, viewModel, _propertiesPanelExpanded);
-        ApplyCurveDataPanelLayout(centerGrid, viewModel, _curveDataPanelExpanded);
     }
 
-    private void ApplyBrowserPanelLayout(Grid mainGrid, MainWindowViewModel viewModel, bool wasExpanded)
+    private void ApplyLeftPanelLayout(Grid mainGrid, MainWindowViewModel viewModel, bool wasExpanded)
     {
-        var browserColumn = mainGrid.ColumnDefinitions[0];
+        var leftColumn = mainGrid.ColumnDefinitions[0];
         var splitterColumn = mainGrid.ColumnDefinitions[1];
 
-        var isExpanded = viewModel.IsBrowserPanelExpanded;
+        var isExpanded = viewModel.IsBrowserPanelExpanded || viewModel.IsCurveDataExpanded;
 
         if (isExpanded)
         {
-            if (_browserColumnWidth <= 0)
+            if (_leftColumnWidth <= 0)
             {
-                var current = browserColumn.ActualWidth > 0 ? browserColumn.ActualWidth : browserColumn.Width.Value;
-                _browserColumnWidth = current > 0 ? current : 200;
+                var current = leftColumn.ActualWidth > 0 ? leftColumn.ActualWidth : leftColumn.Width.Value;
+                _leftColumnWidth = current > 0 ? current : 200;
             }
 
-            browserColumn.Width = new GridLength(_browserColumnWidth, GridUnitType.Pixel);
+            leftColumn.Width = new GridLength(_leftColumnWidth, GridUnitType.Pixel);
             splitterColumn.Width = new GridLength(4, GridUnitType.Pixel);
         }
         else
         {
             if (wasExpanded)
             {
-                var current = browserColumn.ActualWidth > 0 ? browserColumn.ActualWidth : browserColumn.Width.Value;
+                var current = leftColumn.ActualWidth > 0 ? leftColumn.ActualWidth : leftColumn.Width.Value;
                 if (current > 0)
                 {
-                    _browserColumnWidth = current;
-                    PanelLayoutPersistence.UpdateColumnWidth("MainWindow.BrowserPanel", _browserColumnWidth);
+                    _leftColumnWidth = current;
+                    PanelLayoutPersistence.UpdateColumnWidth("MainWindow.LeftPanel", _leftColumnWidth);
                 }
             }
 
-            browserColumn.Width = new GridLength(0, GridUnitType.Pixel);
+            leftColumn.Width = new GridLength(0, GridUnitType.Pixel);
             splitterColumn.Width = new GridLength(0, GridUnitType.Pixel);
         }
     }
@@ -196,38 +199,6 @@ public partial class MainWindow : Window
 
             propertiesColumn.Width = new GridLength(0, GridUnitType.Pixel);
             splitterColumn.Width = new GridLength(0, GridUnitType.Pixel);
-        }
-    }
-
-    private void ApplyCurveDataPanelLayout(Grid centerGrid, MainWindowViewModel viewModel, bool wasExpanded)
-    {
-        var row = centerGrid.RowDefinitions[2];
-        var isExpanded = viewModel.IsCurveDataExpanded;
-
-        if (isExpanded)
-        {
-            if (_curveDataRowHeight <= 0)
-            {
-                var current = row.ActualHeight > 0 ? row.ActualHeight : row.Height.Value;
-                _curveDataRowHeight = current > 0 ? current : 200;
-            }
-
-            row.Height = new GridLength(_curveDataRowHeight, GridUnitType.Pixel);
-        }
-        else
-        {
-            if (wasExpanded)
-            {
-                var current = row.ActualHeight > 0 ? row.ActualHeight : row.Height.Value;
-                if (current > 0)
-                {
-                    _curveDataRowHeight = current;
-                    PanelLayoutPersistence.UpdateRowHeight("MainWindow.CurveDataPanel", _curveDataRowHeight);
-                }
-            }
-
-            // Let the row shrink to the header height when collapsed.
-            row.Height = GridLength.Auto;
         }
     }
 

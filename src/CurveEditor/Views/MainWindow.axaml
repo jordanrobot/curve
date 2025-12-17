@@ -171,33 +171,51 @@
                   Grid.Column="1"
                   ColumnDefinitions="200,4,*,4,280">
             
-            <!-- Left: Directory Browser (placeholder) -->
-            <Border Grid.Column="0" 
-                IsVisible="{Binding IsBrowserPanelExpanded}"
-                    BorderBrush="{DynamicResource SystemControlBackgroundBaseMediumBrush}"
-                    BorderThickness="0,0,1,0"
-                    Padding="8">
-                <StackPanel>
-                    <TextBlock Text="Directory Browser" 
-                               Classes="PanelHeader"/>
-                    <TextBlock Text="(Coming Soon)" 
-                               Foreground="Gray"
-                               FontStyle="Italic"/>
-                    <Button Content="Open Folder..." 
-                            Margin="0,8,0,0"
-                            HorizontalAlignment="Stretch"
-                            IsEnabled="False"/>
-                </StackPanel>
-            </Border>
+            <!-- Left Zone: Browser and Data panels -->
+            <Grid Grid.Column="0" RowDefinitions="*,*">
+                <!-- Browser Panel -->
+                <Border Grid.Row="0"
+                        IsVisible="{Binding IsBrowserPanelExpanded}"
+                        BorderBrush="{DynamicResource SystemControlBackgroundBaseMediumBrush}"
+                        BorderThickness="0,0,1,0"
+                        Padding="8">
+                    <StackPanel>
+                        <TextBlock Text="Browser" 
+                                   Classes="PanelHeader"/>
+                        <TextBlock Text="(Coming Soon)" 
+                                   Foreground="Gray"
+                                   FontStyle="Italic"/>
+                        <Button Content="Open Folder..." 
+                                Margin="0,8,0,0"
+                                HorizontalAlignment="Stretch"
+                                IsEnabled="False"/>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Data Panel -->
+                <Border Grid.Row="1"
+                        IsVisible="{Binding IsCurveDataExpanded}"
+                        BorderBrush="{DynamicResource SystemControlBackgroundBaseMediumBrush}"
+                        BorderThickness="0,0,1,0"
+                        Padding="8"
+                        IsEnabled="{Binding CurrentMotor, Converter={x:Static ObjectConverters.IsNotNull}}">
+                    <StackPanel>
+                        <TextBlock Text="Data" 
+                                   Classes="PanelHeader"/>
+                        <ScrollViewer MaxHeight="600">
+                            <views:CurveDataPanel DataContext="{Binding}"/>
+                        </ScrollViewer>
+                    </StackPanel>
+                </Border>
+            </Grid>
             
             <!-- Left GridSplitter -->
             <GridSplitter x:Name="LeftSplitter" Grid.Column="1" Width="4" ResizeDirection="Columns"/>
 
-            <!-- Center: Chart Area and Collapsible Data Panel -->
-            <Grid x:Name="CenterGrid" Grid.Column="2" RowDefinitions="*,Auto,Auto">
+            <!-- Center: Chart Area -->
+            <Grid x:Name="CenterGrid" Grid.Column="2">
                 <!-- Chart Area -->
-                <Border Grid.Row="0"
-                        Margin="4"
+                <Border Margin="4"
                         BorderBrush="{DynamicResource SystemControlBackgroundBaseMediumBrush}"
                         BorderThickness="1"
                         CornerRadius="4">
@@ -230,42 +248,6 @@
                         <!-- Chart when motor is loaded -->
                         <views:ChartView DataContext="{Binding ChartViewModel}"
                                          IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).CurrentMotor, Converter={x:Static ObjectConverters.IsNotNull}}"/>
-                    </Grid>
-                </Border>
-                
-                <!-- Vertical GridSplitter between chart and data table -->
-                <GridSplitter Grid.Row="1" 
-                              Height="4" 
-                              ResizeDirection="Rows"
-                              IsVisible="{Binding IsCurveDataExpanded}"/>
-                
-                <!-- Collapsible Curve Data Panel -->
-                <Border Grid.Row="2"
-                        Margin="4,0,4,4"
-                        BorderBrush="{DynamicResource SystemControlBackgroundBaseMediumBrush}"
-                        BorderThickness="1"
-                        CornerRadius="4"
-                        IsVisible="{Binding CurrentMotor, Converter={x:Static ObjectConverters.IsNotNull}}">
-                    <Grid RowDefinitions="Auto,Auto">
-                        <!-- Collapsible Header -->
-                        <ToggleButton Grid.Row="0" 
-                                      IsChecked="{Binding IsCurveDataExpanded}"
-                                      Classes="CollapsibleHeader">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="▶" FontSize="10" VerticalAlignment="Center"
-                                           IsVisible="{Binding !IsCurveDataExpanded}"/>
-                                <TextBlock Text="▼" FontSize="10" VerticalAlignment="Center"
-                                           IsVisible="{Binding IsCurveDataExpanded}"/>
-                                <TextBlock Text="Curve Data" FontWeight="Bold" FontSize="12"/>
-                            </StackPanel>
-                        </ToggleButton>
-                        
-                        <!-- Data Content - max height to take about half window -->
-                        <Border Grid.Row="1" 
-                                MaxHeight="300"
-                                IsVisible="{Binding IsCurveDataExpanded}">
-                            <views:CurveDataPanel DataContext="{Binding}"/>
-                        </Border>
                     </Grid>
                 </Border>
             </Grid>

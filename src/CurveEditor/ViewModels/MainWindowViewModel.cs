@@ -94,21 +94,21 @@ public partial class MainWindowViewModel : ViewModelBase
 
     /// <summary>
     /// Whether the curve data panel is expanded.
-    /// Derived from ActivePanelBarPanelId for backward compatibility.
+    /// Derived from ActiveLeftPanelId since Curve Data is in the left zone.
     /// </summary>
     public bool IsCurveDataExpanded => 
-        ActivePanelBarPanelId == PanelRegistry.PanelIds.CurveData;
+        ActiveLeftPanelId == PanelRegistry.PanelIds.CurveData;
 
     /// <summary>
     /// Whether the directory browser panel is expanded.
-    /// Derived from ActivePanelBarPanelId for backward compatibility.
+    /// Derived from ActiveLeftPanelId since Browser is in the left zone.
     /// </summary>
     public bool IsBrowserPanelExpanded => 
-        ActivePanelBarPanelId == PanelRegistry.PanelIds.DirectoryBrowser;
+        ActiveLeftPanelId == PanelRegistry.PanelIds.DirectoryBrowser;
 
     /// <summary>
     /// Whether the properties panel is expanded.
-    /// Derived from ActivePanelBarPanelId for backward compatibility.
+    /// Derived from ActivePanelBarPanelId since Properties is in the right zone.
     /// </summary>
     public bool IsPropertiesPanelExpanded => 
         ActivePanelBarPanelId == PanelRegistry.PanelIds.MotorProperties;
@@ -120,7 +120,15 @@ public partial class MainWindowViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(IsBrowserPanelExpanded))]
     [NotifyPropertyChangedFor(nameof(IsPropertiesPanelExpanded))]
     [NotifyPropertyChangedFor(nameof(IsCurveDataExpanded))]
-    private string? _activePanelBarPanelId;
+    private string? _activePanelBarPanelId = PanelRegistry.PanelIds.MotorProperties; // Default to Motor Properties expanded
+
+    /// <summary>
+    /// The ID of the active panel in the left zone.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsBrowserPanelExpanded))]
+    [NotifyPropertyChangedFor(nameof(IsCurveDataExpanded))]
+    private string? _activeLeftPanelId = PanelRegistry.PanelIds.DirectoryBrowser; // Default to Browser expanded
 
     /// <summary>
     /// Which side of the window the Panel Bar is docked to.
@@ -156,19 +164,48 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     /// <summary>
-    /// Toggles a panel by its ID, implementing Panel Bar exclusivity.
+    /// Toggles a panel by its ID, implementing zone-based exclusivity.
+    /// Panels only collapse others in the same zone.
     /// </summary>
     public void TogglePanel(string panelId)
     {
-        if (ActivePanelBarPanelId == panelId)
+        var descriptor = PanelRegistry.GetById(panelId);
+        if (descriptor == null)
         {
-            // Clicking the active panel collapses it
-            ActivePanelBarPanelId = null;
+            return;
         }
-        else
+
+        // Determine which zone this panel belongs to
+        switch (descriptor.Zone)
         {
-            // Clicking an inactive panel activates it (and collapses others)
-            ActivePanelBarPanelId = panelId;
+            case PanelZone.Left:
+                // Toggle within left zone
+                if (ActiveLeftPanelId == panelId)
+                {
+                    ActiveLeftPanelId = null; // Collapse it
+                }
+                else
+                {
+                    ActiveLeftPanelId = panelId; // Expand it (collapses other left panels)
+                }
+                break;
+
+            case PanelZone.Right:
+                // Toggle within right zone
+                if (ActivePanelBarPanelId == panelId)
+                {
+                    ActivePanelBarPanelId = null; // Collapse it
+                }
+                else
+                {
+                    ActivePanelBarPanelId = panelId; // Expand it (collapses other right panels)
+                }
+                break;
+
+            case PanelZone.Bottom:
+            case PanelZone.Center:
+                // Not used in current configuration
+                break;
         }
     }
 

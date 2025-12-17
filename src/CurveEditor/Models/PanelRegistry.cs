@@ -28,32 +28,32 @@ public static class PanelRegistry
         new PanelDescriptor
         {
             PanelId = PanelIds.DirectoryBrowser,
-            DisplayName = "Directory Browser",
+            DisplayName = "Browser",
             EnableIcon = true,
             EnableCollapse = true,
             Zone = PanelZone.Left,
             DefaultWidth = 200,
-            IconGlyph = "📁"
-        },
-        new PanelDescriptor
-        {
-            PanelId = PanelIds.MotorProperties,
-            DisplayName = "Motor Properties",
-            EnableIcon = true,
-            EnableCollapse = true,
-            Zone = PanelZone.Right,
-            DefaultWidth = 280,
-            IconGlyph = "⚙"
+            IconGlyph = "Browser"
         },
         new PanelDescriptor
         {
             PanelId = PanelIds.CurveData,
-            DisplayName = "Curve Data",
+            DisplayName = "Data",
             EnableIcon = true,
             EnableCollapse = true,
-            Zone = PanelZone.Bottom,
-            DefaultHeight = 250,
-            IconGlyph = "📊"
+            Zone = PanelZone.Left,
+            DefaultWidth = 200,
+            IconGlyph = "Data"
+        },
+        new PanelDescriptor
+        {
+            PanelId = PanelIds.MotorProperties,
+            DisplayName = "Properties",
+            EnableIcon = true,
+            EnableCollapse = true,
+            Zone = PanelZone.Right,
+            DefaultWidth = 280,
+            IconGlyph = "Properties"
         },
         new PanelDescriptor
         {
