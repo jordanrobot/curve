@@ -30,6 +30,15 @@
     </Window.KeyBindings>
     
     <Window.Styles>
+        <!-- Panel Header Style -->
+        <Style Selector="TextBlock.PanelHeader">
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Padding" Value="4"/>
+        </Style>
+        
         <!-- Collapsible Header Style -->
         <Style Selector="ToggleButton.CollapsibleHeader">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
@@ -170,8 +179,7 @@
                     Padding="8">
                 <StackPanel>
                     <TextBlock Text="Directory Browser" 
-                               FontWeight="Bold" 
-                               Margin="0,0,0,8"/>
+                               Classes="PanelHeader"/>
                     <TextBlock Text="(Coming Soon)" 
                                Foreground="Gray"
                                FontStyle="Italic"/>
@@ -275,9 +283,7 @@
                                 IsVisible="{Binding CurrentMotor, Converter={x:Static ObjectConverters.IsNotNull}}">
                         
                         <TextBlock Text="Motor Properties" 
-                                   FontWeight="Bold" 
-                                   FontSize="14"
-                                   Margin="0,0,0,6"/>
+                                   Classes="PanelHeader"/>
                         
                         <!-- Motor Name -->
                         <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
