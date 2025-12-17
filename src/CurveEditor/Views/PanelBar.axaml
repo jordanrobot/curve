@@ -29,6 +29,11 @@
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
         
+        <Style Selector="Button.PanelBarButton.Active">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAccentBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+        </Style>
+        
         <Style Selector="TextBlock.PanelBarIcon">
             <Setter Property="FontSize" Value="20"/>
             <Setter Property="TextAlignment" Value="Center"/>
