@@ -264,7 +264,7 @@ new terminology:
 
 - [X] When a cell is selected, pressing Ctrl+X should cut the torque value(s) of the selected cell(s) to the clipboard and clear the torque value of the selected cell(s).
 
-- [X] When a cell is selected, pressing Ctrl+C should copy the torque value. When multiple cells are selected, then pressing Ctrl+V should paste the copied value into all selected cells. Please implement this behavior.
+- [X]  When a cell is selected, pressing Ctrl+C copies the value in that cell. When multiple cells are selected and Ctrl+V is pressed, it should paste the copied value into all selected cells. Please implement this behavior. Currently the data model updates for the selected cells, but the UI does not reflect the updated values until table is redrawn after a user scrolls away and back. Please fix this so that when pasting into multiple selected cells, the UI updates immediately to show the pasted value in all selected cells.
 
 - [ ] When a cell is in Override Mode, pressing enter exits that mode and moves the selection to the cell below. Please implement this same exit behavior for the arrow keypresses as well. E.g. if the user is in Override Mode and presses the down arrow key, the selection should move to the cell below and exit Override Mode.
 

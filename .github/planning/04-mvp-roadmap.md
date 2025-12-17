@@ -1,5 +1,15 @@
 # Motor Torque Curve Editor - MVP Roadmap
 
+**Related ADRs**
+
+- ADR-0003 Generalized Undo/Redo Command Pattern (`../../docs/adr/adr-0003-motor-property-undo-design.md`)
+- ADR-0004 Layout and Panel Persistence Strategy (`../../docs/adr/adr-0004-layout-and-panel-persistence.md`)
+- ADR-0005 Keyboard Shortcuts and Input Routing Policy (`../../docs/adr/adr-0005-keyboard-shortcuts-and-input-routing.md`)
+- ADR-0006 Motor File Schema and Versioning Strategy (`../../docs/adr/adr-0006-motor-file-schema-and-versioning.md`)
+- ADR-0007 Status Bar, Validation, and User Feedback Conventions (`../../docs/adr/adr-0007-status-bar-and-validation-feedback.md`)
+- ADR-0008 Selection and Editing Coordination Between Chart and Grid (`../../docs/adr/adr-0008-selection-and-editing-coordination.md`)
+- ADR-0009 Logging and Error Handling Policy (`../../docs/adr/adr-0009-logging-and-error-handling-policy.md`)
+
 ## Technology Stack Decision
 
 **Confirmed**: The Motor Torque Curve Editor will be built using:
@@ -49,75 +59,96 @@ Phase 8: Power Curve Overlay (Future)
 ## Phase 1: Foundation
 
 ### 1.1 Project Setup
-- [ ] Create solution with Avalonia template
-- [ ] Configure project for .NET 8
-- [ ] Add NuGet packages (Avalonia, CommunityToolkit.Mvvm, Serilog, Serilog.Sinks.File, Serilog.Sinks.Console)
-- [ ] Set up project structure (Models, Views, ViewModels, Services)
-- [ ] Configure single-file publishing
-- [ ] Set up Serilog logging infrastructure
-- [ ] Configure global exception handling
+- [X] Create solution with Avalonia template
+- [X] Configure project for .NET 8
+- [X] Add NuGet packages (Avalonia, CommunityToolkit.Mvvm, Serilog, Serilog.Sinks.File, Serilog.Sinks.Console)
+- [X] Set up project structure (Models, Views, ViewModels, Services)
+- [X] Configure single-file publishing
+- [X] Set up Serilog logging infrastructure
+- [X] Configure global exception handling
 
 ### 1.2 Basic Window Shell
-- [ ] Create MainWindow with menu bar
-- [ ] Implement basic layout (directory pane + chart area + properties panel)
-- [ ] Add File menu (New, Open, Save, Save As, Save Copy As, Exit)
-- [ ] Implement window title showing current file
-- [ ] Add asterisk (*) to title when file is dirty
+- [X] Create MainWindow with menu bar
+- [X] Implement basic layout (directory pane + chart area + properties panel)
+- [X] Add File menu (New, Open, Save, Save As, Save Copy As, Exit)
+- [X] Implement window title showing current file
+- [X] Add asterisk (*) to title when file is dirty
 
 ### 1.3 Data Models
-- [ ] Create MotorDefinition model class (all motor properties)
-- [ ] Create CurveSeries model class (named curve)
-- [ ] Create DataPoint model class (percent, rpm, torque)
-- [ ] Create UnitSettings model class (torque, speed, power, weight units)
-- [ ] Create MotorMetadata model class
-- [ ] Implement 1% increment data structure (101 points per series)
-- [ ] Add JSON serialization attributes
-- [ ] Write model unit tests
+- [X] Create MotorDefinition model class (all motor properties)
+- [X] Create CurveSeries model class (named curve)
+- [X] Create DataPoint model class (percent, rpm, torque)
+- [X] Create UnitSettings model class (torque, speed, power, weight units)
+- [X] Create MotorMetadata model class
+- [X] Implement 1% increment data structure (101 points per series)
+- [X] Add JSON serialization attributes
+- [X] Write model unit tests
 
 ### 1.4 File Service
-- [ ] Implement JSON loading
-- [ ] Implement JSON saving (always overwrites)
-- [ ] Implement Save As (save to new file, becomes active)
-- [ ] Implement Save Copy As (save copy, original stays active)
-- [ ] Handle file dialogs
-- [ ] Error handling for invalid files
-- [ ] Write service unit tests
+- [X] Implement JSON loading
+- [X] Implement JSON saving (always overwrites)
+- [X] Implement Save As (save to new file, becomes active)
+- [X] Implement Save Copy As (save copy, original stays active)
+- [X] Handle file dialogs
+- [X] Error handling for invalid files
+- [X] Write service unit tests
 
 ### 1.5 Curve Generator Service
-- [ ] Create ICurveGeneratorService interface
-- [ ] Implement curve interpolation from max parameters
-- [ ] Generate curves at 1% increments
-- [ ] Calculate corner speed (constant torque to constant power transition)
-- [ ] Power calculation from torque and speed
-- [ ] Write generator unit tests
+- [X] Create ICurveGeneratorService interface
+- [X] Implement curve interpolation from max parameters
+- [X] Generate curves at 1% increments
+- [X] Calculate corner speed (constant torque to constant power transition)
+- [X] Power calculation from torque and speed
+- [X] Write generator unit tests
 
 ### 1.6 New Motor Definition Wizard
-- [ ] "New Motor" command in File menu
-- [ ] Dialog to enter basic motor parameters:
+- [X] "New Motor" command in File menu
+- [X] Dialog to enter basic motor parameters:
   - Motor name
   - Max RPM
   - Max torque
   - Max power
-- [ ] Generate initial Peak and Continuous curves
-- [ ] Create new file with generated data
+- [X] Generate initial Peak and Continuous curves
+- [X] Create new file with generated data
 
 ### 1.7 Logging and Exception Handling
-- [ ] Configure Serilog with file and console sinks
-- [ ] Add structured logging throughout services
-- [ ] Implement global unhandled exception handler
-- [ ] Create user-friendly error dialogs for exceptions
-- [ ] Log file location in user's AppData folder
-- [ ] Include context (file path, operation) in log entries
+- [x] Configure Serilog with file and console sinks
+- [x] Add structured logging throughout services
+- [x] Implement global unhandled exception handler
+- [x] Create user-friendly error dialogs for exceptions
+- [x] Log file location in user's AppData folder
+- [x] Include context (file path, operation) in log entries
+
+See ADR-0009 (`../../docs/adr/adr-0009-logging-and-error-handling-policy.md`) for the logging and error handling policy.
 
 ### 1.8 Undo/Redo Infrastructure
-- [ ] Implement IUndoableCommand interface
-- [ ] Create UndoStack service for managing edit history
-- [ ] Define command classes for common operations:
+- [x] Implement IUndoableCommand interface
+- [x] Create UndoStack service for managing per-document edit history and exposing CanUndo/CanRedo and UndoDepth
+- [x] Define command classes for common operations with reliable Execute/Undo semantics and logging on failure:
   - EditPointCommand
   - EditSeriesCommand
   - EditMotorPropertyCommand
-- [ ] Wire Ctrl+Z / Ctrl+Y keyboard shortcuts
-- [ ] Integrate undo/redo with dirty state tracking
+- [x] Wire Ctrl+Z / Ctrl+Y keyboard shortcuts
+- [x] Integrate undo/redo with dirty state tracking, including a clean checkpoint tied to saves so undoing back to the saved state clears the dirty flag
+
+See ADR-0003 (`../../docs/adr/adr-0003-motor-property-undo-design.md`) for the generalized undo/redo command pattern applied across motor, drive, voltage, chart, and curve data edits.
+
+**Note on Motor, Drive, and Voltage Properties:**
+
+Motor-level text properties (e.g., Motor Name, Manufacturer, Part Number) are wired through explicit view-model edit methods and `EditMotorPropertyCommand` instances that store old and new values up front. The motor text boxes bind to simple editor properties (e.g., `MotorNameEditor`) and commit changes via these methods on focus loss, with `TextBox`-local undo disabled. Ctrl+Z / Ctrl+Y are handled at the window level and operate on the shared per-document `UndoStack`, so motor property edits participate in the same undo/redo history as chart and grid edits. Drive and selected-voltage properties (scalars and series-related) follow the same pattern using `EditDrivePropertyCommand` and `EditVoltagePropertyCommand`, plus editor buffers such as `DriveNameEditor`, `VoltagePowerEditor`, and `VoltagePeakTorqueEditor`. TextBoxes bind to these editor properties with `IsUndoEnabled = false` and commit on LostFocus via view-model methods (e.g., `EditDriveName`, `EditSelectedVoltagePower`) that push commands onto the shared `UndoStack`. See ADR-0003 (`../../docs/adr/adr-0003-motor-property-undo-design.md`) for the finalized design and rationale.
+
+On undo/redo, the main view model calls back into a central refresh method (e.g., `RefreshMotorEditorsFromCurrentMotor`) and then refreshes the chart and data table so that all property textboxes, the chart axes, and the grid stay synchronized with the current undo state.
+
+**Future Refinements Using ADR-0003 and ADR-000X Patterns:**
+
+To keep the codebase cohesive and efficient, a future agent should consider how the command-driven edit patterns from ADR-0003 and ADR-000X can be applied more broadly:
+
+- **Motor and drive scalar properties:** Route all edits (name, manufacturer, part number, numeric specs) through explicit view-model edit methods that create undoable commands, instead of direct two-way bindings to domain models.
+- **Additional configuration panels:** When adding new groups of scalar properties (e.g., future drive metadata, per-series configuration), add editor buffers, an `Edit*PropertyCommand`, and LostFocus commit methods that push commands and refresh dependent views.
+- **Curve data table and chart edits:** Ensure grid cell edits and (future) chart drag edits both go through shared edit methods (e.g., `EditPointTorque`) that push `EditPointCommand`s, rather than letting the UI mutate `DataPoint` instances directly.
+- **Selection and coordination logic:** Centralize selection changes (from chart and table) through coordinator/view-model APIs that record origin and avoid feedback loops, making it easier to reason about and test selection behavior.
+
+These refinements should be evaluated against the current codebase when planning advanced editing work (Phase 4) so that undo/redo behavior, selection coordination, and mutation paths remain consistent and maintainable.
 
 **Deliverable:** Application that can create, open, and save motor files with JSON content display. Includes full undo/redo support and structured logging.
 
@@ -126,44 +157,44 @@ Phase 8: Power Curve Overlay (Future)
 ## Phase 2: Core Features
 
 ### 2.1 Chart Integration
-- [ ] Add LiveCharts2 NuGet package
-- [ ] Create ChartView component
-- [ ] Bind chart to MotorData with multiple series
-- [ ] Configure default axes (RPM = X, Torque = Y)
-- [ ] Display RPM values rounded to nearest whole number
-- [ ] Style chart appearance
+- [X] Add LiveCharts2 NuGet package
+- [X] Create ChartView component
+- [X] Bind chart to MotorData with multiple series
+- [X] Configure default axes (RPM = X, Torque = Y)
+- [X] Display RPM values rounded to nearest whole number
+- [X] Style chart appearance
 
 ### 2.2 Multiple Series Display
-- [ ] Load and display multiple curve series from file
-- [ ] Create default series ("Peak", "Continuous") for new files
-- [ ] Each series rendered as separate line on chart
-- [ ] Distinguish series by unique line colors
-- [ ] Series legend with names and colors
+- [X] Load and display multiple curve series from file
+- [X] Create default series ("Peak", "Continuous") for new files
+- [X] Each series rendered as separate line on chart
+- [X] Distinguish series by unique line colors
+- [X] Series legend with names and colors
 
 ### 2.3 Grid Lines and Axis Labels
-- [ ] Configure axis labels at rounded increments
+- [X] Configure axis labels at rounded increments
   - RPM: 500, 1000, 1500, 2000, etc.
   - Torque: 5, 10, 15, 20, etc.
-- [ ] Add faded grid lines extending across graph
-- [ ] Implement auto-calculation for label spacing (avoid crowding)
-- [ ] Labels update smoothly when axis range changes
+- [X] Add faded grid lines extending across graph
+- [X] Implement auto-calculation for label spacing (avoid crowding)
+- [X] Labels update smoothly when axis range changes
 
 ### 2.4 Hover Tooltip
-- [ ] Show RPM and torque values on hover near curve
-- [ ] Position tooltip to not obscure cursor
-- [ ] Style tooltip for readability
+- [X] Show RPM and torque values on hover near curve
+- [X] Position tooltip to not obscure cursor
+- [X] Style tooltip for readability
 
 ### 2.5 Series Management Panel
-- [ ] Create series list panel in UI
-- [ ] Checkbox for each series to show/hide visibility
-- [ ] Display series color swatch next to name
-- [ ] Editable series name field
-- [ ] Add Series button
-- [ ] Delete Series button (with confirmation)
+- [X] Create series list panel in UI
+- [X] Checkbox for each series to show/hide visibility
+- [X] Display series color swatch next to name
+- [X] Editable series name field
+- [X] Add Series button
+- [X] Delete Series button (with confirmation)
 
 ### 2.6 Motor Properties Panel
-- [ ] Create MotorPropertiesPanel component
-- [ ] Display all motor properties (editable):
+- [X] Create MotorPropertiesPanel component
+- [X] Display all motor properties (editable):
   - Motor name, manufacturer, part number
   - Drive name, drive part number
   - Voltage, amperage (continuous/peak)
@@ -171,34 +202,46 @@ Phase 8: Power Curve Overlay (Future)
   - Continuous/peak torque
   - Power, weight, rotor inertia
   - Brake properties (hasBrake, torque, amperage)
-- [ ] Unit selector for each property type
-- [ ] Bind properties to MotorDefinition model
-- [ ] Enable editing of all fields
+- [X] Unit selector for each property type
+- [X] Bind properties to MotorDefinition model
+- [X] Enable editing of all fields
+
+Note: Motor text property edits (e.g., name, manufacturer, part number) are routed through explicit view-model edit methods and undoable commands as described in ADR-0003 (`../../docs/adr/adr-0003-motor-property-undo-design.md`).
 
 ### 2.7 Curve Data Panel
-- [ ] Create CurveDataPanel component
-- [ ] Display data grid of points for selected series
-- [ ] Bind grid to curve data
-- [ ] Enable editing in grid cells
-- [ ] RPM values displayed rounded to whole numbers
+- [X] Create CurveDataPanel component
+- [X] Display data grid of points for selected series
+- [X] Bind grid to curve data
+- [X] Enable editing in grid cells
+- [X] RPM values displayed rounded to whole numbers
+
+See ADR-0008 (`../../docs/adr/adr-0008-selection-and-editing-coordination.md`) for the selection and editing coordination strategy between chart and grid.
 
 ### 2.8 Two-Way Binding
-- [ ] Chart updates when grid values change
-- [ ] Grid updates when chart is modified (future)
-- [ ] Implement INotifyPropertyChanged throughout
-- [ ] Handle dirty state tracking (unsaved changes)
+- [X] Chart updates when grid values change
+- [X] Grid updates when chart is modified (future)
+- [X] Implement INotifyPropertyChanged throughout
+- [X] Handle dirty state tracking (unsaved changes)
 
 ### 2.9 Basic Validation
-- [ ] Validate RPM values (positive, ascending)
-- [ ] Validate torque values (non-negative)
-- [ ] Show validation errors in UI
-- [ ] Prevent saving invalid data
+- [X] Validate RPM values (positive, ascending)
+- [X] Validate torque values (non-negative)
+- [X] Show validation errors in UI
+- [X] Prevent saving invalid data
 
 **Deliverable:** Application with working multi-series chart, series visibility toggles, and editable data grid.
 
 ---
 
 ## Phase 3: File Management
+
+### 3.0 Update JSON schema
+- [X] Use new schema file provided by user for JSON schema for motor files
+- [X] Refactor existing JSON serialization/deserialization to match new schema
+
+See ADR-0006 (`../../docs/adr/adr-0006-motor-file-schema-and-versioning.md`) for the motor file schema and versioning strategy.
+- [ ] present options for consolidating series data within drive&voltage sections. This is to group series torque values together so that veiwing and editing raw json files is much easier. 
+- [ ] If the user chooses to adjust series data format within the json schema, implement this change.
 
 ### 3.1 Directory Browser (VS Code-style)
 - [ ] Create side pane for directory browsing
@@ -209,10 +252,10 @@ Phase 8: Power Curve Overlay (Future)
 - [ ] Show current directory path
 
 ### 3.2 Dirty State Tracking
-- [ ] Track unsaved changes per file
-- [ ] Mark file dirty when any edit is made
-- [ ] Clear dirty state when file is saved
-- [ ] Show asterisk (*) in window title when dirty
+- [X] Track unsaved changes per file
+- [X] Mark file dirty when any edit is made
+- [X] Clear dirty state when file is saved
+- [X] Show asterisk (*) in window title when dirty
 - [ ] Visual indicator in directory list for dirty files
 
 ### 3.3 Save Prompts
@@ -222,10 +265,10 @@ Phase 8: Power Curve Overlay (Future)
 - [ ] Handle Cancel to abort the close/open operation
 
 ### 3.4 Save Commands
-- [ ] Save command overwrites current file
-- [ ] Save As: save to new file, new file becomes active
-- [ ] Save Copy As: save copy to new file, original stays active
-- [ ] All saves overwrite (no append mode)
+- [X] Save command overwrites current file
+- [X] Save As: save to new file, new file becomes active
+- [X] Save Copy As: save copy to new file, original stays active
+- [X] All saves overwrite (no append mode)
 
 **Deliverable:** Full file management with directory browser and save prompts.
 
@@ -233,11 +276,18 @@ Phase 8: Power Curve Overlay (Future)
 
 ## Phase 4: Advanced Editing
 
+### 4.0 Series Data Adjustment
+- [ ] Transpose the series data so that each series is represented as a row instead of a column
+- [ ] Ensure all related UI components and data bindings are updated accordingly
+- [ ] Ensure header labels and checkboxes (lock, visibility) are placed at the left-hand of each series row.
+
 ### 4.1 EQ-Style Curve Editing
-- [ ] Enable point selection on chart (click to select)
-- [ ] Implement point dragging (drag up/down to adjust torque)
-- [ ] Visual feedback when point is selected
-- [ ] Sync dragged values back to data model in real-time
+- [ ] Enable point selection on chart (single-click on point)
+- [ ] Implement rubber-band selection on chart (click-drag rectangle to select multiple points)
+- [ ] Ensure chart selections stay synchronized with table selection via `EditingCoordinator`
+- [ ] Implement point dragging (drag selected points up/down to adjust torque)
+- [ ] Provide clear visual feedback for selection and drag operations
+- [ ] Sync dragged torque changes back to the data model in real-time
 
 ### 4.2 Q Value Control
 - [ ] Add Q slider (range 0.0 to 1.0)
@@ -269,6 +319,14 @@ Phase 8: Power Curve Overlay (Future)
 - [ ] Handle insertion between existing points
 - [ ] Update chart and grid automatically
 
+### 4.6 Selection Coordination & Feedback Loops
+- [ ] Model selection changes through a shared `EditingCoordinator`
+- [ ] Introduce an explicit selection origin flag (e.g., Table vs Chart) on coordinator APIs/events
+- [ ] Use origin information to avoid selection feedback loops between chart and table
+- [ ] Keep selection semantics (replace, extend, toggle) consistent between chart and table
+
+See ADR-0008 (`../../docs/adr/adr-0008-selection-and-editing-coordination.md`) for the detailed selection coordination design.
+
 **Deliverable:** Fully functional MVP with EQ-style editing and image overlay.
 
 ---
@@ -285,14 +343,20 @@ Phase 8: Power Curve Overlay (Future)
 
 ### 5.2 UI Polish
 - [ ] Add toolbar with common actions
-- [ ] Implement keyboard shortcuts
-- [ ] Add status bar
-- [ ] Add application icon
+- [X] Implement keyboard shortcuts
+- [X] Add status bar
+- [X] Add application icon
+
+See ADR-0004 (`../../docs/adr/adr-0004-layout-and-panel-persistence.md`) for the layout and panel persistence strategy used by the browser, properties, and curve data panels.
+
+See ADR-0005 (`../../docs/adr/adr-0005-keyboard-shortcuts-and-input-routing.md`) for the keyboard shortcuts and input routing policy.
+
+See ADR-0007 (`../../docs/adr/adr-0007-status-bar-and-validation-feedback.md`) for the status bar, validation, and user feedback conventions.
 
 ### 5.3 Unsaved Changes Handling
 - [ ] Prompt to save on close
 - [ ] Prompt to save on open new file
-- [ ] Show asterisk (*) in title for unsaved changes
+- [X] Show asterisk (*) in title for unsaved changes
 
 **Deliverable:** Polished application with user preferences.
 
@@ -514,7 +578,7 @@ The sample above shows 10% increments for brevity.
 - [ ] Can save to JSON file with all motor properties
 - [ ] Runs as portable executable
 - [ ] Works on Windows 11
-- [ ] Undo/redo support (Ctrl+Z / Ctrl+Y)
+ - [x] Undo/redo support (Ctrl+Z / Ctrl+Y)
 - [ ] Structured logging with Serilog
 - [ ] Global exception handling with user-friendly error dialogs
 

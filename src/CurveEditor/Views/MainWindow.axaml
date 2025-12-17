@@ -22,6 +22,11 @@
         <KeyBinding Gesture="Ctrl+O" Command="{Binding OpenFileCommand}"/>
         <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}"/>
         <KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveAsCommand}"/>
+        <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}"/>
+        <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}"/>
+        <KeyBinding Gesture="Ctrl+B" Command="{Binding ToggleBrowserPanelCommand}"/>
+        <KeyBinding Gesture="Ctrl+R" Command="{Binding TogglePropertiesPanelCommand}"/>
+        <KeyBinding Gesture="Ctrl+G" Command="{Binding ToggleCurveDataPanelCommand}"/>
     </Window.KeyBindings>
     
     <Window.Styles>
@@ -89,14 +94,32 @@
                 <MenuItem Header="E_xit" Command="{Binding ExitCommand}" InputGesture="Alt+F4"/>
             </MenuItem>
             <MenuItem Header="_Edit">
-                <MenuItem Header="_Undo" IsEnabled="False" InputGesture="Ctrl+Z"/>
-                <MenuItem Header="_Redo" IsEnabled="False" InputGesture="Ctrl+Y"/>
+                <MenuItem Header="_Undo"
+                          Command="{Binding UndoCommand}"
+                          IsEnabled="{Binding CanUndo}"
+                          InputGesture="Ctrl+Z"/>
+                <MenuItem Header="_Redo"
+                          Command="{Binding RedoCommand}"
+                          IsEnabled="{Binding CanRedo}"
+                          InputGesture="Ctrl+Y"/>
             </MenuItem>
             <MenuItem Header="_View">
-                <MenuItem Header="Show _Grid Lines" IsEnabled="False"/>
-                <MenuItem Header="Show _Hover Tooltip" IsEnabled="False"/>
+                <MenuItem Header="Show _Directory Browser"
+                          IsChecked="{Binding IsBrowserPanelExpanded}"
+                          Command="{Binding ToggleBrowserPanelCommand}"
+                          InputGesture="Ctrl+B"/>
+                <MenuItem Header="Show _Properties Panel"
+                          IsChecked="{Binding IsPropertiesPanelExpanded}"
+                          Command="{Binding TogglePropertiesPanelCommand}"
+                          InputGesture="Ctrl+R"/>
+                <MenuItem Header="Show _Curve Data Panel"
+                          IsChecked="{Binding IsCurveDataExpanded}"
+                          Command="{Binding ToggleCurveDataPanelCommand}"
+                          InputGesture="Ctrl+G"/>
             </MenuItem>
             <MenuItem Header="_Help">
+                <MenuItem Header="Open _Logs Folder" Command="{Binding OpenLogsFolderCommand}"/>
+                <Separator/>
                 <MenuItem Header="_About" IsEnabled="False"/>
             </MenuItem>
         </Menu>
@@ -128,10 +151,11 @@
         </Border>
 
         <!-- Main Content Area with resizable panels -->
-        <Grid ColumnDefinitions="200,4,*,4,280">
+        <Grid x:Name="MainLayoutGrid" ColumnDefinitions="200,4,*,4,280">
             
             <!-- Left: Directory Browser (placeholder) -->
             <Border Grid.Column="0" 
+                IsVisible="{Binding IsBrowserPanelExpanded}"
                     BorderBrush="{DynamicResource SystemControlBackgroundBaseMediumBrush}"
                     BorderThickness="0,0,1,0"
                     Padding="8">
@@ -150,10 +174,10 @@
             </Border>
             
             <!-- Left GridSplitter -->
-            <GridSplitter Grid.Column="1" Width="4" ResizeDirection="Columns"/>
+            <GridSplitter x:Name="LeftSplitter" Grid.Column="1" Width="4" ResizeDirection="Columns"/>
 
             <!-- Center: Chart Area and Collapsible Data Panel -->
-            <Grid Grid.Column="2" RowDefinitions="*,Auto,Auto">
+            <Grid x:Name="CenterGrid" Grid.Column="2" RowDefinitions="*,Auto,Auto">
                 <!-- Chart Area -->
                 <Border Grid.Row="0"
                         Margin="4"
@@ -230,10 +254,11 @@
             </Grid>
             
             <!-- Right GridSplitter -->
-            <GridSplitter Grid.Column="3" Width="4" ResizeDirection="Columns"/>
+            <GridSplitter x:Name="RightSplitter" Grid.Column="3" Width="4" ResizeDirection="Columns"/>
 
-            <!-- Right: Properties Panel -->
-            <Border Grid.Column="4" 
+                <!-- Right: Properties Panel -->
+                <Border Grid.Column="4" 
+                    IsVisible="{Binding IsPropertiesPanelExpanded}"
                     BorderBrush="{DynamicResource SystemControlBackgroundBaseMediumBrush}"
                     BorderThickness="1,0,0,0">
                 <ScrollViewer>
@@ -248,26 +273,42 @@
                         <!-- Motor Name -->
                         <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
                             <TextBlock Grid.Column="0" Text="Motor Name" Classes="PropertyLabel"/>
-                            <TextBox Grid.Column="1" Text="{Binding CurrentMotor.MotorName}" Classes="PropertyInput"/>
+                            <TextBox Grid.Column="1"
+                                     Classes="PropertyInput"
+                                     Text="{Binding MotorNameEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                     IsUndoEnabled="False"
+                                     LostFocus="OnMotorNameLostFocus"/>
                         </Grid>
                         
                         <!-- Manufacturer -->
                         <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
                             <TextBlock Grid.Column="0" Text="Manufacturer" Classes="PropertyLabel"/>
-                            <TextBox Grid.Column="1" Text="{Binding CurrentMotor.Manufacturer}" Classes="PropertyInput"/>
+                            <TextBox Grid.Column="1"
+                                     Classes="PropertyInput"
+                                     Text="{Binding ManufacturerEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                     IsUndoEnabled="False"
+                                     LostFocus="OnManufacturerLostFocus"/>
                         </Grid>
                         
                         <!-- Part Number -->
                         <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
                             <TextBlock Grid.Column="0" Text="Part Number" Classes="PropertyLabel"/>
-                            <TextBox Grid.Column="1" Text="{Binding CurrentMotor.PartNumber}" Classes="PropertyInput"/>
+                            <TextBox Grid.Column="1"
+                                     Classes="PropertyInput"
+                                     Text="{Binding PartNumberEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                     IsUndoEnabled="False"
+                                     LostFocus="OnPartNumberLostFocus"/>
                         </Grid>
                         
                         <!-- Max Speed -->
                         <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
                             <TextBlock Grid.Column="0" Text="Max Speed" Classes="PropertyLabel"/>
                             <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
-                                <TextBox Grid.Column="0" Text="{Binding CurrentMotor.MaxSpeed}" Classes="PropertyInput" LostFocus="OnMotorMaxSpeedLostFocus"/>
+                                <TextBox Grid.Column="0"
+                                         Classes="PropertyInput"
+                                         Text="{Binding MaxSpeedEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                         IsUndoEnabled="False"
+                                         LostFocus="OnMotorMaxSpeedLostFocus"/>
                                 <TextBlock Grid.Column="1" Text="RPM" Classes="PropertyValue" Margin="4,0,0,0"/>
                             </Grid>
                         </Grid>
@@ -276,7 +317,11 @@
                         <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
                             <TextBlock Grid.Column="0" Text="Rated Speed" Classes="PropertyLabel"/>
                             <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
-                                <TextBox Grid.Column="0" Text="{Binding CurrentMotor.RatedSpeed}" Classes="PropertyInput"/>
+                                <TextBox Grid.Column="0"
+                                         Classes="PropertyInput"
+                                         Text="{Binding RatedSpeedEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                         IsUndoEnabled="False"
+                                         LostFocus="OnRatedSpeedLostFocus"/>
                                 <TextBlock Grid.Column="1" Text="RPM" Classes="PropertyValue" Margin="4,0,0,0"/>
                             </Grid>
                         </Grid>
@@ -285,7 +330,11 @@
                         <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
                             <TextBlock Grid.Column="0" Text="Peak Torque" Classes="PropertyLabel"/>
                             <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
-                                <TextBox Grid.Column="0" Text="{Binding CurrentMotor.RatedPeakTorque}" Classes="PropertyInput"/>
+                                <TextBox Grid.Column="0"
+                                         Classes="PropertyInput"
+                                         Text="{Binding RatedPeakTorqueEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                         IsUndoEnabled="False"
+                                         LostFocus="OnRatedPeakTorqueLostFocus"/>
                                 <TextBlock Grid.Column="1" Text="{Binding CurrentMotor.Units.Torque}" Classes="PropertyValue" Margin="4,0,0,0"/>
                             </Grid>
                         </Grid>
@@ -294,7 +343,11 @@
                         <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
                             <TextBlock Grid.Column="0" Text="Cont. Torque" Classes="PropertyLabel"/>
                             <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
-                                <TextBox Grid.Column="0" Text="{Binding CurrentMotor.RatedContinuousTorque}" Classes="PropertyInput"/>
+                                <TextBox Grid.Column="0"
+                                         Classes="PropertyInput"
+                                         Text="{Binding RatedContinuousTorqueEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                         IsUndoEnabled="False"
+                                         LostFocus="OnRatedContinuousTorqueLostFocus"/>
                                 <TextBlock Grid.Column="1" Text="{Binding CurrentMotor.Units.Torque}" Classes="PropertyValue" Margin="4,0,0,0"/>
                             </Grid>
                         </Grid>
@@ -303,7 +356,11 @@
                         <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
                             <TextBlock Grid.Column="0" Text="Power" Classes="PropertyLabel"/>
                             <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
-                                <TextBox Grid.Column="0" Text="{Binding CurrentMotor.Power}" Classes="PropertyInput"/>
+                                <TextBox Grid.Column="0"
+                                         Classes="PropertyInput"
+                                         Text="{Binding PowerEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                         IsUndoEnabled="False"
+                                         LostFocus="OnPowerLostFocus"/>
                                 <TextBlock Grid.Column="1" Text="{Binding CurrentMotor.Units.Power}" Classes="PropertyValue" Margin="4,0,0,0"/>
                             </Grid>
                         </Grid>
@@ -312,7 +369,11 @@
                         <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
                             <TextBlock Grid.Column="0" Text="Weight" Classes="PropertyLabel"/>
                             <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
-                                <TextBox Grid.Column="0" Text="{Binding CurrentMotor.Weight}" Classes="PropertyInput"/>
+                                <TextBox Grid.Column="0"
+                                         Classes="PropertyInput"
+                                         Text="{Binding WeightEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                         IsUndoEnabled="False"
+                                         LostFocus="OnWeightLostFocus"/>
                                 <TextBlock Grid.Column="1" Text="{Binding CurrentMotor.Units.Weight}" Classes="PropertyValue" Margin="4,0,0,0"/>
                             </Grid>
                         </Grid>
@@ -320,19 +381,29 @@
                         <!-- Rotor Inertia -->
                         <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
                             <TextBlock Grid.Column="0" Text="Rotor Inertia" Classes="PropertyLabel"/>
-                            <TextBox Grid.Column="1" Text="{Binding CurrentMotor.RotorInertia}" Classes="PropertyInput"/>
+                            <TextBox Grid.Column="1"
+                                     Classes="PropertyInput"
+                                     Text="{Binding RotorInertiaEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                     IsUndoEnabled="False"
+                                     LostFocus="OnRotorInertiaLostFocus"/>
                         </Grid>
                         
                         <!-- Feedback PPR -->
                         <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
                             <TextBlock Grid.Column="0" Text="Feedback PPR" Classes="PropertyLabel"/>
-                            <TextBox Grid.Column="1" Text="{Binding CurrentMotor.FeedbackPpr}" Classes="PropertyInput"/>
+                            <TextBox Grid.Column="1"
+                                     Classes="PropertyInput"
+                                     Text="{Binding FeedbackPprEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                     IsUndoEnabled="False"
+                                     LostFocus="OnFeedbackPprLostFocus"/>
                         </Grid>
                         
                         <!-- Has Brake (Checkbox) -->
                         <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
                             <TextBlock Grid.Column="0" Text="Has Brake" Classes="PropertyLabel"/>
-                            <CheckBox Grid.Column="1" IsChecked="{Binding CurrentMotor.HasBrake}" VerticalAlignment="Center"
+                            <CheckBox Grid.Column="1"
+                                      IsChecked="{Binding HasBrakeEditor, Mode=TwoWay}"
+                                      VerticalAlignment="Center"
                                       Click="OnHasBrakeChanged"/>
                         </Grid>
                         
@@ -340,7 +411,10 @@
                         <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
                             <TextBlock Grid.Column="0" Text="Brake Torque" Classes="PropertyLabel"/>
                             <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
-                                <TextBox Grid.Column="0" Text="{Binding CurrentMotor.BrakeTorque}" Classes="PropertyInput"
+                                <TextBox Grid.Column="0"
+                                         Classes="PropertyInput"
+                                         Text="{Binding BrakeTorqueEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                         IsUndoEnabled="False"
                                          LostFocus="OnBrakeTorqueLostFocus"/>
                                 <TextBlock Grid.Column="1" Text="{Binding CurrentMotor.Units.Torque}" Classes="PropertyValue" Margin="4,0,0,0"/>
                             </Grid>
@@ -350,7 +424,11 @@
                         <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
                             <TextBlock Grid.Column="0" Text="Brake Amps" Classes="PropertyLabel"/>
                             <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
-                                <TextBox Grid.Column="0" Text="{Binding CurrentMotor.BrakeAmperage}" Classes="PropertyInput"/>
+                                <TextBox Grid.Column="0"
+                                         Classes="PropertyInput"
+                                         Text="{Binding BrakeAmperageEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                         IsUndoEnabled="False"
+                                         LostFocus="OnBrakeAmperageLostFocus"/>
                                 <TextBlock Grid.Column="1" Text="A" Classes="PropertyValue" Margin="4,0,0,0"/>
                             </Grid>
                         </Grid>
@@ -359,7 +437,11 @@
                         <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
                             <TextBlock Grid.Column="0" Text="Brake Voltage" Classes="PropertyLabel"/>
                             <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
-                                <TextBox Grid.Column="0" Text="{Binding CurrentMotor.BrakeVoltage}" Classes="PropertyInput"/>
+                                <TextBox Grid.Column="0"
+                                         Classes="PropertyInput"
+                                         Text="{Binding BrakeVoltageEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                         IsUndoEnabled="False"
+                                         LostFocus="OnBrakeVoltageLostFocus"/>
                                 <TextBlock Grid.Column="1" Text="V" Classes="PropertyValue" Margin="4,0,0,0"/>
                             </Grid>
                         </Grid>
@@ -533,15 +615,27 @@
                         <StackPanel IsVisible="{Binding SelectedDrive, Converter={x:Static ObjectConverters.IsNotNull}}">
                             <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
                                 <TextBlock Grid.Column="0" Text="Drive Name" Classes="PropertyLabel"/>
-                                <TextBox Grid.Column="1" Text="{Binding SelectedDrive.Name, Mode=TwoWay}" Classes="PropertyInput"/>
+                                <TextBox Grid.Column="1"
+                                         Text="{Binding DriveNameEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                         Classes="PropertyInput"
+                                         IsUndoEnabled="False"
+                                         LostFocus="OnDriveNameLostFocus"/>
                             </Grid>
                             <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
                                 <TextBlock Grid.Column="0" Text="Part Number" Classes="PropertyLabel"/>
-                                <TextBox Grid.Column="1" Text="{Binding SelectedDrive.PartNumber}" Classes="PropertyInput"/>
+                                <TextBox Grid.Column="1"
+                                         Text="{Binding DrivePartNumberEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                         Classes="PropertyInput"
+                                         IsUndoEnabled="False"
+                                         LostFocus="OnDrivePartNumberLostFocus"/>
                             </Grid>
                             <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
                                 <TextBlock Grid.Column="0" Text="Manufacturer" Classes="PropertyLabel"/>
-                                <TextBox Grid.Column="1" Text="{Binding SelectedDrive.Manufacturer}" Classes="PropertyInput"/>
+                                <TextBox Grid.Column="1"
+                                         Text="{Binding DriveManufacturerEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                         Classes="PropertyInput"
+                                         IsUndoEnabled="False"
+                                         LostFocus="OnDriveManufacturerLostFocus"/>
                             </Grid>
                             
                             <!-- Selected Voltage Properties -->
@@ -549,49 +643,77 @@
                                 <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
                                     <TextBlock Grid.Column="0" Text="Voltage" Classes="PropertyLabel"/>
                                     <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
-                                        <TextBox Grid.Column="0" Text="{Binding SelectedVoltage.Voltage}" Classes="PropertyInput"/>
+                                        <TextBox Grid.Column="0"
+                                                 Text="{Binding VoltageValueEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                 Classes="PropertyInput"
+                                                 IsUndoEnabled="False"
+                                                 LostFocus="OnVoltageValueLostFocus"/>
                                         <TextBlock Grid.Column="1" Text="{Binding CurrentMotor.Units.Voltage}" Classes="PropertyValue" Margin="4,0,0,0"/>
                                     </Grid>
                                 </Grid>
                                 <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
                                     <TextBlock Grid.Column="0" Text="Power" Classes="PropertyLabel"/>
                                     <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
-                                        <TextBox Grid.Column="0" Text="{Binding SelectedVoltage.Power}" Classes="PropertyInput"/>
+                                        <TextBox Grid.Column="0"
+                                                 Text="{Binding VoltagePowerEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                 Classes="PropertyInput"
+                                                 IsUndoEnabled="False"
+                                                 LostFocus="OnVoltagePowerLostFocus"/>
                                         <TextBlock Grid.Column="1" Text="{Binding CurrentMotor.Units.Power}" Classes="PropertyValue" Margin="4,0,0,0"/>
                                     </Grid>
                                 </Grid>
                                 <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
                                     <TextBlock Grid.Column="0" Text="Max Speed" Classes="PropertyLabel"/>
                                     <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
-                                        <TextBox Grid.Column="0" Text="{Binding SelectedVoltage.MaxSpeed}" Classes="PropertyInput" LostFocus="OnMaxSpeedLostFocus"/>
+                                        <TextBox Grid.Column="0"
+                                                 Text="{Binding VoltageMaxSpeedEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                 Classes="PropertyInput"
+                                                 IsUndoEnabled="False"
+                                                 LostFocus="OnMaxSpeedLostFocus"/>
                                         <TextBlock Grid.Column="1" Text="{Binding CurrentMotor.Units.Speed}" Classes="PropertyValue" Margin="4,0,0,0"/>
                                     </Grid>
                                 </Grid>
                                 <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
                                     <TextBlock Grid.Column="0" Text="Peak Torque" Classes="PropertyLabel"/>
                                     <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
-                                        <TextBox Grid.Column="0" Text="{Binding SelectedVoltage.RatedPeakTorque}" Classes="PropertyInput"/>
+                                        <TextBox Grid.Column="0"
+                                                 Text="{Binding VoltagePeakTorqueEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                 Classes="PropertyInput"
+                                                 IsUndoEnabled="False"
+                                                 LostFocus="OnVoltagePeakTorqueLostFocus"/>
                                         <TextBlock Grid.Column="1" Text="{Binding CurrentMotor.Units.Torque}" Classes="PropertyValue" Margin="4,0,0,0"/>
                                     </Grid>
                                 </Grid>
                                 <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
                                     <TextBlock Grid.Column="0" Text="Cont. Torque" Classes="PropertyLabel"/>
                                     <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
-                                        <TextBox Grid.Column="0" Text="{Binding SelectedVoltage.RatedContinuousTorque}" Classes="PropertyInput"/>
+                                        <TextBox Grid.Column="0"
+                                                 Text="{Binding VoltageContinuousTorqueEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                 Classes="PropertyInput"
+                                                 IsUndoEnabled="False"
+                                                 LostFocus="OnVoltageContinuousTorqueLostFocus"/>
                                         <TextBlock Grid.Column="1" Text="{Binding CurrentMotor.Units.Torque}" Classes="PropertyValue" Margin="4,0,0,0"/>
                                     </Grid>
                                 </Grid>
                                 <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
                                     <TextBlock Grid.Column="0" Text="Cont. Amps" Classes="PropertyLabel"/>
                                     <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
-                                        <TextBox Grid.Column="0" Text="{Binding SelectedVoltage.ContinuousAmperage}" Classes="PropertyInput"/>
+                                        <TextBox Grid.Column="0"
+                                                 Text="{Binding VoltageContinuousAmpsEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                 Classes="PropertyInput"
+                                                 IsUndoEnabled="False"
+                                                 LostFocus="OnVoltageContinuousAmpsLostFocus"/>
                                         <TextBlock Grid.Column="1" Text="{Binding CurrentMotor.Units.Current}" Classes="PropertyValue" Margin="4,0,0,0"/>
                                     </Grid>
                                 </Grid>
                                 <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
                                     <TextBlock Grid.Column="0" Text="Peak Amps" Classes="PropertyLabel"/>
                                     <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
-                                        <TextBox Grid.Column="0" Text="{Binding SelectedVoltage.PeakAmperage}" Classes="PropertyInput"/>
+                                        <TextBox Grid.Column="0"
+                                                 Text="{Binding VoltagePeakAmpsEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                 Classes="PropertyInput"
+                                                 IsUndoEnabled="False"
+                                                 LostFocus="OnVoltagePeakAmpsLostFocus"/>
                                         <TextBlock Grid.Column="1" Text="{Binding CurrentMotor.Units.Current}" Classes="PropertyValue" Margin="4,0,0,0"/>
                                     </Grid>
                                 </Grid>

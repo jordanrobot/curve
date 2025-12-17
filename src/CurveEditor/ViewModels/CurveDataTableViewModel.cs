@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CurveEditor.Models;
+using CurveEditor.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -130,6 +131,48 @@ public partial class CurveDataTableViewModel : ViewModelBase
     [ObservableProperty]
     private string? _selectedSeriesName;
 
+    private UndoStack? _undoStack;
+
+    /// <summary>
+    /// Optional undo stack associated with the active document. When set,
+    /// torque edits are executed via commands so they can be undone.
+    /// </summary>
+    public UndoStack? UndoStack
+    {
+        get => _undoStack;
+        set => _undoStack = value;
+    }
+
+    /// <summary>
+    /// Optional editing coordinator used to share logical point selection
+    /// with other views such as the chart.
+    /// </summary>
+    public EditingCoordinator? EditingCoordinator
+    {
+        get => _editingCoordinator;
+        set
+        {
+            if (ReferenceEquals(_editingCoordinator, value))
+            {
+                return;
+            }
+
+            if (_editingCoordinator is not null)
+            {
+                _editingCoordinator.SelectionChanged -= OnCoordinatorSelectionChanged;
+            }
+
+            _editingCoordinator = value;
+
+            if (_editingCoordinator is not null)
+            {
+                _editingCoordinator.SelectionChanged += OnCoordinatorSelectionChanged;
+            }
+        }
+    }
+
+    private EditingCoordinator? _editingCoordinator;
+
     /// <summary>
     /// Collection of currently selected cells.
     /// </summary>
@@ -150,7 +193,11 @@ public partial class CurveDataTableViewModel : ViewModelBase
     /// The string parameter contains a human-readable error message
     /// that can be surfaced by the UI layer.
     /// </summary>
-    public event EventHandler<string>? ClipboardError;
+    public event EventHandler<string>? ClipboardError
+    {
+        add { }
+        remove { }
+    }
 
     /// <summary>
     /// Gets or sets the current voltage configuration.
@@ -215,11 +262,33 @@ public partial class CurveDataTableViewModel : ViewModelBase
     /// </summary>
     public void UpdateTorque(int rowIndex, string seriesName, double value)
     {
-        if (rowIndex >= 0 && rowIndex < Rows.Count)
+        if (rowIndex < 0 || rowIndex >= Rows.Count)
         {
+            return;
+        }
+
+        if (_currentVoltage is null)
+        {
+            return;
+        }
+
+        var series = _currentVoltage.Series.FirstOrDefault(s => s.Name == seriesName);
+        if (series is null)
+        {
+            return;
+        }
+
+        if (_undoStack is null)
+        {
+            // Fallback legacy behavior when no undo stack is available.
             Rows[rowIndex].SetTorque(seriesName, value);
             DataChanged?.Invoke(this, EventArgs.Empty);
+            return;
         }
+
+        var command = new EditPointCommand(series, rowIndex, series.Data[rowIndex].Rpm, value);
+        _undoStack.PushAndExecute(command);
+        DataChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -269,6 +338,7 @@ public partial class CurveDataTableViewModel : ViewModelBase
         SelectedCells.Clear();
         _anchorCell = null;
         SelectionChanged?.Invoke(this, EventArgs.Empty);
+        PushSelectionToCoordinator();
     }
 
     /// <summary>
@@ -282,6 +352,7 @@ public partial class CurveDataTableViewModel : ViewModelBase
         _anchorCell = cell;
         SelectedRowIndex = rowIndex;
         SelectionChanged?.Invoke(this, EventArgs.Empty);
+        PushSelectionToCoordinator();
     }
 
     /// <summary>
@@ -300,6 +371,7 @@ public partial class CurveDataTableViewModel : ViewModelBase
             _anchorCell = cell;
         }
         SelectionChanged?.Invoke(this, EventArgs.Empty);
+        PushSelectionToCoordinator();
     }
 
     /// <summary>
@@ -328,6 +400,7 @@ public partial class CurveDataTableViewModel : ViewModelBase
             }
         }
         SelectionChanged?.Invoke(this, EventArgs.Empty);
+        PushSelectionToCoordinator();
     }
 
     /// <summary>
@@ -341,6 +414,7 @@ public partial class CurveDataTableViewModel : ViewModelBase
             SelectedCells.Add(cell);
         }
         SelectionChanged?.Invoke(this, EventArgs.Empty);
+        PushSelectionToCoordinator();
     }
 
     /// <summary>
@@ -363,6 +437,7 @@ public partial class CurveDataTableViewModel : ViewModelBase
         }
         _anchorCell = startCell;
         SelectionChanged?.Invoke(this, EventArgs.Empty);
+        PushSelectionToCoordinator();
     }
 
     /// <summary>
@@ -413,6 +488,7 @@ public partial class CurveDataTableViewModel : ViewModelBase
         }
 
         SelectionChanged?.Invoke(this, EventArgs.Empty);
+        PushSelectionToCoordinator();
     }
 
     /// <summary>
@@ -436,6 +512,116 @@ public partial class CurveDataTableViewModel : ViewModelBase
         var newCol = Math.Clamp(referenceCell.ColumnIndex + columnDelta, 0, Math.Max(0, ColumnCount - 1));
 
         SelectCell(newRow, newCol);
+    }
+
+    /// <summary>
+    /// Pushes the current cell selection to the shared editing coordinator as
+    /// logical series/index pairs, when available. Non-series columns (%/RPM)
+    /// are ignored.
+    /// </summary>
+    private void PushSelectionToCoordinator()
+    {
+        if (EditingCoordinator is null)
+        {
+            return;
+        }
+
+        if (_currentVoltage is null || SeriesColumns.Count == 0)
+        {
+            EditingCoordinator.ClearSelection();
+            return;
+        }
+
+        if (SelectedCells.Count == 0)
+        {
+            EditingCoordinator.ClearSelection();
+            return;
+        }
+
+        var selections = new List<EditingCoordinator.PointSelection>();
+
+        foreach (var cell in SelectedCells)
+        {
+            // Skip non-series columns
+            if (cell.ColumnIndex < 2)
+            {
+                continue;
+            }
+
+            if (cell.RowIndex < 0)
+            {
+                continue;
+            }
+
+            var seriesName = GetSeriesNameForColumn(cell.ColumnIndex);
+            if (seriesName is null)
+            {
+                continue;
+            }
+
+            var series = _currentVoltage.Series.FirstOrDefault(s => s.Name == seriesName);
+            if (series is null)
+            {
+                continue;
+            }
+
+            if (cell.RowIndex >= series.Data.Count)
+            {
+                continue;
+            }
+
+            selections.Add(new EditingCoordinator.PointSelection(series, cell.RowIndex));
+        }
+
+        if (selections.Count == 0)
+        {
+            EditingCoordinator.ClearSelection();
+        }
+        else
+        {
+            EditingCoordinator.SetSelection(selections);
+        }
+    }
+
+    /// <summary>
+    /// Responds to selection changes coming from the shared editing
+    /// coordinator (e.g., graph-driven selection) by updating
+    /// <see cref="SelectedCells"/>. This keeps table selection in sync
+    /// with graph interactions.
+    /// </summary>
+    private void OnCoordinatorSelectionChanged(object? sender, EventArgs e)
+    {
+        if (_editingCoordinator is null || _currentVoltage is null)
+        {
+            return;
+        }
+
+        // Rebuild SelectedCells from the coordinator's logical selection.
+        SelectedCells.Clear();
+
+        foreach (var point in _editingCoordinator.SelectedPoints)
+        {
+            var seriesIndex = SeriesColumns.IndexOf(point.Series);
+            if (seriesIndex < 0)
+            {
+                continue;
+            }
+
+            var rowIndex = point.Index;
+            if (rowIndex < 0 || rowIndex >= Rows.Count)
+            {
+                continue;
+            }
+
+            var columnIndex = 2 + seriesIndex; // offset for % and RPM columns
+            SelectedCells.Add(new CellPosition(rowIndex, columnIndex));
+        }
+
+        // When selection is driven externally, reset the anchor to the first
+        // selected cell for predictable Shift+Arrow behavior.
+        _anchorCell = SelectedCells.FirstOrDefault();
+
+        SelectionChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -511,6 +697,104 @@ public partial class CurveDataTableViewModel : ViewModelBase
     }
 
     /// <summary>
+    /// Commits an override-mode edit for the specified cells using the
+    /// shared <see cref="UndoStack"/> when available, so that the
+    /// operation is undoable as a single logical step.
+    /// </summary>
+    /// <param name="originalValues">
+    /// The original torque values captured at the start of override mode,
+    /// keyed by cell position.
+    /// </param>
+    /// <param name="newValue">The final override torque value.</param>
+    /// <returns>True if any cell was changed and an operation was committed; otherwise false.</returns>
+    public bool TryCommitOverrideWithUndo(IReadOnlyDictionary<CellPosition, double> originalValues, double newValue)
+    {
+        ArgumentNullException.ThrowIfNull(originalValues);
+
+        if (_currentVoltage is null || Rows.Count == 0 || SeriesColumns.Count == 0)
+        {
+            return false;
+        }
+
+        if (originalValues.Count == 0)
+        {
+            return false;
+        }
+
+        // When no undo stack is present, fall back to the existing direct
+        // mutation path so behavior remains consistent with earlier
+        // versions, even though the operation will not be undoable.
+        if (_undoStack is null)
+        {
+            ApplyTorqueToCells(originalValues.Keys, newValue);
+            return true;
+        }
+
+        var targets = new List<OverrideTorqueCellsCommand.Target>();
+
+        foreach (var kvp in originalValues)
+        {
+            var cell = kvp.Key;
+            var oldTorque = kvp.Value;
+
+            // Skip rows that are now out of range.
+            if (cell.RowIndex < 0 || cell.RowIndex >= Rows.Count)
+            {
+                continue;
+            }
+
+            // Skip non-series columns.
+            if (cell.ColumnIndex < 2)
+            {
+                continue;
+            }
+
+            var seriesName = GetSeriesNameForColumn(cell.ColumnIndex);
+            if (string.IsNullOrEmpty(seriesName))
+            {
+                continue;
+            }
+
+            // Respect locked series.
+            if (IsSeriesLocked(seriesName))
+            {
+                continue;
+            }
+
+            var series = _currentVoltage.Series.FirstOrDefault(s => s.Name == seriesName);
+            if (series is null)
+            {
+                continue;
+            }
+
+            var dataIndex = cell.RowIndex;
+            if (dataIndex < 0 || dataIndex >= series.Data.Count)
+            {
+                continue;
+            }
+
+            // Skip no-op entries where the override value matches the
+            // original torque.
+            if (Math.Abs(oldTorque - newValue) <= double.Epsilon)
+            {
+                continue;
+            }
+
+            targets.Add(new OverrideTorqueCellsCommand.Target(series, dataIndex, oldTorque, newValue));
+        }
+
+        if (targets.Count == 0)
+        {
+            return false;
+        }
+
+        var command = new OverrideTorqueCellsCommand(targets);
+        _undoStack.PushAndExecute(command);
+        DataChanged?.Invoke(this, EventArgs.Empty);
+        return true;
+    }
+
+    /// <summary>
     /// Clears torque values for all currently selected cells by setting them to zero.
     /// </summary>
     public void ClearSelectedTorqueCells()
@@ -520,7 +804,31 @@ public partial class CurveDataTableViewModel : ViewModelBase
             return;
         }
 
-        ApplyTorqueToCells(SelectedCells, 0);
+        // When an undo stack is available, route per-cell edits through
+        // undoable commands so delete/backspace operations participate in
+        // the global undo/redo history. In environments without an undo
+        // stack (certain tests or tooling scenarios), fall back to the
+        // legacy direct mutation path for simplicity.
+        if (_undoStack is null)
+        {
+            ApplyTorqueToCells(SelectedCells, 0);
+            return;
+        }
+
+        var anyChanged = false;
+
+        foreach (var cell in SelectedCells)
+        {
+            if (TryApplyTorqueWithUndo(cell, 0))
+            {
+                anyChanged = true;
+            }
+        }
+
+        if (anyChanged)
+        {
+            DataChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     /// <summary>
@@ -559,13 +867,90 @@ public partial class CurveDataTableViewModel : ViewModelBase
             return false;
         }
 
+        // When no undo stack is present, use the existing direct-mutation
+        // path for backward compatibility.
+        if (_undoStack is null)
+        {
+            // Special case: single scalar replicated across all selected cells
+            if (lines.Length == 1)
+            {
+                var parts = lines[0].Split('\t', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 1 && double.TryParse(parts[0], out var scalar))
+                {
+                    ApplyTorqueToCells(selectedCellsSnapshot, scalar);
+                    return true;
+                }
+            }
+
+            // General rectangular paste starting from the top-left selected cell
+            var minRowLegacy = selectedCellsSnapshot.Min(c => c.RowIndex);
+            var minColLegacy = selectedCellsSnapshot.Min(c => c.ColumnIndex);
+
+            var anyChangedLegacy = false;
+
+            for (var lineIndex = 0; lineIndex < lines.Length; lineIndex++)
+            {
+                var values = lines[lineIndex].Split('\t');
+                var rowIndex = minRowLegacy + lineIndex;
+
+                if (rowIndex >= Rows.Count)
+                {
+                    break;
+                }
+
+                for (var valueIndex = 0; valueIndex < values.Length; valueIndex++)
+                {
+                    var colIndex = minColLegacy + valueIndex;
+                    var raw = values[valueIndex];
+
+                    if (!double.TryParse(raw, out var value))
+                    {
+                        continue;
+                    }
+
+                    var cellPos = new CellPosition(rowIndex, colIndex);
+                    if (TrySetTorqueAtCell(cellPos, value))
+                    {
+                        anyChangedLegacy = true;
+                    }
+                }
+            }
+
+            if (!anyChangedLegacy)
+            {
+                return false;
+            }
+
+            DataChanged?.Invoke(this, EventArgs.Empty);
+            return true;
+        }
+
+        // Undo-aware path: create proper undoable commands for each cell that
+        // changes so the entire paste operation can be unwound via the shared
+        // UndoStack.
+
         // Special case: single scalar replicated across all selected cells
         if (lines.Length == 1)
         {
-            var parts = lines[0].Split('\t', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length == 1 && double.TryParse(parts[0], out var scalar))
-            {
-                ApplyTorqueToCells(selectedCellsSnapshot, scalar);
+                var parts = lines[0].Split('\t', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 1 && double.TryParse(parts[0], out var scalar))
+                {
+                    var anyScalarChanged = false;
+
+                foreach (var cell in selectedCellsSnapshot)
+                {
+                    if (TryApplyTorqueWithUndo(cell, scalar))
+                    {
+                        anyScalarChanged = true;
+                    }
+                }
+
+                if (!anyScalarChanged)
+                {
+                    return false;
+                }
+
+                DataChanged?.Invoke(this, EventArgs.Empty);
                 return true;
             }
         }
@@ -597,7 +982,7 @@ public partial class CurveDataTableViewModel : ViewModelBase
                 }
 
                 var cellPos = new CellPosition(rowIndex, colIndex);
-                if (TrySetTorqueAtCell(cellPos, value))
+                if (TryApplyTorqueWithUndo(cellPos, value))
                 {
                     anyChanged = true;
                 }
@@ -680,6 +1065,93 @@ public partial class CurveDataTableViewModel : ViewModelBase
     }
 
     /// <summary>
+    /// Helper used by view code to route single-cell edits through the
+    /// undo-aware path without exposing the full command plumbing. This
+    /// maintains a clear separation where the view delegates mutation
+    /// rules to the view model while still allowing tests to exercise the
+    /// lower-level <see cref="TrySetTorqueAtCell"/> API directly.
+    /// </summary>
+    /// <param name="cell">The logical cell being edited.</param>
+    /// <param name="value">The new torque value.</param>
+    /// <returns>True if the value changed; otherwise false.</returns>
+    public bool TryApplyTorqueWithUndoForView(CellPosition cell, double value)
+    {
+        return TryApplyTorqueWithUndo(cell, value);
+    }
+
+    /// <summary>
+    /// Attempts to set the torque value at a specific cell using the shared
+    /// <see cref="UndoStack"/> when available so that the change can be
+    /// undone and redone. When no undo stack is configured, this falls back
+    /// to the same direct-mutation semantics as <see cref="TrySetTorqueAtCell"/>.
+    /// </summary>
+    /// <param name="cell">The logical cell position.</param>
+    /// <param name="value">The new torque value.</param>
+    /// <returns>
+    /// True if the value changed; otherwise false.
+    /// </returns>
+    private bool TryApplyTorqueWithUndo(CellPosition cell, double value)
+    {
+        if (_currentVoltage is null || Rows.Count == 0 || SeriesColumns.Count == 0)
+        {
+            return false;
+        }
+
+        if (cell.RowIndex < 0 || cell.RowIndex >= Rows.Count)
+        {
+            return false;
+        }
+
+        // Skip % and RPM columns (read-only)
+        if (cell.ColumnIndex < 2)
+        {
+            return false;
+        }
+
+        var seriesName = GetSeriesNameForColumn(cell.ColumnIndex);
+        if (string.IsNullOrEmpty(seriesName))
+        {
+            return false;
+        }
+
+        if (IsSeriesLocked(seriesName))
+        {
+            return false;
+        }
+
+        var series = _currentVoltage.Series.FirstOrDefault(s => s.Name == seriesName);
+        if (series is null)
+        {
+            return false;
+        }
+
+        var row = Rows[cell.RowIndex];
+        var dataIndex = row.RowIndex;
+
+        if (dataIndex < 0 || dataIndex >= series.Data.Count)
+        {
+            return false;
+        }
+
+        var current = series.Data[dataIndex].Torque;
+        if (Math.Abs(current - value) <= double.Epsilon)
+        {
+            return false;
+        }
+
+        if (_undoStack is null)
+        {
+            row.SetTorque(seriesName, value);
+            return true;
+        }
+
+        var rpm = series.Data[dataIndex].Rpm;
+        var command = new EditPointCommand(series, dataIndex, rpm, value);
+        _undoStack.PushAndExecute(command);
+        return true;
+    }
+
+    /// <summary>
     /// Extends selection to the end of the row or column in the specified direction (for Ctrl+Shift+Arrow keys).
     /// </summary>
     public void ExtendSelectionToEnd(int rowDelta, int columnDelta)
@@ -739,6 +1211,10 @@ public partial class CurveDataTableViewModel : ViewModelBase
         }
 
         SelectionChanged?.Invoke(this, EventArgs.Empty);
+
+        // Keep the shared editing selection in sync so chart overlays
+        // reflect Ctrl+Shift+Arrow driven selection changes.
+        PushSelectionToCoordinator();
     }
 
     /// <summary>

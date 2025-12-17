@@ -345,7 +345,11 @@ public partial class CurveDataPanel : UserControl
                             Margin = new Thickness(2),
                             Text = row?.GetTorque(seriesName).ToString("N2") ?? "0.00",
                             BorderThickness = new Thickness(2),
-                            BorderBrush = Brushes.White
+                            BorderBrush = Brushes.White,
+                            // Disable Avalonia's per-TextBox undo stack so that
+                            // Ctrl+Z / Ctrl+Y bubble up to the window-level
+                            // undo/redo commands backed by the shared UndoStack.
+                            IsUndoEnabled = false
                         };
                         
                         // Select all text when the TextBox is attached to visual tree (edit mode starts)
@@ -358,22 +362,33 @@ public partial class CurveDataPanel : UserControl
                             }
                         };
                         
-                        // Handle text changes to update the underlying data and refresh chart
+                        // Commit edits via the view-model helper so that changes
+                        // participate in the shared undo/redo history when an
+                        // UndoStack is available.
                         textBox.LostFocus += (sender, e) =>
                         {
-                            if (sender is TextBox tb && row is not null)
+                            if (sender is not TextBox tb || row is null)
                             {
-                                if (double.TryParse(tb.Text, out var newValue))
-                                {
-                                    row.SetTorque(seriesName, newValue);
-                                    
-                                    // Update chart and mark dirty when focus is lost
-                                    if (DataContext is MainWindowViewModel viewModel)
-                                    {
-                                        viewModel.MarkDirty();
-                                        viewModel.ChartViewModel.RefreshChart();
-                                    }
-                                }
+                                return;
+                            }
+
+                            if (!double.TryParse(tb.Text, out var newValue))
+                            {
+                                return;
+                            }
+
+                            if (DataContext is not MainWindowViewModel viewModel)
+                            {
+                                return;
+                            }
+
+                            var rowIndex = row.RowIndex;
+                            var cellPos = new CellPosition(rowIndex, currentColumnIndex);
+
+                            if (viewModel.CurveDataTableViewModel.TryApplyTorqueWithUndoForView(cellPos, newValue))
+                            {
+                                viewModel.MarkDirty();
+                                viewModel.ChartViewModel.RefreshChart();
                             }
                         };
                         
@@ -726,15 +741,25 @@ public partial class CurveDataPanel : UserControl
     }
 
     /// <summary>
-    /// Handles lock toggle button click.
+    /// Handles lock toggle button click. Delegates to the
+    /// MainWindowViewModel's ToggleSeriesLock command so that
+    /// the operation participates in the shared undo/redo stack.
     /// </summary>
     private void OnSeriesLockToggleClick(object? sender, RoutedEventArgs e)
     {
-        if (DataContext is MainWindowViewModel viewModel)
+        if (sender is not ToggleButton toggleButton || toggleButton.DataContext is not CurveSeries series)
         {
-            viewModel.MarkDirty();
-            // Rebuild columns to update read-only state
-            RebuildDataGridColumns();
+            return;
+        }
+
+        if (DataContext is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+
+        if (viewModel.ToggleSeriesLockCommand.CanExecute(series))
+        {
+            viewModel.ToggleSeriesLockCommand.Execute(series);
         }
     }
 
@@ -941,8 +966,9 @@ public partial class CurveDataPanel : UserControl
                 e.Handled = true;
                 return;
             }
-            // Arrow keys: commit override and move selection in the arrow
-            // direction, restoring the original single-press behavior.
+            // Arrow keys: commit the current override and then move the
+            // selection in the corresponding direction, matching the
+            // normal navigation behavior for non-override mode.
             else if (e.Key is Key.Up or Key.Down or Key.Left or Key.Right)
             {
                 CommitOverrideMode();
@@ -973,6 +999,20 @@ public partial class CurveDataPanel : UserControl
             var charInOverride = GetCharacterFromKey(e.Key, e.KeyModifiers);
             if (charInOverride is not null)
             {
+                // Enforce a single leading minus sign and a single
+                // decimal separator within the override text.
+                if (charInOverride == '-' && _overrideText.Length > 0)
+                {
+                    e.Handled = true;
+                    return;
+                }
+
+                if (charInOverride == '.' && _overrideText.Contains('.'))
+                {
+                    e.Handled = true;
+                    return;
+                }
+
                 _overrideText += charInOverride;
                 UpdateOverrideModeDisplay();
                 ForceDataGridRefresh(dataGrid);
@@ -1137,6 +1177,20 @@ public partial class CurveDataPanel : UserControl
                 _overrideText = "";
             }
             
+            // Enforce a single leading minus sign and a single decimal
+            // separator even when starting a new override via key down.
+            if (character == '-' && _overrideText.Length > 0)
+            {
+                e.Handled = true;
+                return;
+            }
+
+            if (character == '.' && _overrideText.Contains('.'))
+            {
+                e.Handled = true;
+                return;
+            }
+
             _overrideText += character;
             
             // Update cell displays immediately as user types
@@ -1432,22 +1486,55 @@ public partial class CurveDataPanel : UserControl
         var isInEditMode = e.Source is TextBox;
         if (isInEditMode) return;
         
+        // If we're already in Override Mode, rely on key handling for
+        // additional characters so we don't double-append input.
+        if (_isInOverrideMode) return;
+        
         // Don't handle if no cells selected
         var selectedCells = vm.CurveDataTableViewModel.SelectedCells;
         if (selectedCells.Count == 0) return;
         
-        // Accept any text input - validation happens on commit
         var text = e.Text;
         if (string.IsNullOrEmpty(text)) return;
-        
-        // Enter Override Mode and accumulate typed text
-        if (!_isInOverrideMode)
+
+        // Only start Override Mode for numeric-like characters: digits,
+        // a single leading minus sign, or a decimal separator. This
+        // ensures users cannot write arbitrary non-numeric text into
+        // torque cells when beginning an override.
+        if (text.Length != 1)
         {
-            _isInOverrideMode = true;
-            _overrideText = "";
+            return;
+        }
+
+        var ch = text[0];
+        var isDigit = char.IsDigit(ch);
+        var isMinus = ch == '-';
+        var isDecimal = ch == '.';
+        if (!isDigit && !isMinus && !isDecimal)
+        {
+            // Let non-numeric first characters fall through so they are
+            // not written into the cells at all.
+            return;
         }
         
-        _overrideText += text;
+        // Enter Override Mode and accumulate typed text
+        _isInOverrideMode = true;
+        _overrideText = text;
+
+        // Immediately update the display so the user sees exactly what
+        // they typed, even if it is not a valid number. Validation and
+        // potential revert happen when Override Mode is committed or
+        // cancelled.
+        UpdateOverrideModeDisplay();
+
+        if (sender is DataGrid grid)
+        {
+            ForceDataGridRefresh(grid);
+        }
+        else if (DataTable is not null)
+        {
+            ForceDataGridRefresh(DataTable);
+        }
         
         // Prevent the event from reaching the DataGrid
         e.Handled = true;
@@ -1465,8 +1552,21 @@ public partial class CurveDataPanel : UserControl
         // Try to parse the accumulated text as a number
         if (double.TryParse(_overrideText, out var value))
         {
-            // Values are already applied via UpdateOverrideModeDisplay, just mark dirty
-            vm.MarkDirty();
+            var committedViaUndo = false;
+
+            if (_originalValues.Count > 0)
+            {
+                committedViaUndo = vm.CurveDataTableViewModel.TryCommitOverrideWithUndo(_originalValues, value);
+            }
+
+            // If the view-model did not route through the undo stack (for
+            // example, in environments without an UndoStack), fall back to
+            // simply marking the document dirty so validation and UI state
+            // stay consistent with prior behavior.
+            if (!committedViaUndo)
+            {
+                vm.MarkDirty();
+            }
         }
         else
         {
@@ -1508,7 +1608,10 @@ public partial class CurveDataPanel : UserControl
             SnapshotOriginalValues(selectedCells);
         }
 
-        // Update all selected cells with the current typed text (or 0 if not parseable)
+        // If the text parses, update the underlying torque values and show
+        // the formatted numeric value. Otherwise, leave the model unchanged
+        // but show the raw typed text so the user sees exactly what they
+        // entered; validation and revert happen when Override Mode exits.
         if (double.TryParse(_overrideText, out var value))
         {
             // Delegate mutation rules to the view model helper, then update
@@ -1545,6 +1648,21 @@ public partial class CurveDataPanel : UserControl
 
             // Refresh chart to show updated values
             vm.ChartViewModel.RefreshChart();
+        }
+        else
+        {
+            foreach (var cellPos in selectedCells)
+            {
+                if (cellPos.ColumnIndex < 2)
+                {
+                    continue;
+                }
+
+                if (_cellBorders.TryGetValue(cellPos, out var border) && border.Child is TextBlock textBlock)
+                {
+                    textBlock.Text = _overrideText;
+                }
+            }
         }
     }
 

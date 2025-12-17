@@ -21,6 +21,10 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly IFileService _fileService;
     private readonly ICurveGeneratorService _curveGeneratorService;
     private readonly IValidationService _validationService;
+    private readonly IDriveVoltageSeriesService _driveVoltageSeriesService;
+    private readonly IMotorConfigurationWorkflow _motorConfigurationWorkflow;
+    private readonly UndoStack _undoStack = new();
+    private int _cleanCheckpoint;
 
     private static readonly FilePickerFileType JsonFileType = new("JSON Files")
     {
@@ -65,16 +69,22 @@ public partial class MainWindowViewModel : ViewModelBase
     private CurveSeries? _selectedSeries;
 
     /// <summary>
+    /// Coordinates editing and selection between chart and data table.
+    /// </summary>
+    [ObservableProperty]
+    private EditingCoordinator _editingCoordinator = new();
+
+    /// <summary>
     /// ViewModel for the chart component.
     /// </summary>
     [ObservableProperty]
-    private ChartViewModel _chartViewModel = new();
+    private ChartViewModel _chartViewModel;
 
     /// <summary>
     /// ViewModel for the curve data table.
     /// </summary>
     [ObservableProperty]
-    private CurveDataTableViewModel _curveDataTableViewModel = new();
+    private CurveDataTableViewModel _curveDataTableViewModel;
 
     /// <summary>
     /// Whether the units section is expanded.
@@ -87,6 +97,127 @@ public partial class MainWindowViewModel : ViewModelBase
     /// </summary>
     [ObservableProperty]
     private bool _isCurveDataExpanded;
+
+    /// <summary>
+    /// Whether the directory browser panel is expanded.
+    /// </summary>
+    [ObservableProperty]
+    private bool _isBrowserPanelExpanded = true;
+
+    /// <summary>
+    /// Whether the properties panel is expanded.
+    /// </summary>
+    [ObservableProperty]
+    private bool _isPropertiesPanelExpanded = true;
+
+    /// <summary>
+    /// Toggles the browser panel visibility.
+    /// </summary>
+    [RelayCommand]
+    private void ToggleBrowserPanel()
+    {
+        IsBrowserPanelExpanded = !IsBrowserPanelExpanded;
+    }
+
+    /// <summary>
+    /// Toggles the properties panel visibility.
+    /// </summary>
+    [RelayCommand]
+    private void TogglePropertiesPanel()
+    {
+        IsPropertiesPanelExpanded = !IsPropertiesPanelExpanded;
+    }
+
+    /// <summary>
+    /// Toggles the curve data panel visibility.
+    /// </summary>
+    [RelayCommand]
+    private void ToggleCurveDataPanel()
+    {
+        IsCurveDataExpanded = !IsCurveDataExpanded;
+    }
+
+    // Motor text editor buffers used to drive command-based edits.
+    [ObservableProperty]
+    private string _motorNameEditor = string.Empty;
+
+    [ObservableProperty]
+    private string _manufacturerEditor = string.Empty;
+
+    [ObservableProperty]
+    private string _partNumberEditor = string.Empty;
+
+    // Motor scalar editor buffers used to drive command-based edits.
+
+    [ObservableProperty]
+    private string _maxSpeedEditor = string.Empty;
+
+    [ObservableProperty]
+    private string _ratedSpeedEditor = string.Empty;
+
+    [ObservableProperty]
+    private string _ratedPeakTorqueEditor = string.Empty;
+
+    [ObservableProperty]
+    private string _ratedContinuousTorqueEditor = string.Empty;
+
+    [ObservableProperty]
+    private string _powerEditor = string.Empty;
+
+    [ObservableProperty]
+    private string _weightEditor = string.Empty;
+
+    [ObservableProperty]
+    private string _rotorInertiaEditor = string.Empty;
+
+    [ObservableProperty]
+    private string _feedbackPprEditor = string.Empty;
+
+    [ObservableProperty]
+    private bool _hasBrakeEditor;
+
+    [ObservableProperty]
+    private string _brakeTorqueEditor = string.Empty;
+
+    [ObservableProperty]
+    private string _brakeAmperageEditor = string.Empty;
+
+    [ObservableProperty]
+    private string _brakeVoltageEditor = string.Empty;
+
+    // Drive editor buffers used to drive command-based edits.
+
+    [ObservableProperty]
+    private string _driveNameEditor = string.Empty;
+
+    [ObservableProperty]
+    private string _drivePartNumberEditor = string.Empty;
+
+    [ObservableProperty]
+    private string _driveManufacturerEditor = string.Empty;
+
+    // Selected voltage editor buffers used to drive command-based edits.
+
+    [ObservableProperty]
+    private string _voltageValueEditor = string.Empty;
+
+    [ObservableProperty]
+    private string _voltagePowerEditor = string.Empty;
+
+    [ObservableProperty]
+    private string _voltageMaxSpeedEditor = string.Empty;
+    
+    [ObservableProperty]
+    private string _voltagePeakTorqueEditor = string.Empty;
+
+    [ObservableProperty]
+    private string _voltageContinuousTorqueEditor = string.Empty;
+
+    [ObservableProperty]
+    private string _voltageContinuousAmpsEditor = string.Empty;
+
+    [ObservableProperty]
+    private string _voltagePeakAmpsEditor = string.Empty;
 
     /// <summary>
     /// Cached list of available voltages for the selected drive.
@@ -105,6 +236,16 @@ public partial class MainWindowViewModel : ViewModelBase
     /// </summary>
     [ObservableProperty]
     private ObservableCollection<DriveConfiguration> _availableDrives = [];
+
+    /// <summary>
+    /// Gets whether there is at least one operation to undo.
+    /// </summary>
+    public bool CanUndo => _undoStack.CanUndo;
+
+    /// <summary>
+    /// Gets whether there is at least one operation to redo.
+    /// </summary>
+    public bool CanRedo => _undoStack.CanRedo;
 
     /// <summary>
     /// Whether save is enabled (motor exists and no validation errors).
@@ -156,13 +297,55 @@ public partial class MainWindowViewModel : ViewModelBase
     /// </summary>
     public static string[] BacklashUnits => UnitSettings.SupportedBacklashUnits;
 
+    /// <summary>
+    /// Opens the folder where application log files are stored.
+    /// </summary>
+    [RelayCommand]
+    private void OpenLogsFolder()
+    {
+        try
+        {
+            var logDirectory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "CurveEditor",
+                "logs");
+
+            if (!Directory.Exists(logDirectory))
+            {
+                Directory.CreateDirectory(logDirectory);
+            }
+
+            Log.Information("Opening logs folder at {LogDirectory}", logDirectory);
+
+            using var process = new System.Diagnostics.Process
+            {
+                StartInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = logDirectory,
+                    UseShellExecute = true
+                }
+            };
+
+            process.Start();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to open logs folder");
+            StatusMessage = "Failed to open logs folder. See log for details.";
+        }
+    }
+
     public MainWindowViewModel()
     {
         _curveGeneratorService = new CurveGeneratorService();
         _fileService = new FileService(_curveGeneratorService);
         _validationService = new ValidationService();
-        ChartViewModel.DataChanged += OnChartDataChanged;
-        CurveDataTableViewModel.DataChanged += OnDataTableDataChanged;
+        _driveVoltageSeriesService = new DriveVoltageSeriesService();
+        _chartViewModel = new ChartViewModel();
+        _curveDataTableViewModel = new CurveDataTableViewModel();
+        _motorConfigurationWorkflow = new MotorConfigurationWorkflow(_driveVoltageSeriesService);
+        WireEditingCoordinator();
+        WireUndoInfrastructure();
     }
 
     public MainWindowViewModel(IFileService fileService, ICurveGeneratorService curveGeneratorService)
@@ -170,6 +353,59 @@ public partial class MainWindowViewModel : ViewModelBase
         _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
         _curveGeneratorService = curveGeneratorService ?? throw new ArgumentNullException(nameof(curveGeneratorService));
         _validationService = new ValidationService();
+        _driveVoltageSeriesService = new DriveVoltageSeriesService();
+        _chartViewModel = new ChartViewModel();
+        _curveDataTableViewModel = new CurveDataTableViewModel();
+        _motorConfigurationWorkflow = new MotorConfigurationWorkflow(_driveVoltageSeriesService);
+        WireEditingCoordinator();
+        WireUndoInfrastructure();
+    }
+
+    /// <summary>
+    /// Public constructor intended for tests and advanced composition scenarios
+    /// where all dependencies, including workflow services, are supplied
+    /// explicitly.
+    /// </summary>
+    public MainWindowViewModel(
+        IFileService fileService,
+        ICurveGeneratorService curveGeneratorService,
+        IValidationService validationService,
+        IDriveVoltageSeriesService driveVoltageSeriesService,
+        IMotorConfigurationWorkflow motorConfigurationWorkflow,
+        ChartViewModel chartViewModel,
+        CurveDataTableViewModel curveDataTableViewModel)
+    {
+        _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
+        _curveGeneratorService = curveGeneratorService ?? throw new ArgumentNullException(nameof(curveGeneratorService));
+        _validationService = validationService ?? throw new ArgumentNullException(nameof(validationService));
+        _driveVoltageSeriesService = driveVoltageSeriesService ?? throw new ArgumentNullException(nameof(driveVoltageSeriesService));
+        _motorConfigurationWorkflow = motorConfigurationWorkflow ?? throw new ArgumentNullException(nameof(motorConfigurationWorkflow));
+        _chartViewModel = chartViewModel ?? throw new ArgumentNullException(nameof(chartViewModel));
+        _curveDataTableViewModel = curveDataTableViewModel ?? throw new ArgumentNullException(nameof(curveDataTableViewModel));
+
+        WireEditingCoordinator();
+        WireUndoInfrastructure();
+    }
+
+    private void WireEditingCoordinator()
+    {
+        ChartViewModel.DataChanged += OnChartDataChanged;
+        CurveDataTableViewModel.DataChanged += OnDataTableDataChanged;
+        ChartViewModel.EditingCoordinator = EditingCoordinator;
+        CurveDataTableViewModel.EditingCoordinator = EditingCoordinator;
+    }
+
+    private void WireUndoInfrastructure()
+    {
+        ChartViewModel.UndoStack = _undoStack;
+        CurveDataTableViewModel.UndoStack = _undoStack;
+
+        _undoStack.UndoStackChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(CanUndo));
+            OnPropertyChanged(nameof(CanRedo));
+            UpdateDirtyFromUndoDepth();
+        };
     }
 
     public string WindowTitle
@@ -183,6 +419,216 @@ public partial class MainWindowViewModel : ViewModelBase
             var dirtyIndicator = IsDirty ? " *" : "";
             return $"{fileName}{dirtyIndicator} - Curve Editor";
         }
+    }
+
+    /// <summary>
+    /// Marks the current undo history position as the clean checkpoint
+    /// corresponding to the last successful save.
+    /// </summary>
+    public void MarkCleanCheckpoint()
+    {
+        _cleanCheckpoint = GetUndoDepth();
+        IsDirty = false;
+    }
+
+    private int GetUndoDepth()
+    {
+        return _undoStack.UndoDepth;
+    }
+
+    private void UpdateDirtyFromUndoDepth()
+    {
+        var depth = GetUndoDepth();
+
+        if (depth == _cleanCheckpoint && !_fileService.IsDirty)
+        {
+            IsDirty = false;
+        }
+        else if (depth != _cleanCheckpoint || _fileService.IsDirty)
+        {
+            IsDirty = true;
+        }
+    }
+
+    private void RefreshMotorEditorsFromCurrentMotor()
+    {
+        if (CurrentMotor is null)
+        {
+            MotorNameEditor = string.Empty;
+            ManufacturerEditor = string.Empty;
+            PartNumberEditor = string.Empty;
+            MaxSpeedEditor = string.Empty;
+            RatedSpeedEditor = string.Empty;
+            RatedPeakTorqueEditor = string.Empty;
+            RatedContinuousTorqueEditor = string.Empty;
+            PowerEditor = string.Empty;
+            WeightEditor = string.Empty;
+            RotorInertiaEditor = string.Empty;
+            FeedbackPprEditor = string.Empty;
+            HasBrakeEditor = false;
+            BrakeTorqueEditor = string.Empty;
+            BrakeAmperageEditor = string.Empty;
+            BrakeVoltageEditor = string.Empty;
+            DriveNameEditor = string.Empty;
+            DrivePartNumberEditor = string.Empty;
+            DriveManufacturerEditor = string.Empty;
+            VoltageValueEditor = string.Empty;
+            VoltagePowerEditor = string.Empty;
+            VoltageMaxSpeedEditor = string.Empty;
+            VoltagePeakTorqueEditor = string.Empty;
+            VoltageContinuousTorqueEditor = string.Empty;
+            VoltageContinuousAmpsEditor = string.Empty;
+            VoltagePeakAmpsEditor = string.Empty;
+            return;
+        }
+
+        MotorNameEditor = CurrentMotor.MotorName ?? string.Empty;
+        ManufacturerEditor = CurrentMotor.Manufacturer ?? string.Empty;
+        PartNumberEditor = CurrentMotor.PartNumber ?? string.Empty;
+        MaxSpeedEditor = CurrentMotor.MaxSpeed.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        RatedSpeedEditor = CurrentMotor.RatedSpeed.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        RatedPeakTorqueEditor = CurrentMotor.RatedPeakTorque.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        RatedContinuousTorqueEditor = CurrentMotor.RatedContinuousTorque.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        PowerEditor = CurrentMotor.Power.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        WeightEditor = CurrentMotor.Weight.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        RotorInertiaEditor = CurrentMotor.RotorInertia.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        FeedbackPprEditor = CurrentMotor.FeedbackPpr.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        HasBrakeEditor = CurrentMotor.HasBrake;
+        BrakeTorqueEditor = CurrentMotor.BrakeTorque.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        BrakeAmperageEditor = CurrentMotor.BrakeAmperage.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        BrakeVoltageEditor = CurrentMotor.BrakeVoltage.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        DriveNameEditor = SelectedDrive?.Name ?? string.Empty;
+        DrivePartNumberEditor = SelectedDrive?.PartNumber ?? string.Empty;
+        DriveManufacturerEditor = SelectedDrive?.Manufacturer ?? string.Empty;
+        VoltageValueEditor = SelectedVoltage?.Voltage.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+        VoltagePowerEditor = SelectedVoltage?.Power.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+        VoltageMaxSpeedEditor = SelectedVoltage?.MaxSpeed.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+        VoltagePeakTorqueEditor = SelectedVoltage?.RatedPeakTorque.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+        VoltageContinuousTorqueEditor = SelectedVoltage?.RatedContinuousTorque.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+        VoltageContinuousAmpsEditor = SelectedVoltage?.ContinuousAmperage.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+        VoltagePeakAmpsEditor = SelectedVoltage?.PeakAmperage.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Edits the motor name via an undoable command.
+    /// </summary>
+    /// <param name="newName">The new motor name.</param>
+    public void EditMotorName(string newName)
+    {
+        if (CurrentMotor is null)
+        {
+            return;
+        }
+
+        var oldName = CurrentMotor.MotorName ?? string.Empty;
+        var newNameValue = newName ?? string.Empty;
+
+        if (string.Equals(oldName, newNameValue, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var command = new EditMotorPropertyCommand(CurrentMotor, nameof(MotorDefinition.MotorName), oldName, newNameValue);
+        _undoStack.PushAndExecute(command);
+        UpdateDirtyFromUndoDepth();
+        MotorNameEditor = CurrentMotor.MotorName ?? string.Empty;
+        OnPropertyChanged(nameof(WindowTitle));
+    }
+
+    /// <summary>
+    /// Edits the motor manufacturer via an undoable command.
+    /// </summary>
+    /// <param name="newManufacturer">The new manufacturer.</param>
+    public void EditMotorManufacturer(string newManufacturer)
+    {
+        if (CurrentMotor is null)
+        {
+            return;
+        }
+
+        var oldManufacturer = CurrentMotor.Manufacturer ?? string.Empty;
+        var newManufacturerValue = newManufacturer ?? string.Empty;
+
+        if (string.Equals(oldManufacturer, newManufacturerValue, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var command = new EditMotorPropertyCommand(CurrentMotor, nameof(MotorDefinition.Manufacturer), oldManufacturer, newManufacturerValue);
+        _undoStack.PushAndExecute(command);
+        UpdateDirtyFromUndoDepth();
+        ManufacturerEditor = CurrentMotor.Manufacturer ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Edits the motor max speed via an undoable command.
+    /// </summary>
+    public void EditMotorMaxSpeed()
+    {
+        if (CurrentMotor is null)
+        {
+            return;
+        }
+
+        var oldValue = CurrentMotor.MaxSpeed;
+        if (!TryParseDouble(MaxSpeedEditor, oldValue, out var newValue))
+        {
+            MaxSpeedEditor = oldValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return;
+        }
+
+        if (Math.Abs(oldValue - newValue) < 0.000001)
+        {
+            return;
+        }
+
+        var command = new EditMotorPropertyCommand(CurrentMotor, nameof(MotorDefinition.MaxSpeed), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        MaxSpeedEditor = newValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        ChartViewModel.MotorMaxSpeed = newValue;
+        IsDirty = true;
+    }
+
+    /// <summary>
+    /// Edits the motor part number via an undoable command.
+    /// </summary>
+    /// <param name="newPartNumber">The new part number.</param>
+    public void EditMotorPartNumber(string newPartNumber)
+    {
+        if (CurrentMotor is null)
+        {
+            return;
+        }
+
+        var oldPartNumber = CurrentMotor.PartNumber ?? string.Empty;
+        var newPartNumberValue = newPartNumber ?? string.Empty;
+        if (string.Equals(oldPartNumber, newPartNumberValue, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var command = new EditMotorPropertyCommand(CurrentMotor, nameof(MotorDefinition.PartNumber), oldPartNumber, newPartNumberValue);
+        _undoStack.PushAndExecute(command);
+        UpdateDirtyFromUndoDepth();
+        PartNumberEditor = CurrentMotor.PartNumber ?? string.Empty;
+    }
+
+    private static bool TryParseDouble(string text, double currentValue, out double parsed)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            parsed = currentValue;
+            return true;
+        }
+
+        if (double.TryParse(text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var value))
+        {
+            parsed = value;
+            return true;
+        }
+
+        parsed = currentValue;
+        return false;
     }
 
     /// <summary>
@@ -215,6 +661,538 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
+    public void EditDriveName()
+    {
+        if (SelectedDrive is null)
+        {
+            return;
+        }
+
+        var oldValue = SelectedDrive.Name ?? string.Empty;
+        var newValue = DriveNameEditor ?? string.Empty;
+
+        if (string.Equals(oldValue, newValue, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var command = new EditDrivePropertyCommand(SelectedDrive, nameof(DriveConfiguration.Name), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        DriveNameEditor = newValue;
+        IsDirty = true;
+    }
+
+    public void EditDrivePartNumber()
+    {
+        if (SelectedDrive is null)
+        {
+            return;
+        }
+
+        var oldValue = SelectedDrive.PartNumber ?? string.Empty;
+        var newValue = DrivePartNumberEditor ?? string.Empty;
+
+        if (string.Equals(oldValue, newValue, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var command = new EditDrivePropertyCommand(SelectedDrive, nameof(DriveConfiguration.PartNumber), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        DrivePartNumberEditor = newValue;
+        IsDirty = true;
+    }
+
+    public void EditDriveManufacturer()
+    {
+        if (SelectedDrive is null)
+        {
+            return;
+        }
+
+        var oldValue = SelectedDrive.Manufacturer ?? string.Empty;
+        var newValue = DriveManufacturerEditor ?? string.Empty;
+
+        if (string.Equals(oldValue, newValue, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var command = new EditDrivePropertyCommand(SelectedDrive, nameof(DriveConfiguration.Manufacturer), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        DriveManufacturerEditor = newValue;
+        IsDirty = true;
+    }
+
+    public void EditSelectedVoltageValue()
+    {
+        if (SelectedVoltage is null)
+        {
+            return;
+        }
+
+        var oldValue = SelectedVoltage.Voltage;
+        if (!TryParseDouble(VoltageValueEditor, oldValue, out var newValue))
+        {
+            VoltageValueEditor = oldValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return;
+        }
+
+        if (Math.Abs(oldValue - newValue) < 0.000001)
+        {
+            return;
+        }
+
+        Log.Debug("EditSelectedVoltageValue: old={Old}, new={New}", oldValue, newValue);
+        var command = new EditVoltagePropertyCommand(SelectedVoltage, nameof(VoltageConfiguration.Voltage), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        VoltageValueEditor = newValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        ChartViewModel.RefreshChart();
+        CurveDataTableViewModel.RefreshData();
+        IsDirty = true;
+    }
+
+    public void EditSelectedVoltagePower()
+    {
+        if (SelectedVoltage is null)
+        {
+            return;
+        }
+
+        var oldValue = SelectedVoltage.Power;
+        if (!TryParseDouble(VoltagePowerEditor, oldValue, out var newValue))
+        {
+            VoltagePowerEditor = oldValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return;
+        }
+
+        if (Math.Abs(oldValue - newValue) < 0.000001)
+        {
+            return;
+        }
+
+        Log.Debug("EditSelectedVoltagePower: old={Old}, new={New}", oldValue, newValue);
+        var command = new EditVoltagePropertyCommand(SelectedVoltage, nameof(VoltageConfiguration.Power), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        VoltagePowerEditor = newValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        ChartViewModel.RefreshChart();
+        CurveDataTableViewModel.RefreshData();
+        IsDirty = true;
+    }
+
+    public void EditSelectedVoltageMaxSpeed()
+    {
+        if (SelectedVoltage is null)
+        {
+            return;
+        }
+
+        var oldValue = SelectedVoltage.MaxSpeed;
+        if (!TryParseDouble(VoltageMaxSpeedEditor, oldValue, out var newValue))
+        {
+            VoltageMaxSpeedEditor = oldValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return;
+        }
+
+        if (Math.Abs(oldValue - newValue) < 0.000001)
+        {
+            return;
+        }
+
+        Log.Debug("EditSelectedVoltageMaxSpeed: old={Old}, new={New}", oldValue, newValue);
+        var command = new EditVoltagePropertyCommand(SelectedVoltage, nameof(VoltageConfiguration.MaxSpeed), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        VoltageMaxSpeedEditor = newValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        ChartViewModel.RefreshChart();
+        CurveDataTableViewModel.RefreshData();
+        IsDirty = true;
+    }
+
+    public void EditSelectedVoltagePeakTorque()
+    {
+        if (SelectedVoltage is null)
+        {
+            return;
+        }
+
+        var oldValue = SelectedVoltage.RatedPeakTorque;
+        if (!TryParseDouble(VoltagePeakTorqueEditor, oldValue, out var newValue))
+        {
+            VoltagePeakTorqueEditor = oldValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return;
+        }
+
+        if (Math.Abs(oldValue - newValue) < 0.000001)
+        {
+            return;
+        }
+
+        Log.Debug("EditSelectedVoltagePeakTorque: old={Old}, new={New}", oldValue, newValue);
+        var command = new EditVoltagePropertyCommand(SelectedVoltage, nameof(VoltageConfiguration.RatedPeakTorque), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        VoltagePeakTorqueEditor = newValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        ChartViewModel.RefreshChart();
+        CurveDataTableViewModel.RefreshData();
+        IsDirty = true;
+    }
+
+    public void EditSelectedVoltageContinuousTorque()
+    {
+        if (SelectedVoltage is null)
+        {
+            return;
+        }
+
+        var oldValue = SelectedVoltage.RatedContinuousTorque;
+        if (!TryParseDouble(VoltageContinuousTorqueEditor, oldValue, out var newValue))
+        {
+            VoltageContinuousTorqueEditor = oldValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return;
+        }
+
+        if (Math.Abs(oldValue - newValue) < 0.000001)
+        {
+            return;
+        }
+
+        Log.Debug("EditSelectedVoltageContinuousTorque: old={Old}, new={New}", oldValue, newValue);
+        var command = new EditVoltagePropertyCommand(SelectedVoltage, nameof(VoltageConfiguration.RatedContinuousTorque), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        VoltageContinuousTorqueEditor = newValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        ChartViewModel.RefreshChart();
+        CurveDataTableViewModel.RefreshData();
+        IsDirty = true;
+    }
+
+    public void EditSelectedVoltageContinuousAmps()
+    {
+        if (SelectedVoltage is null)
+        {
+            return;
+        }
+
+        var oldValue = SelectedVoltage.ContinuousAmperage;
+        if (!TryParseDouble(VoltageContinuousAmpsEditor, oldValue, out var newValue))
+        {
+            VoltageContinuousAmpsEditor = oldValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return;
+        }
+
+        if (Math.Abs(oldValue - newValue) < 0.000001)
+        {
+            return;
+        }
+
+        Log.Debug("EditSelectedVoltageContinuousAmps: old={Old}, new={New}", oldValue, newValue);
+        var command = new EditVoltagePropertyCommand(SelectedVoltage, nameof(VoltageConfiguration.ContinuousAmperage), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        VoltageContinuousAmpsEditor = newValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        ChartViewModel.RefreshChart();
+        CurveDataTableViewModel.RefreshData();
+        IsDirty = true;
+    }
+
+    public void EditSelectedVoltagePeakAmps()
+    {
+        if (SelectedVoltage is null)
+        {
+            return;
+        }
+
+        var oldValue = SelectedVoltage.PeakAmperage;
+        if (!TryParseDouble(VoltagePeakAmpsEditor, oldValue, out var newValue))
+        {
+            VoltagePeakAmpsEditor = oldValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return;
+        }
+
+        if (Math.Abs(oldValue - newValue) < 0.000001)
+        {
+            return;
+        }
+
+        Log.Debug("EditSelectedVoltagePeakAmps: old={Old}, new={New}", oldValue, newValue);
+        var command = new EditVoltagePropertyCommand(SelectedVoltage, nameof(VoltageConfiguration.PeakAmperage), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        VoltagePeakAmpsEditor = newValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        ChartViewModel.RefreshChart();
+        CurveDataTableViewModel.RefreshData();
+        IsDirty = true;
+    }
+
+    public void EditMotorRatedSpeed()
+    {
+        if (CurrentMotor is null)
+        {
+            return;
+        }
+
+        var oldValue = CurrentMotor.RatedSpeed;
+        if (!TryParseDouble(RatedSpeedEditor, oldValue, out var newValue))
+        {
+            RatedSpeedEditor = oldValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return;
+        }
+
+        if (Math.Abs(oldValue - newValue) < 0.000001)
+        {
+            return;
+        }
+
+        var command = new EditMotorPropertyCommand(CurrentMotor, nameof(MotorDefinition.RatedSpeed), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        RatedSpeedEditor = newValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        IsDirty = true;
+    }
+
+    public void EditMotorRatedPeakTorque()
+    {
+        if (CurrentMotor is null)
+        {
+            return;
+        }
+
+        var oldValue = CurrentMotor.RatedPeakTorque;
+        if (!TryParseDouble(RatedPeakTorqueEditor, oldValue, out var newValue))
+        {
+            RatedPeakTorqueEditor = oldValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return;
+        }
+
+        if (Math.Abs(oldValue - newValue) < 0.000001)
+        {
+            return;
+        }
+
+        var command = new EditMotorPropertyCommand(CurrentMotor, nameof(MotorDefinition.RatedPeakTorque), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        RatedPeakTorqueEditor = newValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        IsDirty = true;
+    }
+
+    public void EditMotorRatedContinuousTorque()
+    {
+        if (CurrentMotor is null)
+        {
+            return;
+        }
+
+        var oldValue = CurrentMotor.RatedContinuousTorque;
+        if (!TryParseDouble(RatedContinuousTorqueEditor, oldValue, out var newValue))
+        {
+            RatedContinuousTorqueEditor = oldValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return;
+        }
+
+        if (Math.Abs(oldValue - newValue) < 0.000001)
+        {
+            return;
+        }
+
+        var command = new EditMotorPropertyCommand(CurrentMotor, nameof(MotorDefinition.RatedContinuousTorque), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        RatedContinuousTorqueEditor = newValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        IsDirty = true;
+    }
+
+    public void EditMotorPower()
+    {
+        if (CurrentMotor is null)
+        {
+            return;
+        }
+
+        var oldValue = CurrentMotor.Power;
+        if (!TryParseDouble(PowerEditor, oldValue, out var newValue))
+        {
+            PowerEditor = oldValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return;
+        }
+
+        if (Math.Abs(oldValue - newValue) < 0.000001)
+        {
+            return;
+        }
+
+        var command = new EditMotorPropertyCommand(CurrentMotor, nameof(MotorDefinition.Power), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        PowerEditor = newValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        IsDirty = true;
+    }
+
+    public void EditMotorWeight()
+    {
+        if (CurrentMotor is null)
+        {
+            return;
+        }
+
+        var oldValue = CurrentMotor.Weight;
+        if (!TryParseDouble(WeightEditor, oldValue, out var newValue))
+        {
+            WeightEditor = oldValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return;
+        }
+
+        if (Math.Abs(oldValue - newValue) < 0.000001)
+        {
+            return;
+        }
+
+        var command = new EditMotorPropertyCommand(CurrentMotor, nameof(MotorDefinition.Weight), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        WeightEditor = newValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        IsDirty = true;
+    }
+
+    public void EditMotorRotorInertia()
+    {
+        if (CurrentMotor is null)
+        {
+            return;
+        }
+
+        var oldValue = CurrentMotor.RotorInertia;
+        if (!TryParseDouble(RotorInertiaEditor, oldValue, out var newValue))
+        {
+            RotorInertiaEditor = oldValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return;
+        }
+
+        if (Math.Abs(oldValue - newValue) < 0.000001)
+        {
+            return;
+        }
+
+        var command = new EditMotorPropertyCommand(CurrentMotor, nameof(MotorDefinition.RotorInertia), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        RotorInertiaEditor = newValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        IsDirty = true;
+    }
+
+    public void EditMotorFeedbackPpr()
+    {
+        if (CurrentMotor is null)
+        {
+            return;
+        }
+
+        var oldValue = CurrentMotor.FeedbackPpr;
+        if (!int.TryParse(FeedbackPprEditor, out var newValue))
+        {
+            FeedbackPprEditor = oldValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return;
+        }
+
+        if (oldValue == newValue)
+        {
+            return;
+        }
+
+        var command = new EditMotorPropertyCommand(CurrentMotor, nameof(MotorDefinition.FeedbackPpr), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        FeedbackPprEditor = newValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        IsDirty = true;
+    }
+
+    public void EditMotorHasBrake()
+    {
+        if (CurrentMotor is null)
+        {
+            return;
+        }
+
+        var oldValue = CurrentMotor.HasBrake;
+        var newValue = HasBrakeEditor;
+
+        if (oldValue == newValue)
+        {
+            return;
+        }
+
+        var command = new EditMotorPropertyCommand(CurrentMotor, nameof(MotorDefinition.HasBrake), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        HasBrakeEditor = newValue;
+        ChartViewModel.HasBrake = newValue;
+        IsDirty = true;
+    }
+
+    public void EditMotorBrakeTorque()
+    {
+        if (CurrentMotor is null)
+        {
+            return;
+        }
+
+        var oldValue = CurrentMotor.BrakeTorque;
+        if (!TryParseDouble(BrakeTorqueEditor, oldValue, out var newValue))
+        {
+            BrakeTorqueEditor = oldValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return;
+        }
+
+        if (Math.Abs(oldValue - newValue) < 0.000001)
+        {
+            return;
+        }
+
+        var command = new EditMotorPropertyCommand(CurrentMotor, nameof(MotorDefinition.BrakeTorque), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        BrakeTorqueEditor = newValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        ChartViewModel.BrakeTorque = newValue;
+        IsDirty = true;
+    }
+
+    public void EditMotorBrakeAmperage()
+    {
+        if (CurrentMotor is null)
+        {
+            return;
+        }
+
+        var oldValue = CurrentMotor.BrakeAmperage;
+        if (!TryParseDouble(BrakeAmperageEditor, oldValue, out var newValue))
+        {
+            BrakeAmperageEditor = oldValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return;
+        }
+
+        if (Math.Abs(oldValue - newValue) < 0.000001)
+        {
+            return;
+        }
+
+        var command = new EditMotorPropertyCommand(CurrentMotor, nameof(MotorDefinition.BrakeAmperage), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        BrakeAmperageEditor = newValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        IsDirty = true;
+    }
+
+    public void EditMotorBrakeVoltage()
+    {
+        if (CurrentMotor is null)
+        {
+            return;
+        }
+
+        var oldValue = CurrentMotor.BrakeVoltage;
+        if (!TryParseDouble(BrakeVoltageEditor, oldValue, out var newValue))
+        {
+            BrakeVoltageEditor = oldValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return;
+        }
+
+        if (Math.Abs(oldValue - newValue) < 0.000001)
+        {
+            return;
+        }
+
+        var command = new EditMotorPropertyCommand(CurrentMotor, nameof(MotorDefinition.BrakeVoltage), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        BrakeVoltageEditor = newValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        IsDirty = true;
+    }
+
     /// <summary>
     /// Refreshes the available series collection from the selected voltage.
     /// </summary>
@@ -245,6 +1223,64 @@ public partial class MainWindowViewModel : ViewModelBase
         
         // When motor changes, select the first drive
         SelectedDrive = value?.Drives.FirstOrDefault();
+
+        // Update motor editor buffers from the current motor so that
+        // the UI reflects the active document while ensuring that
+        // subsequent edits flow through the command-based path.
+        MotorNameEditor = value?.MotorName ?? string.Empty;
+        ManufacturerEditor = value?.Manufacturer ?? string.Empty;
+        PartNumberEditor = value?.PartNumber ?? string.Empty;
+
+        if (value is null)
+        {
+            MaxSpeedEditor = string.Empty;
+            RatedSpeedEditor = string.Empty;
+            RatedPeakTorqueEditor = string.Empty;
+            RatedContinuousTorqueEditor = string.Empty;
+            PowerEditor = string.Empty;
+            WeightEditor = string.Empty;
+            RotorInertiaEditor = string.Empty;
+            FeedbackPprEditor = string.Empty;
+            HasBrakeEditor = false;
+            BrakeTorqueEditor = string.Empty;
+            BrakeAmperageEditor = string.Empty;
+            BrakeVoltageEditor = string.Empty;
+            DriveNameEditor = string.Empty;
+            DrivePartNumberEditor = string.Empty;
+            DriveManufacturerEditor = string.Empty;
+            VoltageValueEditor = string.Empty;
+            VoltagePowerEditor = string.Empty;
+            VoltageMaxSpeedEditor = string.Empty;
+            VoltagePeakTorqueEditor = string.Empty;
+            VoltageContinuousTorqueEditor = string.Empty;
+            VoltageContinuousAmpsEditor = string.Empty;
+            VoltagePeakAmpsEditor = string.Empty;
+        }
+        else
+        {
+            MaxSpeedEditor = value.MaxSpeed.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            RatedSpeedEditor = value.RatedSpeed.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            RatedPeakTorqueEditor = value.RatedPeakTorque.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            RatedContinuousTorqueEditor = value.RatedContinuousTorque.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            PowerEditor = value.Power.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            WeightEditor = value.Weight.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            RotorInertiaEditor = value.RotorInertia.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            FeedbackPprEditor = value.FeedbackPpr.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            HasBrakeEditor = value.HasBrake;
+            BrakeTorqueEditor = value.BrakeTorque.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            BrakeAmperageEditor = value.BrakeAmperage.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            BrakeVoltageEditor = value.BrakeVoltage.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            DriveNameEditor = SelectedDrive?.Name ?? string.Empty;
+            DrivePartNumberEditor = SelectedDrive?.PartNumber ?? string.Empty;
+            DriveManufacturerEditor = SelectedDrive?.Manufacturer ?? string.Empty;
+            VoltageValueEditor = SelectedVoltage?.Voltage.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+            VoltagePowerEditor = SelectedVoltage?.Power.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+            VoltageMaxSpeedEditor = SelectedVoltage?.MaxSpeed.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+            VoltagePeakTorqueEditor = SelectedVoltage?.RatedPeakTorque.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+            VoltageContinuousTorqueEditor = SelectedVoltage?.RatedContinuousTorque.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+            VoltageContinuousAmpsEditor = SelectedVoltage?.ContinuousAmperage.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+            VoltagePeakAmpsEditor = SelectedVoltage?.PeakAmperage.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+        }
     }
 
     partial void OnSelectedDriveChanged(DriveConfiguration? value)
@@ -261,6 +1297,10 @@ public partial class MainWindowViewModel : ViewModelBase
         // Prefer 208V if available, otherwise use the first voltage
         var preferred = value.Voltages.FirstOrDefault(v => Math.Abs(v.Voltage - 208) < 0.1);
         SelectedVoltage = preferred ?? value.Voltages.FirstOrDefault();
+
+        DriveNameEditor = value.Name ?? string.Empty;
+        DrivePartNumberEditor = value.PartNumber ?? string.Empty;
+        DriveManufacturerEditor = value.Manufacturer ?? string.Empty;
     }
 
     partial void OnSelectedVoltageChanged(VoltageConfiguration? value)
@@ -280,6 +1320,14 @@ public partial class MainWindowViewModel : ViewModelBase
 
         // Update data table with new voltage configuration
         CurveDataTableViewModel.CurrentVoltage = value;
+
+        VoltageValueEditor = value?.Voltage.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+        VoltagePowerEditor = value?.Power.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+        VoltageMaxSpeedEditor = value?.MaxSpeed.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+        VoltagePeakTorqueEditor = value?.RatedPeakTorque.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+        VoltageContinuousTorqueEditor = value?.RatedContinuousTorque.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+        VoltageContinuousAmpsEditor = value?.ContinuousAmperage.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+        VoltagePeakAmpsEditor = value?.PeakAmperage.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
     }
 
     private void OnChartDataChanged(object? sender, EventArgs e)
@@ -291,6 +1339,30 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         MarkDirty();
         ChartViewModel.RefreshChart();
+    }
+
+    /// <summary>
+    /// Undoes the most recent editing operation, if any.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanUndo))]
+    private void Undo()
+    {
+        _undoStack.Undo();
+        RefreshMotorEditorsFromCurrentMotor();
+        ChartViewModel.RefreshChart();
+        CurveDataTableViewModel.RefreshData();
+    }
+
+    /// <summary>
+    /// Re-applies the most recently undone editing operation, if any.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanRedo))]
+    private void Redo()
+    {
+        _undoStack.Redo();
+        RefreshMotorEditorsFromCurrentMotor();
+        ChartViewModel.RefreshChart();
+        CurveDataTableViewModel.RefreshData();
     }
 
     [RelayCommand]
@@ -411,6 +1483,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
             await _fileService.SaveAsync(CurrentMotor);
             IsDirty = false;
+            MarkCleanCheckpoint();
             StatusMessage = "File saved successfully";
             OnPropertyChanged(nameof(WindowTitle));
         }
@@ -466,6 +1539,7 @@ public partial class MainWindowViewModel : ViewModelBase
             var filePath = file.Path.LocalPath;
             await _fileService.SaveAsAsync(CurrentMotor, filePath);
             IsDirty = false;
+            MarkCleanCheckpoint();
             StatusMessage = $"Saved to: {Path.GetFileName(filePath)}";
             OnPropertyChanged(nameof(WindowTitle));
         }
@@ -525,73 +1599,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task AddDriveAsync()
     {
-        if (CurrentMotor is null) return;
-
-        try
-        {
-            var dialog = new Views.AddDriveVoltageDialog();
-            dialog.Initialize(
-                CurrentMotor.MaxSpeed,
-                CurrentMotor.RatedPeakTorque,
-                CurrentMotor.RatedContinuousTorque,
-                CurrentMotor.Power);
-
-            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop &&
-                desktop.MainWindow is not null)
-            {
-                await dialog.ShowDialog(desktop.MainWindow);
-            }
-            else
-            {
-                StatusMessage = "Cannot show dialog - no main window available";
-                return;
-            }
-
-            if (dialog.Result is null) return;
-
-            var result = dialog.Result;
-            var driveName = string.IsNullOrWhiteSpace(result.Name)
-                ? GenerateUniqueName(CurrentMotor.Drives.Select(d => d.Name), "New Drive")
-                : result.Name;
-
-            var drive = CurrentMotor.AddDrive(driveName);
-            drive.PartNumber = result.PartNumber;
-            drive.Manufacturer = result.Manufacturer;
-
-            // Add the voltage configuration
-            var voltage = drive.AddVoltageConfiguration(result.Voltage);
-            voltage.MaxSpeed = result.MaxSpeed;
-            voltage.Power = result.Power;
-            voltage.RatedPeakTorque = result.PeakTorque;
-            voltage.RatedContinuousTorque = result.ContinuousTorque;
-            voltage.ContinuousAmperage = result.ContinuousCurrent;
-            voltage.PeakAmperage = result.PeakCurrent;
-
-            // Create Peak and Continuous torque series
-            var peakSeries = new CurveSeries("Peak");
-            var continuousSeries = new CurveSeries("Continuous");
-            peakSeries.InitializeData(voltage.MaxSpeed, voltage.RatedPeakTorque);
-            continuousSeries.InitializeData(voltage.MaxSpeed, voltage.RatedContinuousTorque);
-            voltage.Series.Add(peakSeries);
-            voltage.Series.Add(continuousSeries);
-
-            // Add the new drive directly to the collection (don't clear/refresh)
-            AvailableDrives.Add(drive);
-            
-            // Select the new drive - this will trigger OnSelectedDriveChanged which updates voltages
-            SelectedDrive = drive;
-            
-            // Explicitly refresh chart to ensure axes are updated with new max speed
-            ChartViewModel.RefreshChart();
-            
-            MarkDirty();
-            StatusMessage = $"Added drive: {driveName}";
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Failed to add drive");
-            StatusMessage = $"Error adding drive: {ex.Message}";
-        }
+        await AddDriveInternalAsync();
     }
 
     [RelayCommand]
@@ -644,65 +1652,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task AddVoltageAsync()
     {
-        if (SelectedDrive is null) return;
-
-        try
-        {
-            var dialog = new Views.AddDriveVoltageDialog();
-            dialog.Title = "Add New Voltage Configuration";
-            dialog.Initialize(
-                CurrentMotor?.MaxSpeed ?? 5000,
-                CurrentMotor?.RatedPeakTorque ?? 50,
-                CurrentMotor?.RatedContinuousTorque ?? 40,
-                CurrentMotor?.Power ?? 1500);
-
-            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            {
-                await dialog.ShowDialog(desktop.MainWindow!);
-            }
-
-            if (dialog.Result is null) return;
-
-            var result = dialog.Result;
-            
-            // Check if voltage already exists
-            if (SelectedDrive.Voltages.Any(v => Math.Abs(v.Voltage - result.Voltage) < DriveConfiguration.DefaultVoltageTolerance))
-            {
-                StatusMessage = $"Voltage {result.Voltage}V already exists for this drive.";
-                return;
-            }
-
-            var voltage = SelectedDrive.AddVoltageConfiguration(result.Voltage);
-            voltage.MaxSpeed = result.MaxSpeed;
-            voltage.Power = result.Power;
-            voltage.RatedPeakTorque = result.PeakTorque;
-            voltage.RatedContinuousTorque = result.ContinuousTorque;
-            voltage.ContinuousAmperage = result.ContinuousCurrent;
-            voltage.PeakAmperage = result.PeakCurrent;
-
-            // Create Peak and Continuous torque series
-            var peakSeries = new CurveSeries("Peak");
-            var continuousSeries = new CurveSeries("Continuous");
-            peakSeries.InitializeData(voltage.MaxSpeed, voltage.RatedPeakTorque);
-            continuousSeries.InitializeData(voltage.MaxSpeed, voltage.RatedContinuousTorque);
-            voltage.Series.Add(peakSeries);
-            voltage.Series.Add(continuousSeries);
-
-            // Refresh the available voltages and select the new one
-            RefreshAvailableVoltages();
-            SelectedVoltage = voltage;
-            
-            // Force chart refresh to update axes based on new max speed
-            ChartViewModel.RefreshChart();
-            
-            MarkDirty();
-            StatusMessage = $"Added voltage: {result.Voltage}V";
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Failed to add voltage");
-            StatusMessage = $"Error adding voltage: {ex.Message}";
-        }
+        await AddVoltageInternalAsync();
     }
 
     [RelayCommand]
@@ -750,7 +1700,139 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task AddSeriesAsync()
     {
-        if (SelectedVoltage is null) return;
+        await AddSeriesInternalAsync();
+    }
+
+    /// <summary>
+    /// Core workflow for adding a new drive with an initial voltage configuration.
+    /// Kept internal to simplify future extraction into a dedicated workflow service.
+    /// </summary>
+    private async Task AddDriveInternalAsync()
+    {
+        if (CurrentMotor is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var dialog = new Views.AddDriveVoltageDialog();
+            dialog.Initialize(
+                CurrentMotor.MaxSpeed,
+                CurrentMotor.RatedPeakTorque,
+                CurrentMotor.RatedContinuousTorque,
+                CurrentMotor.Power);
+
+            if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop ||
+                desktop.MainWindow is null)
+            {
+                StatusMessage = "Cannot show dialog - no main window available";
+                return;
+            }
+
+            await dialog.ShowDialog(desktop.MainWindow);
+            if (dialog.Result is null)
+            {
+                return;
+            }
+
+            var result = dialog.Result;
+
+            var (drive, _) = _motorConfigurationWorkflow.CreateDriveWithVoltage(CurrentMotor, result);
+
+            // Add the new drive directly to the collection (don't clear/refresh)
+            AvailableDrives.Add(drive);
+
+            // Select the new drive - this will trigger OnSelectedDriveChanged which updates voltages
+            SelectedDrive = drive;
+
+            // Explicitly refresh chart to ensure axes are updated with new max speed
+            ChartViewModel.RefreshChart();
+
+            MarkDirty();
+            StatusMessage = $"Added drive: {drive.Name}";
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to add drive");
+            StatusMessage = $"Error adding drive: {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Core workflow for adding a new voltage configuration to the selected drive.
+    /// </summary>
+    private async Task AddVoltageInternalAsync()
+    {
+        if (SelectedDrive is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var dialog = new Views.AddDriveVoltageDialog
+            {
+                Title = "Add New Voltage Configuration"
+            };
+
+            dialog.Initialize(
+                CurrentMotor?.MaxSpeed ?? 5000,
+                CurrentMotor?.RatedPeakTorque ?? 50,
+                CurrentMotor?.RatedContinuousTorque ?? 40,
+                CurrentMotor?.Power ?? 1500);
+
+            if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop ||
+                desktop.MainWindow is null)
+            {
+                StatusMessage = "Cannot show dialog - no main window available";
+                return;
+            }
+
+            await dialog.ShowDialog(desktop.MainWindow);
+            if (dialog.Result is null)
+            {
+                return;
+            }
+
+            var result = dialog.Result;
+
+            // Delegate duplicate check and creation to the workflow
+            var voltageResult = _motorConfigurationWorkflow.CreateVoltageWithSeries(SelectedDrive, result);
+            if (voltageResult.IsDuplicate)
+            {
+                StatusMessage = $"Voltage {result.Voltage}V already exists for this drive.";
+                return;
+            }
+
+            var voltage = voltageResult.Voltage;
+
+            // Refresh the available voltages and select the new one
+            RefreshAvailableVoltages();
+            SelectedVoltage = voltage;
+
+            // Force chart refresh to update axes based on new max speed
+            ChartViewModel.RefreshChart();
+
+            MarkDirty();
+            StatusMessage = $"Added voltage: {result.Voltage}V";
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to add voltage");
+            StatusMessage = $"Error adding voltage: {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Core workflow for adding a new curve series to the selected voltage.
+    /// </summary>
+    private async Task AddSeriesInternalAsync()
+    {
+        if (SelectedVoltage is null)
+        {
+            return;
+        }
 
         try
         {
@@ -760,18 +1842,18 @@ public partial class MainWindowViewModel : ViewModelBase
                 SelectedVoltage.RatedContinuousTorque,
                 SelectedVoltage.Power);
 
-            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop &&
-                desktop.MainWindow is not null)
-            {
-                await dialog.ShowDialog(desktop.MainWindow);
-            }
-            else
+            if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop ||
+                desktop.MainWindow is null)
             {
                 StatusMessage = "Cannot show dialog - no main window available";
                 return;
             }
 
-            if (dialog.Result is null) return;
+            await dialog.ShowDialog(desktop.MainWindow);
+            if (dialog.Result is null)
+            {
+                return;
+            }
 
             // Re-check SelectedVoltage in case it changed during async operation
             if (SelectedVoltage is null)
@@ -781,14 +1863,9 @@ public partial class MainWindowViewModel : ViewModelBase
             }
 
             var result = dialog.Result;
-            var seriesName = GenerateUniqueName(
-                SelectedVoltage.Series.Select(s => s.Name),
-                result.Name);
-            
-            var series = SelectedVoltage.AddSeries(seriesName, result.BaseTorque);
-            series.IsVisible = result.IsVisible;
-            series.Locked = result.IsLocked;
-            
+
+            var series = _motorConfigurationWorkflow.CreateSeries(SelectedVoltage, result);
+
             // IMPORTANT: RefreshData BEFORE RefreshAvailableSeries to prevent DataGrid column sync issues
             // The column rebuild is triggered by AvailableSeries collection change, so data must be ready first
             CurveDataTableViewModel.RefreshData();
@@ -796,7 +1873,7 @@ public partial class MainWindowViewModel : ViewModelBase
             SelectedSeries = series;
             ChartViewModel.RefreshChart();
             MarkDirty();
-            StatusMessage = $"Added series: {seriesName}";
+            StatusMessage = $"Added series: {series.Name}";
         }
         catch (Exception ex)
         {
@@ -849,12 +1926,24 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private void ToggleSeriesLock(CurveSeries? series)
     {
-        if (series is null) return;
+        if (series is null)
+        {
+            return;
+        }
 
-        series.Locked = !series.Locked;
-        OnPropertyChanged(nameof(AvailableSeries));
-        MarkDirty();
-        StatusMessage = series.Locked
+        var newLocked = !series.Locked;
+
+        var command = new EditSeriesCommand(series, newLocked: newLocked);
+        _undoStack.PushAndExecute(command);
+        UpdateDirtyFromUndoDepth();
+
+        // Refresh the curve data table so that the DataGrid columns
+        // are rebuilt with the correct read-only state for the
+        // affected series. This keeps the editor behavior and
+        // header lock icon in sync with the model state.
+        CurveDataTableViewModel.RefreshData();
+
+        StatusMessage = newLocked
             ? $"Locked series: {series.Name}"
             : $"Unlocked series: {series.Name}";
     }
@@ -911,6 +2000,20 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         var errors = _validationService.ValidateMotorDefinition(CurrentMotor);
+
+        if (errors.Count > 0)
+        {
+            Log.Information("Validation failed for motor {MotorName} with {ErrorCount} errors", CurrentMotor.MotorName, errors.Count);
+            foreach (var error in errors)
+            {
+                Log.Debug("Validation error for motor {MotorName}: {ErrorMessage}", CurrentMotor.MotorName, error);
+            }
+        }
+        else
+        {
+            Log.Debug("Validation succeeded for motor {MotorName}", CurrentMotor.MotorName);
+        }
+
         HasValidationErrors = errors.Count > 0;
         ValidationErrors = errors.Count > 0
             ? string.Join("\n", errors)
@@ -948,21 +2051,4 @@ public partial class MainWindowViewModel : ViewModelBase
         return null;
     }
 
-    private static string GenerateUniqueName(IEnumerable<string> existingNames, string baseName)
-    {
-        var names = existingNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (!names.Contains(baseName))
-        {
-            return baseName;
-        }
-
-        var counter = 1;
-        string newName;
-        do
-        {
-            newName = $"{baseName} {counter++}";
-        } while (names.Contains(newName));
-
-        return newName;
-    }
 }

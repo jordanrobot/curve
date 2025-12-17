@@ -12,15 +12,18 @@ Given the current state, functionality, and future #file:04-mvp-roadmap.md plans
 
 We don't want to loose functionality, but I'd like to tidy up if we can.
 
-### 1. Centralize Editing Orchestration
+### 1. Centralize Editing Orchestration (in progress)
 - **Goal**: Reduce coupling between `MainWindowViewModel`, `CurveDataPanel`, `ChartViewModel`, and `CurveDataTableViewModel` by introducing a focused coordination layer.
-- **Idea**: Introduce a lightweight "editing controller" (service or view model) responsible for:
-  - Current selection context (series, rows, and graph/table linkage).
-  - Coordinating torque edits, clipboard operations, and override-mode semantics.
-  - Owning cross-cutting behaviors like dirty-state management and chart refresh triggers.
+- **What we implemented so far**:
+  - Added an `EditingCoordinator` class that owns selection as a model-level structure of `(CurveSeries Series, int Index)` pairs.
+  - `MainWindowViewModel` creates and wires a single `EditingCoordinator` instance into `ChartViewModel` and `CurveDataTableViewModel`.
+  - `CurveDataTableViewModel` now pushes all selection changes (click, drag, Shift+arrow, Ctrl+Shift+arrow, etc.) into the coordinator via a single `PushSelectionToCoordinator` helper.
+  - `ChartViewModel` listens to coordinator `SelectionChanged` and renders per-point selection overlays (extra marker-only series) so selected table cells immediately highlight corresponding curve points.
+- **Still to consider**:
+  - Whether to move additional cross-cutting behaviors (dirty-state decisions, some chart refresh triggers, future graph-drag editing) into this coordinator or a sibling orchestration service.
 - **Benefits**:
-  - Simplifies individual view models and views.
-  - Makes it easier to add Phase 3+ features: graph selection drives table selection, EQ-style editing, and multi-point operations.
+  - Simplifies individual view models and views by centralizing shared selection logic.
+  - Provides a clean foundation for Phase 3+ features: graph selection drives table selection, EQ-style editing, and multi-point operations.
 
 ### 2. Unify Torque Mutation Paths ✅ (Completed)
 - **Current State**: All per-cell torque mutations now go through `CurveDataTableViewModel.TrySetTorqueAtCell`, and batch updates use `ApplyTorqueToCells`.
@@ -52,31 +55,42 @@ We don't want to loose functionality, but I'd like to tidy up if we can.
   - Reduced duplication of torque mutation rules between view and view model.
   - Lower risk when adding new clipboard or override-mode behaviors, since they plug into centralized APIs.
 
-### 4. Strengthen Graph/Table Linking
+### 4. Strengthen Graph/Table Linking (substantially completed)
 - **Goal**: Lay groundwork for Phase 3+ features that tie graph point selection to table selection and vice versa.
-- **Ideas**:
-  - Represent selection in a model-level structure (e.g., selected points as `(series, index)` pairs) that both `ChartViewModel` and `CurveDataTableViewModel` understand.
-  - Expose small, intention-revealing methods:
-    - `SelectPoints(IEnumerable<PointSelection> points)`
-    - `SelectCellsForPoints(IEnumerable<PointSelection> points)`
-  - Ensure that selection changes raise a shared event or use a shared coordinator so chart ↔ table updates remain consistent.
+- **Current state**:
+  - Selection is now represented in a model-level structure (`EditingCoordinator.PointSelection` as `(series, index)` pairs) understood by both `ChartViewModel` and `CurveDataTableViewModel`.
+  - Table  Graph is implemented:
+    - `CurveDataTableViewModel` translates its `SelectedCells` into `PointSelection`s and updates the coordinator (including drag and Ctrl/Shift/Ctrl+Shift arrow selection).
+    - `ChartViewModel` listens to the coordinator and builds lightweight overlay series that highlight only the selected points.
+  - Graph  Table (click selection) is implemented:
+    - `ChartView` uses LiveCharts hit-testing to find the nearest point under the cursor.
+    - `ChartViewModel.HandleChartPointClick` updates the coordinator using `SetSelection`, `AddToSelection`, or `ToggleSelection` based on modifier keys.
+    - `CurveDataTableViewModel` listens to `EditingCoordinator.SelectionChanged` and mirrors `SelectedPoints` back into `SelectedCells`, so graph clicks update the table selection.
+- **Planned (Phase 3)**:
+  - Rubber-band graph selection and drag-to-edit behaviors that build on the same coordinator and view-model APIs.
+  - Use the existing centralized torque mutation APIs (`TrySetTorqueAtCell` / `ApplyTorqueToCells`) as the single path for graph-drag multi-point torque edits.
 - **Benefits**:
+  - Clear, testable selection model shared between graph and table.
   - Easier implementation of:
     - Selecting a point on the graph highlights the cell.
     - Rubber-band select on graph updates table.
     - Dragging points updates torque values consistently.
 
-### 5. Thin `MainWindowViewModel`
+### 5. Thin `MainWindowViewModel` ✅ (Completed)
 - **Goal**: Keep `MainWindowViewModel` focused on application shell responsibilities (file commands, high-level selections, status/validation).
-- **Ideas**:
-  - Move detailed drive/voltage/series creation logic (including dialogs) into dedicated services or smaller view models.
-  - Introduce small domain services for:
-    - Drive/voltage creation from dialog results.
-    - Initial default selections (first drive, preferred 208 V, first series).
-  - Keep `MainWindowViewModel` mostly as a composition root and coordinator.
+- **What we implemented**:
+  - Introduced an `IMotorConfigurationWorkflow` service with a default `MotorConfigurationWorkflow` implementation that composes `IDriveVoltageSeriesService`.
+  - Refactored `AddDriveAsync`, `AddVoltageAsync`, and `AddSeriesAsync` so their internal workflows delegate to `MotorConfigurationWorkflow` for:
+    - Creating a new drive + initial voltage from `DriveVoltageDialogResult`.
+    - Creating a new voltage + series set from `DriveVoltageDialogResult` with duplicate-voltage detection.
+    - Creating a new series from `AddCurveSeriesResult`, including unique-name generation and visibility/lock flags.
+  - Kept selection updates, chart/table refreshes, and status messaging in `MainWindowViewModel` so it remains the composition root and coordinator.
+  - Added a public constructor overload for `MainWindowViewModel` that takes `IMotorConfigurationWorkflow` (and related services) as explicit dependencies to improve testability and advanced composition.
+- **Ideas / next steps**:
+  - Consider moving additional file/drive/voltage selection defaults (first drive, preferred 208 V, first series) into small helper services or the workflow.
 - **Benefits**:
-  - Improves readability and testability of file/drive/voltage workflows.
-  - Reduces risk of regressions when adding more commands or dialogs.
+  - Improves readability and testability of drive/voltage/series workflows by isolating orchestration from the main shell view model.
+  - Reduces risk of regressions when adding more commands or dialogs, since creation logic is centralized behind a dedicated service.
 
 ### 6. Improve Testability and Surface Areas
 - **Goal**: Make more behavior reachable through public, non-UI types rather than private event handlers in views.

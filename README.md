@@ -56,15 +56,36 @@ dotnet run --project src/CurveEditor
 dotnet test
 ```
 
-### Publish (Single Executable)
+### Publish (Windows Single-File Executable)
+
+This project supports creating a self-contained, single-file executable for Windows.
+
+- **Target runtime**: `win-x64`
+- **Publish profile**: `WinSingleFile`
+- **Output folder**: `src/CurveEditor/bin/Release/net8.0/win-x64/publish`
+- **Artifact to distribute**: `CurveEditor.exe` in the `publish` folder
+
+#### Option 1: Using the publish profile (recommended)
 
 ```bash
-# Windows
-dotnet publish src/CurveEditor -c Release -r win-x64 --self-contained
-
-# Linux
-dotnet publish src/CurveEditor -c Release -r linux-x64 --self-contained
+dotnet publish src/CurveEditor -c Release -p:PublishProfile=WinSingleFile
 ```
+
+#### Option 2: Explicit single-file command
+
+```bash
+dotnet publish src/CurveEditor -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+```
+
+#### Option 3: Convenience PowerShell script (Windows)
+
+From the repository root:
+
+```pwsh
+./build-singlefile.ps1
+```
+
+The resulting EXE is self-contained and should run on a Windows 10/11 x64 machine without installing the .NET runtime.
 
 ## Project Structure
 
@@ -72,7 +93,7 @@ dotnet publish src/CurveEditor -c Release -r linux-x64 --self-contained
 CurveEditor/
 ├── src/
 │   └── CurveEditor/
-│       ├── Models/           # Data models (MotorDefinition, DriveConfiguration, VoltageConfiguration, CurveSeries, DataPoint)
+│       ├── Models/           # Data models
 │       ├── ViewModels/       # MVVM view models
 │       ├── Views/            # Avalonia UI views
 │       ├── Services/         # File and curve generation services
@@ -97,7 +118,7 @@ This structure reflects the real-world relationship where:
 
 ```json
 {
-  "schemaVersion": "2.0",
+  "schemaVersion": "1.0.0",
   "motorName": "High Torque Servo Motor",
   "manufacturer": "Acme Motors",
   "partNumber": "M-1234-HT",
