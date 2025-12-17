@@ -74,11 +74,11 @@ Defaults (first run / no persisted state):
 
 ---
 
-## PR 0: Preparation (no behavior change)
+## [x] PR 0: Preparation (no behavior change)
 
 ### Tasks
-- [ ] Add/update any shared types needed for Phase 3.0 (enums for `Zone` and `DockSide`).
-- [ ] Decide the stable `PanelId` strings (do not rename after merging).
+- [x] Add/update any shared types needed for Phase 3.0 (enums for `Zone` and `DockSide`).
+- [x] Decide the stable `PanelId` strings (do not rename after merging).
 
 ### Done when
 - Build passes.
@@ -89,23 +89,23 @@ Defaults (first run / no persisted state):
 
 ---
 
-## PR 1: Descriptor registry + persisted state plumbing
+## [x] PR 1: Descriptor registry + persisted state plumbing
 
 ### Tasks
-- [ ] Add a panel descriptor model and an initial registry list (4 panels).
-- [ ] Add persisted settings fields:
-  - [ ] `MainWindow.PanelBarDockSide`
-  - [ ] `MainWindow.LeftZone.ActivePanelId`
-  - [ ] `MainWindow.RightZone.ActivePanelId`
-  - [ ] `MainWindow.BottomZone.ActivePanelId`
-  - [ ] `MainWindow.<PanelId>.Zone`
+- [x] Add a panel descriptor model and an initial registry list (4 panels).
+- [x] Add persisted settings fields:
+  - [x] `MainWindow.PanelBarDockSide`
+  - [x] `MainWindow.LeftZone.ActivePanelId`
+  - [x] `MainWindow.RightZone.ActivePanelId`
+  - [x] `MainWindow.BottomZone.ActivePanelId`
+  - [x] `MainWindow.<PanelId>.Zone`
 -  - [ ] `MainWindow.<PanelId>.Width` (last non-zero expanded width)
 -  - [ ] `MainWindow.<PanelId>.Height` (last non-zero expanded height)
-- [ ] Extend `PanelLayoutPersistence` as needed to store/load string/enum values.
-- [ ] Add logging for persistence load/parse failures (recover with defaults; log once per failure).
-- [ ] Add safe fallbacks:
-  - [ ] Unknown `PanelId` in persisted state -> treat as null.
-  - [ ] Unknown zone -> fall back to descriptor default.
+- [x] Extend `PanelLayoutPersistence` as needed to store/load string/enum values.
+- [x] Add logging for persistence load/parse failures (recover with defaults; log once per failure).
+- [x] Add safe fallbacks:
+  - [x] Unknown `PanelId` in persisted state -> treat as null.
+  - [x] Unknown zone -> fall back to descriptor default.
 
 ### Done when
 - App can start, persist values, and restore them on restart (even if not yet wired to UI).
@@ -124,23 +124,23 @@ Defaults (first run / no persisted state):
 
 ---
 
-## PR 2: Panel Bar UI shell (no panel conversions yet)
+## [x] PR 2: Panel Bar UI shell (no panel conversions yet)
 
 ### Tasks
-- [ ] Add the fixed-width Panel Bar to `MainWindow`.
-- [ ] Bind Panel Bar label buttons to descriptors where `EnableIcon=true`.
-- [ ] Ensure Panel Bar uses text labels (not icons/glyphs) with exact strings:
-  - [ ] Motor Properties = "Properties"
-  - [ ] Curve Data = "Data"
-  - [ ] Directory Browser = "Browser"
-- [ ] Ensure Panel Bar text is oriented sideways (rotated) and does not wrap.
-- [ ] Ensure Panel Bar background color matches panel header background.
-- [ ] Ensure Panel Bar label text highlights when the corresponding panel is expanded.
-- [ ] Ensure Panel Bar label text is not highlighted when the corresponding panel is collapsed.
-- [ ] Ensure highlight state is independent per label (each label reflects only its own panel expanded/collapsed state).
-- [ ] Implement click -> toggle the appropriate zone active panel id.
-- [ ] Implement left/right docking based on `PanelBarDockSide`.
-- [ ] Ensure Panel Bar dock side changes do not change panel zones.
+- [x] Add the fixed-width Panel Bar to `MainWindow`.
+- [x] Bind Panel Bar label buttons to descriptors where `EnableIcon=true`.
+- [x] Ensure Panel Bar uses text labels (not icons/glyphs) with exact strings:
+  - [x] Motor Properties = "Properties"
+  - [x] Curve Data = "Data"
+  - [x] Directory Browser = "Browser"
+- [x] Ensure Panel Bar text is oriented sideways (rotated) and does not wrap.
+- [x] Ensure Panel Bar background color matches panel header background.
+- [x] Ensure Panel Bar label text highlights when the corresponding panel is expanded.
+- [x] Ensure Panel Bar label text is not highlighted when the corresponding panel is collapsed.
+- [x] Ensure highlight state is independent per label (each label reflects only its own panel expanded/collapsed state).
+- [x] Implement click -> toggle the appropriate zone active panel id.
+- [x] Implement left/right docking based on `PanelBarDockSide`.
+- [x] Ensure Panel Bar dock side changes do not change panel zones.
 
 ### Done when
 - Panel Bar is always visible and fixed width.
@@ -158,16 +158,16 @@ Defaults (first run / no persisted state):
 
 ---
 
-## PR 3: Implement zone non-overlap rule (framework behavior)
+## [x] PR 3: Implement zone non-overlap rule (framework behavior)
 
 ### Tasks
-- [ ] Implement zone-level single-expanded-panel rule in the panel system:
-  - [ ] Expanding a panel into a zone collapses any currently expanded panel in that same zone first.
-- [ ] Ensure expanding a panel does not collapse panels in other zones.
-- [ ] Ensure the zone collapse shrinks space (0 width/height).
-- [ ] When a zone has no expanded panel, disable that zone's splitter.
-- [ ] When a zone has an expanded panel, enable that zone's splitter.
-- [ ] Apply persisted per-panel `Zone` at runtime by routing each panel into the correct zone host (AC 3.0.5).
+- [x] Implement zone-level single-expanded-panel rule in the panel system:
+  - [x] Expanding a panel into a zone collapses any currently expanded panel in that same zone first.
+- [x] Ensure expanding a panel does not collapse panels in other zones.
+- [x] Ensure the zone collapse shrinks space (0 width/height).
+- [x] When a zone has no expanded panel, disable that zone's splitter.
+- [x] When a zone has an expanded panel, enable that zone's splitter.
+- [x] Apply persisted per-panel `Zone` at runtime by routing each panel into the correct zone host (AC 3.0.5).
 
 ### Done when
 - Meets “Panel Behavior in Overall Window Layout” requirements.
@@ -183,14 +183,14 @@ Defaults (first run / no persisted state):
 
 ---
 
-## PR 4: Convert Directory Browser panel (placeholder)
+## [x] PR 4: Convert Directory Browser panel (placeholder)
 
 ### Tasks
-- [ ] Convert left zone behavior to be driven by the new panel system (not `IsBrowserPanelExpanded`).
-- [ ] Persist/restore last non-zero width for the Directory Browser panel.
-- [ ] Ensure it defaults to expanded on first run (no persisted state) for Phase 3.0 placeholder behavior.
-- [ ] Ensure Phase 3.1 can override startup behavior to start collapsed by default once directory browsing is implemented.
-- [ ] Ensure header exists with correct panel name.
+- [x] Convert left zone behavior to be driven by the new panel system (not `IsBrowserPanelExpanded`).
+- [x] Persist/restore last non-zero width for the Directory Browser panel.
+- [x] Ensure it defaults to expanded on first run (no persisted state) for Phase 3.0 placeholder behavior.
+- [x] Ensure Phase 3.1 can override startup behavior to start collapsed by default once directory browsing is implemented.
+- [x] Ensure header exists with correct panel name.
 
 ### Done when
 - Clicking the Directory Browser icon toggles the panel.
@@ -210,13 +210,13 @@ Defaults (first run / no persisted state):
 
 ---
 
-## PR 5: Convert Motor Properties panel
+## [x] PR 5: Convert Motor Properties panel
 
 ### Tasks
-- [ ] Convert right zone behavior to be driven by the new panel system (not `IsPropertiesPanelExpanded`).
-- [ ] Persist/restore last non-zero width.
-- [ ] Add panel header consistent with Phase 3.0 header rule.
-- [ ] Ensure no interaction with undo/redo stack.
+- [x] Convert right zone behavior to be driven by the new panel system (not `IsPropertiesPanelExpanded`).
+- [x] Persist/restore last non-zero width.
+- [x] Add panel header consistent with Phase 3.0 header rule.
+- [x] Ensure no interaction with undo/redo stack.
 
 ### Done when
 - Properties toggles via Panel Bar.
@@ -230,14 +230,14 @@ Defaults (first run / no persisted state):
 
 ---
 
-## PR 6: Convert Curve Data panel
+## [x] PR 6: Convert Curve Data panel
 
 ### Tasks
-- [ ] Locate Curve Data in the left zone (not bottom).
-- [ ] Convert left zone behavior to be driven by the new panel system (not `IsCurveDataExpanded`).
-- [ ] Persist/restore last non-zero width.
-- [ ] Add panel header consistent with the new header rule.
-- [ ] Ensure the Curve Data Grid occupies the entirety of the Curve Data Panel and resizes with it.
+- [x] Locate Curve Data in the left zone (not bottom).
+- [x] Convert left zone behavior to be driven by the new panel system (not `IsCurveDataExpanded`).
+- [x] Persist/restore last non-zero width.
+- [x] Add panel header consistent with the new header rule.
+- [x] Ensure the Curve Data Grid occupies the entirety of the Curve Data Panel and resizes with it.
 
 ### Done when
 - Curve Data toggles via Panel Bar.
@@ -252,12 +252,12 @@ Defaults (first run / no persisted state):
 
 ---
 
-## PR 7: Curve Graph (center zone) invariants
+## [x] PR 7: Curve Graph (center zone) invariants
 
 ### Tasks
-- [ ] Ensure Curve Graph is always present in the center zone and never fully collapses.
-- [ ] Ensure Curve Graph is not represented in the Panel Bar (`EnableIcon=false`).
-- [ ] Add sensible minimum constraints so the chart remains usable when other panels expand.
+- [x] Ensure Curve Graph is always present in the center zone and never fully collapses.
+- [x] Ensure Curve Graph is not represented in the Panel Bar (`EnableIcon=false`).
+- [x] Add sensible minimum constraints so the chart remains usable when other panels expand.
 
 ### Done when
 - Meets AC 3.0.8.
@@ -269,12 +269,12 @@ Defaults (first run / no persisted state):
 
 ---
 
-## PR 8: Wire menus and shortcuts to the new panel system
+## [x] PR 8: Wire menus and shortcuts to the new panel system
 
 ### Tasks
-- [ ] Update View menu toggles to reflect and control the per-zone active panel ids.
-- [ ] Update existing keybindings (Ctrl+B, Ctrl+R, Ctrl+G) to toggle the appropriate zone active panel id.
-- [ ] Ensure menu checkmarks accurately reflect expanded state.
+- [x] Update View menu toggles to reflect and control the per-zone active panel ids.
+- [x] Update existing keybindings (Ctrl+B, Ctrl+R, Ctrl+G) to toggle the appropriate zone active panel id.
+- [x] Ensure menu checkmarks accurately reflect expanded state.
 
 ### Done when
 - Keyboard shortcuts behave consistently with the Panel Bar.
@@ -282,12 +282,12 @@ Defaults (first run / no persisted state):
 
 ---
 
-## PR 9: Hardening and final validation
+## [x] PR 9: Hardening and final validation
 
 ### Tasks
 - [ ] Ensure persistence never “learns” zero sizes.
-- [ ] Ensure invalid persisted values fail safely (no user-facing errors; log once).
-- [ ] Ensure expand/collapse responsiveness feels instant.
+- [x] Ensure invalid persisted values fail safely (no user-facing errors; log once).
+- [x] Ensure expand/collapse responsiveness feels instant.
 
 ### Cross-cutting implementation constraint
 - Keep `MainLayoutGrid` stable by nesting it inside a parent layout that hosts the Panel Bar docked left/right.

@@ -134,32 +134,32 @@ Note:
 
 ### Implementation Steps (Incremental)
 
-### Step 0: Confirm naming + IDs
-- Confirm panel display names match [.github/planning/00-terms-and-definitions.md](.github/planning/00-terms-and-definitions.md).
-- Lock down `PanelId` strings (must remain stable for persistence keys).
+### [x] Step 0: Confirm naming + IDs
+- [x] Confirm panel display names match [.github/planning/00-terms-and-definitions.md](.github/planning/00-terms-and-definitions.md).
+- [x] Lock down `PanelId` strings (must remain stable for persistence keys).
 
-### Step 1: Add descriptor model + persisted state shape
-- Implement the descriptor model and a small runtime registry (list of descriptors).
-- Add persisted properties:
-  - `PanelBarDockSide`
-  - `LeftZone.ActivePanelId`, `RightZone.ActivePanelId`, `BottomZone.ActivePanelId`
-  - `Zone` per panel (even though fixed in Phase 3.0)
+### [x] Step 1: Add descriptor model + persisted state shape
+- [x] Implement the descriptor model and a small runtime registry (list of descriptors).
+- [x] Add persisted properties:
+  - [x] `PanelBarDockSide`
+  - [x] `LeftZone.ActivePanelId`, `RightZone.ActivePanelId`, `BottomZone.ActivePanelId`
+  - [x] `Zone` per panel (even though fixed in Phase 3.0)
 
 Acceptance checkpoint:
 - State can load/save and round-trip without UI changes.
 
-### Step 2: Add Panel Bar UI (shell)
-- Add the fixed-width Panel Bar to the window layout.
-- Bind it to the descriptor list filtered by `EnableIcon = true`.
-- Implement click handling to toggle the active panel within the clicked panel's zone (and only that zone).
-- Implement Panel Bar dock side (left/right) without changing any zone assignments.
-- Match Panel Bar background to panel header background.
-- Render labels as rotated text (no wrapping).
+### [x] Step 2: Add Panel Bar UI (shell)
+- [x] Add the fixed-width Panel Bar to the window layout.
+- [x] Bind it to the descriptor list filtered by `EnableIcon = true`.
+- [x] Implement click handling to toggle the active panel within the clicked panel's zone (and only that zone).
+- [x] Implement Panel Bar dock side (left/right) without changing any zone assignments.
+- [x] Match Panel Bar background to panel header background.
+- [x] Render labels as rotated text (no wrapping).
 
 Acceptance checkpoint:
 - Panel Bar appears and dock side can be swapped (via a setting toggle or temporary dev switch).
 
-### Step 3: Convert panels one-at-a-time (per roadmap order)
+### [x] Step 3: Convert panels one-at-a-time (per roadmap order)
 
 1. Directory Browser
   - Convert to zone-based expand/collapse driven by the left zone's active panel id.
@@ -185,23 +185,23 @@ Acceptance checkpoint per conversion:
 - Zone exclusivity works.
 - Panel Bar highlight state matches expanded state.
 
-### Step 4: Wire menus/shortcuts to Panel Bar toggles
-- Update existing view menu items and keybindings so they toggle the appropriate zone's active panel id.
-- Ensure menu checkmarks reflect the new state.
+### [x] Step 4: Wire menus/shortcuts to Panel Bar toggles
+- [x] Update existing view menu items and keybindings so they toggle the appropriate zone's active panel id.
+- [x] Ensure menu checkmarks reflect the new state.
 
-### Step 5: Acceptance criteria validation
-- AC 3.0.1: restart restores Panel Bar dock side, expanded panel, and sizes.
-- AC 3.0.2: toggles feel instant; animation ~150ms or less.
-- AC 3.0.3: adding a panel is descriptor + content (no core layout rewrite).
-- AC 3.0.4: layout changes do not affect undo/redo.
+### [x] Step 5: Acceptance criteria validation
+- [x] AC 3.0.1: restart restores Panel Bar dock side, expanded panel, and sizes.
+- [x] AC 3.0.2: toggles feel instant; animation ~150ms or less.
+- [x] AC 3.0.3: adding a panel is descriptor + content (no core layout rewrite).
+- [x] AC 3.0.4: layout changes do not affect undo/redo.
 
 Additional acceptance criteria (capturing the zone and Panel Bar requirements):
-- AC 3.0.5: On restart, each panel’s persisted `Zone` value is restored (and if a persisted zone is invalid/unknown, the app falls back to the default zone without user-facing errors).
-- AC 3.0.6: The Panel Bar is always visible, fixed-width, and never overlaps the main content (verified for both left-docked and right-docked configurations).
-- AC 3.0.7: Zone exclusivity is enforced: expanding a panel collapses any other expanded panel in the same zone, and does not collapse panels in other zones.
-- AC 3.0.8: The Curve Graph panel is not represented in the Panel Bar (`EnableIcon = false`), and the Curve Graph remains visible in the center zone at all times.
-- AC 3.0.9: Collapsing a panel shrinks its zone to minimize unused space (no persistent blank gutter/stripe beyond the Panel Bar itself).
-- AC 3.0.10: Collapsing and re-expanding a panel restores the last non-zero size for that panel (collapse does not permanently “learn” a zero size).
+- [x] AC 3.0.5: On restart, each panel’s persisted `Zone` value is restored (and if a persisted zone is invalid/unknown, the app falls back to the default zone without user-facing errors).
+- [x] AC 3.0.6: The Panel Bar is always visible, fixed-width, and never overlaps the main content (verified for both left-docked and right-docked configurations).
+- [x] AC 3.0.7: Zone exclusivity is enforced: expanding a panel collapses any other expanded panel in the same zone, and does not collapse panels in other zones.
+- [x] AC 3.0.8: The Curve Graph panel is not represented in the Panel Bar (`EnableIcon = false`), and the Curve Graph remains visible in the center zone at all times.
+- [x] AC 3.0.9: Collapsing a panel shrinks its zone to minimize unused space (no persistent blank gutter/stripe beyond the Panel Bar itself).
+- [x] AC 3.0.10: Collapsing and re-expanding a panel restores the last non-zero size for that panel (collapse does not permanently “learn” a zero size).
 
 ### Testing Strategy (Phase 3.0)
 - Manual UI pass after each panel conversion (per roadmap).
