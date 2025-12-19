@@ -4,8 +4,6 @@ using System.Linq;
 using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
-using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.Input;
@@ -15,6 +13,14 @@ namespace CurveEditor.Views;
 
 public partial class PanelBar : UserControl
 {
+    public static readonly StyledProperty<PanelBarDockSide> DockSideProperty =
+        AvaloniaProperty.Register<PanelBar, PanelBarDockSide>(nameof(DockSide), PanelBarDockSide.Left);
+
+    static PanelBar()
+    {
+        DockSideProperty.Changed.AddClassHandler<PanelBar>((bar, _) => bar.UpdateDockSideBorder());
+    }
+
     public PanelBar()
     {
         InitializeComponent();
@@ -26,21 +32,25 @@ public partial class PanelBar : UserControl
         {
             items.ItemsSource = PanelRegistry.PanelBarPanels;
         }
+        UpdateDockSideBorder();
     }
 
     public ICommand PanelClickCommand { get; }
 
-    private string? _activePanelId;
-    public string? ActivePanelId 
-    { 
-        get => _activePanelId;
+    public PanelBarDockSide DockSide
+    {
+        get => GetValue(DockSideProperty);
+        set => SetValue(DockSideProperty, value);
+    }
+
+    private IReadOnlyCollection<string> _activePanelIds = Array.Empty<string>();
+    public IReadOnlyCollection<string> ActivePanelIds
+    {
+        get => _activePanelIds;
         set
         {
-            if (_activePanelId != value)
-            {
-                _activePanelId = value;
-                UpdateButtonStyles();
-            }
+            _activePanelIds = value ?? Array.Empty<string>();
+            UpdateButtonStyles();
         }
     }
 
@@ -62,12 +72,16 @@ public partial class PanelBar : UserControl
             return;
         }
 
+        var activeIds = _activePanelIds.Count == 0
+            ? null
+            : new HashSet<string>(_activePanelIds, StringComparer.Ordinal);
+
         // Find all buttons in the visual tree and update their classes
         var buttons = items.GetVisualDescendants().OfType<Button>();
         foreach (var button in buttons)
         {
             var panelId = button.CommandParameter as string;
-            var isActive = string.Equals(panelId, _activePanelId, StringComparison.Ordinal);
+            var isActive = panelId is not null && activeIds is not null && activeIds.Contains(panelId);
             
             if (isActive && !button.Classes.Contains("Active"))
             {
@@ -78,6 +92,22 @@ public partial class PanelBar : UserControl
                 button.Classes.Remove("Active");
             }
         }
+    }
+
+    private void UpdateDockSideBorder()
+    {
+        var border = this.FindControl<Border>("RootBorder");
+        if (border is null)
+        {
+            return;
+        }
+
+        border.BorderThickness = DockSide switch
+        {
+            PanelBarDockSide.Left => new Thickness(0, 0, 1, 0),
+            PanelBarDockSide.Right => new Thickness(1, 0, 0, 0),
+            _ => new Thickness(0)
+        };
     }
 }
 

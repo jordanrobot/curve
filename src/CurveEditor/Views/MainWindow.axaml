@@ -160,11 +160,12 @@
         </Border>
 
         <!-- Main Content Area with Panel Bar and resizable panels -->
-        <Grid x:Name="RootLayoutGrid" ColumnDefinitions="Auto,*">
+        <Grid x:Name="RootLayoutGrid" ColumnDefinitions="Auto,*,Auto">
             
-            <!-- Panel Bar (left side by default) -->
+            <!-- Panel Bar (docked left or right based on PanelBarDockSide) -->
             <views:PanelBar Grid.Column="0" 
-                            x:Name="PanelBarControl"/>
+                            x:Name="PanelBarControl"
+                            DockSide="{Binding PanelBarDockSide}"/>
             
             <!-- Main Layout Grid with all panels -->
             <Grid x:Name="MainLayoutGrid" 

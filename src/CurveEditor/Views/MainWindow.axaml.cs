@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using CurveEditor.Behaviors;
@@ -11,10 +13,8 @@ public partial class MainWindow : Window
 {
     private const double MaxSpeedChangeTolerance = 0.1;
     private double _previousMaxSpeed;
-    private double _leftColumnWidth;
-    private double _propertiesColumnWidth;
-    private bool _leftPanelExpanded;
-    private bool _propertiesPanelExpanded;
+    private string? _previousActiveLeftPanelId;
+    private string? _previousActiveRightPanelId;
 
     public MainWindow()
     {
@@ -27,11 +27,12 @@ public partial class MainWindow : Window
     {
         Opened -= OnOpened;
 
+        var rootGrid = this.FindControl<Grid>("RootLayoutGrid");
         var mainGrid = this.FindControl<Grid>("MainLayoutGrid");
         var centerGrid = this.FindControl<Grid>("CenterGrid");
         var panelBar = this.FindControl<PanelBar>("PanelBarControl");
 
-        if (mainGrid is null || centerGrid is null || DataContext is not MainWindowViewModel viewModel)
+        if (rootGrid is null || mainGrid is null || centerGrid is null || DataContext is not MainWindowViewModel viewModel)
         {
             return;
         }
@@ -44,29 +45,25 @@ public partial class MainWindow : Window
                 viewModel.TogglePanel(panelId);
             };
 
-            // Update PanelBar when active panel changes in either zone
+            // Update PanelBar when active panel changes in either zone.
+            // Multiple zones may be expanded simultaneously; PanelBar must highlight all expanded panels.
             viewModel.PropertyChanged += (_, args) =>
             {
                 if (args.PropertyName == nameof(MainWindowViewModel.ActivePanelBarPanelId) ||
                     args.PropertyName == nameof(MainWindowViewModel.ActiveLeftPanelId))
                 {
-                    // Update active panel ID for visual highlighting
-                    // PanelBar needs to know about both zones
-                    var activeId = viewModel.ActivePanelBarPanelId ?? viewModel.ActiveLeftPanelId;
-                    panelBar.ActivePanelId = activeId;
+                    panelBar.ActivePanelIds = GetPanelBarActivePanelIds(viewModel);
+                }
+                else if (args.PropertyName == nameof(MainWindowViewModel.PanelBarDockSide))
+                {
+                    ApplyPanelBarDockSide(rootGrid, panelBar, viewModel.PanelBarDockSide);
                 }
             };
 
             // Set initial state
-            var initialActiveId = viewModel.ActivePanelBarPanelId ?? viewModel.ActiveLeftPanelId;
-            panelBar.ActivePanelId = initialActiveId;
+            panelBar.ActivePanelIds = GetPanelBarActivePanelIds(viewModel);
+            ApplyPanelBarDockSide(rootGrid, panelBar, viewModel.PanelBarDockSide);
         }
-
-        // Left zone panel (column 0)
-        PanelLayoutPersistence.AttachColumn(this, mainGrid, 0, "MainWindow.LeftPanel");
-
-        // Right properties panel (column 4)
-        PanelLayoutPersistence.AttachColumn(this, mainGrid, 4, "MainWindow.PropertiesPanel");
 
         // Load persisted state for both zones
         var activeRightPanelId = PanelLayoutPersistence.LoadString("MainWindow.ActivePanelBarPanelId");
@@ -96,109 +93,189 @@ public partial class MainWindow : Window
             viewModel.PanelBarDockSide = dockSide.Value;
         }
 
+        // Track previous active panel IDs so we can persist per-panel widths when switching.
+        _previousActiveLeftPanelId = viewModel.ActiveLeftPanelId;
+        _previousActiveRightPanelId = viewModel.ActivePanelBarPanelId;
+
+        // Apply initial layout for expanded/collapsed state and per-panel widths.
+        ApplyLeftZoneLayout(mainGrid, viewModel);
+        ApplyRightZoneLayout(mainGrid, viewModel);
+
         // Save panel state on window closing
         Closing += (_, _) =>
         {
             PanelLayoutPersistence.SaveString("MainWindow.ActivePanelBarPanelId", viewModel.ActivePanelBarPanelId);
             PanelLayoutPersistence.SaveString("MainWindow.ActiveLeftPanelId", viewModel.ActiveLeftPanelId);
             PanelLayoutPersistence.SaveDockSide("MainWindow.PanelBarDockSide", viewModel.PanelBarDockSide);
+
+            PersistActiveZoneWidths(mainGrid, viewModel);
         };
 
-        // Capture initial sizes (after any persisted values are restored)
-        _leftColumnWidth = mainGrid.ColumnDefinitions[0].Width.Value;
-        _propertiesColumnWidth = mainGrid.ColumnDefinitions[4].Width.Value;
-
-        _leftPanelExpanded = viewModel.IsBrowserPanelExpanded || viewModel.IsCurveDataExpanded;
-        _propertiesPanelExpanded = viewModel.IsPropertiesPanelExpanded;
-
-        // React to panel expanded/collapsed properties changing.
+        // React to active zone changes.
         viewModel.PropertyChanged += (_, args) =>
         {
-            if (args.PropertyName == nameof(MainWindowViewModel.IsBrowserPanelExpanded) ||
-                args.PropertyName == nameof(MainWindowViewModel.IsCurveDataExpanded))
+            if (args.PropertyName == nameof(MainWindowViewModel.ActiveLeftPanelId))
             {
-                ApplyLeftPanelLayout(mainGrid, viewModel, _leftPanelExpanded);
-                _leftPanelExpanded = viewModel.IsBrowserPanelExpanded || viewModel.IsCurveDataExpanded;
+                PersistLeftZoneWidthIfNeeded(mainGrid);
+                _previousActiveLeftPanelId = viewModel.ActiveLeftPanelId;
+                ApplyLeftZoneLayout(mainGrid, viewModel);
             }
-            else if (args.PropertyName == nameof(MainWindowViewModel.IsPropertiesPanelExpanded))
+            else if (args.PropertyName == nameof(MainWindowViewModel.ActivePanelBarPanelId))
             {
-                ApplyPropertiesPanelLayout(mainGrid, viewModel, _propertiesPanelExpanded);
-                _propertiesPanelExpanded = viewModel.IsPropertiesPanelExpanded;
+                PersistRightZoneWidthIfNeeded(mainGrid);
+                _previousActiveRightPanelId = viewModel.ActivePanelBarPanelId;
+                ApplyRightZoneLayout(mainGrid, viewModel);
             }
         };
-
-        // Apply initial layouts based on current expanded/collapsed state.
-        ApplyLeftPanelLayout(mainGrid, viewModel, _leftPanelExpanded);
-        ApplyPropertiesPanelLayout(mainGrid, viewModel, _propertiesPanelExpanded);
     }
 
-    private void ApplyLeftPanelLayout(Grid mainGrid, MainWindowViewModel viewModel, bool wasExpanded)
+    private static IReadOnlyCollection<string> GetPanelBarActivePanelIds(MainWindowViewModel viewModel)
+    {
+        var ids = new List<string>(capacity: 2);
+
+        if (!string.IsNullOrWhiteSpace(viewModel.ActiveLeftPanelId))
+        {
+            ids.Add(viewModel.ActiveLeftPanelId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(viewModel.ActivePanelBarPanelId))
+        {
+            ids.Add(viewModel.ActivePanelBarPanelId);
+        }
+
+        return ids.Distinct(StringComparer.Ordinal).ToArray();
+    }
+
+    private static void ApplyPanelBarDockSide(Grid rootGrid, PanelBar panelBar, PanelBarDockSide dockSide)
+    {
+        // Root grid is "Auto,*,Auto". Main layout stays in the center column.
+        // PanelBar moves between column 0 and column 2.
+        panelBar.SetValue(Grid.ColumnProperty, dockSide == PanelBarDockSide.Right ? 2 : 0);
+    }
+
+    private static double GetColumnWidth(GridLength columnWidth, double actualWidth)
+    {
+        var width = actualWidth > 0 ? actualWidth : columnWidth.Value;
+        return width;
+    }
+
+    private static string GetPanelWidthKey(string panelId) => $"MainWindow.{panelId}.Width";
+
+    private static double GetPanelDefaultWidth(string panelId, double fallback)
+    {
+        var descriptor = PanelRegistry.GetById(panelId);
+        return descriptor?.DefaultWidth is double width && width > 0 ? width : fallback;
+    }
+
+    private static double LoadPanelWidthOrFallback(string panelId, string legacyZoneKey, double defaultWidth)
+    {
+        var width = PanelLayoutPersistence.LoadWidth(GetPanelWidthKey(panelId));
+        if (width is double panelWidth)
+        {
+            return panelWidth;
+        }
+
+        var legacyWidth = PanelLayoutPersistence.LoadWidth(legacyZoneKey);
+        if (legacyWidth is double zoneWidth)
+        {
+            return zoneWidth;
+        }
+
+        return GetPanelDefaultWidth(panelId, defaultWidth);
+    }
+
+    private void ApplyLeftZoneLayout(Grid mainGrid, MainWindowViewModel viewModel)
     {
         var leftColumn = mainGrid.ColumnDefinitions[0];
         var splitterColumn = mainGrid.ColumnDefinitions[1];
 
-        var isExpanded = viewModel.IsBrowserPanelExpanded || viewModel.IsCurveDataExpanded;
-
-        if (isExpanded)
+        if (string.IsNullOrWhiteSpace(viewModel.ActiveLeftPanelId))
         {
-            if (_leftColumnWidth <= 0)
-            {
-                var current = leftColumn.ActualWidth > 0 ? leftColumn.ActualWidth : leftColumn.Width.Value;
-                _leftColumnWidth = current > 0 ? current : 200;
-            }
-
-            leftColumn.Width = new GridLength(_leftColumnWidth, GridUnitType.Pixel);
-            splitterColumn.Width = new GridLength(4, GridUnitType.Pixel);
-        }
-        else
-        {
-            if (wasExpanded)
-            {
-                var current = leftColumn.ActualWidth > 0 ? leftColumn.ActualWidth : leftColumn.Width.Value;
-                if (current > 0)
-                {
-                    _leftColumnWidth = current;
-                    PanelLayoutPersistence.UpdateColumnWidth("MainWindow.LeftPanel", _leftColumnWidth);
-                }
-            }
-
             leftColumn.Width = new GridLength(0, GridUnitType.Pixel);
             splitterColumn.Width = new GridLength(0, GridUnitType.Pixel);
+            return;
         }
+
+        var panelId = viewModel.ActiveLeftPanelId;
+        var width = LoadPanelWidthOrFallback(panelId, legacyZoneKey: "MainWindow.LeftPanel", defaultWidth: 200);
+
+        leftColumn.Width = new GridLength(width, GridUnitType.Pixel);
+        splitterColumn.Width = new GridLength(4, GridUnitType.Pixel);
     }
 
-    private void ApplyPropertiesPanelLayout(Grid mainGrid, MainWindowViewModel viewModel, bool wasExpanded)
+    private void ApplyRightZoneLayout(Grid mainGrid, MainWindowViewModel viewModel)
     {
         var splitterColumn = mainGrid.ColumnDefinitions[3];
         var propertiesColumn = mainGrid.ColumnDefinitions[4];
 
-        var isExpanded = viewModel.IsPropertiesPanelExpanded;
-
-        if (isExpanded)
+        if (string.IsNullOrWhiteSpace(viewModel.ActivePanelBarPanelId))
         {
-            if (_propertiesColumnWidth <= 0)
-            {
-                var current = propertiesColumn.ActualWidth > 0 ? propertiesColumn.ActualWidth : propertiesColumn.Width.Value;
-                _propertiesColumnWidth = current > 0 ? current : 280;
-            }
-
-            propertiesColumn.Width = new GridLength(_propertiesColumnWidth, GridUnitType.Pixel);
-            splitterColumn.Width = new GridLength(4, GridUnitType.Pixel);
-        }
-        else
-        {
-            if (wasExpanded)
-            {
-                var current = propertiesColumn.ActualWidth > 0 ? propertiesColumn.ActualWidth : propertiesColumn.Width.Value;
-                if (current > 0)
-                {
-                    _propertiesColumnWidth = current;
-                    PanelLayoutPersistence.UpdateColumnWidth("MainWindow.PropertiesPanel", _propertiesColumnWidth);
-                }
-            }
-
             propertiesColumn.Width = new GridLength(0, GridUnitType.Pixel);
             splitterColumn.Width = new GridLength(0, GridUnitType.Pixel);
+            return;
+        }
+
+        var panelId = viewModel.ActivePanelBarPanelId;
+        var width = LoadPanelWidthOrFallback(panelId, legacyZoneKey: "MainWindow.PropertiesPanel", defaultWidth: 280);
+
+        propertiesColumn.Width = new GridLength(width, GridUnitType.Pixel);
+        splitterColumn.Width = new GridLength(4, GridUnitType.Pixel);
+    }
+
+    private void PersistLeftZoneWidthIfNeeded(Grid mainGrid)
+    {
+        if (string.IsNullOrWhiteSpace(_previousActiveLeftPanelId))
+        {
+            return;
+        }
+
+        var leftColumn = mainGrid.ColumnDefinitions[0];
+        var currentWidth = GetColumnWidth(leftColumn.Width, leftColumn.ActualWidth);
+        if (currentWidth <= 0)
+        {
+            return;
+        }
+
+        PanelLayoutPersistence.UpdateColumnWidth(GetPanelWidthKey(_previousActiveLeftPanelId), currentWidth);
+    }
+
+    private void PersistRightZoneWidthIfNeeded(Grid mainGrid)
+    {
+        if (string.IsNullOrWhiteSpace(_previousActiveRightPanelId))
+        {
+            return;
+        }
+
+        var column = mainGrid.ColumnDefinitions[4];
+        var currentWidth = GetColumnWidth(column.Width, column.ActualWidth);
+        if (currentWidth <= 0)
+        {
+            return;
+        }
+
+        PanelLayoutPersistence.UpdateColumnWidth(GetPanelWidthKey(_previousActiveRightPanelId), currentWidth);
+    }
+
+    private void PersistActiveZoneWidths(Grid mainGrid, MainWindowViewModel viewModel)
+    {
+        if (!string.IsNullOrWhiteSpace(viewModel.ActiveLeftPanelId))
+        {
+            var leftColumn = mainGrid.ColumnDefinitions[0];
+            var width = GetColumnWidth(leftColumn.Width, leftColumn.ActualWidth);
+            if (width > 0)
+            {
+                PanelLayoutPersistence.UpdateColumnWidth(GetPanelWidthKey(viewModel.ActiveLeftPanelId), width);
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(viewModel.ActivePanelBarPanelId))
+        {
+            var rightColumn = mainGrid.ColumnDefinitions[4];
+            var width = GetColumnWidth(rightColumn.Width, rightColumn.ActualWidth);
+            if (width > 0)
+            {
+                PanelLayoutPersistence.UpdateColumnWidth(GetPanelWidthKey(viewModel.ActivePanelBarPanelId), width);
+            }
         }
     }
 

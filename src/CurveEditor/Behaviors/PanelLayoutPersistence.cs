@@ -349,4 +349,48 @@ public static class PanelLayoutPersistence
             Log.Warning(ex, "Failed to save dock side setting {SettingsKey}", settingsKey);
         }
     }
+
+    /// <summary>
+    /// Load a persisted width in pixels (only returns values &gt; 0).
+    /// </summary>
+    public static double? LoadWidth(string settingsKey)
+    {
+        try
+        {
+            var settings = Load(settingsKey);
+            if (settings?.Width is double width && width > 0)
+            {
+                return width;
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "Failed to load width setting {SettingsKey}, using default", settingsKey);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Load a persisted height in pixels (only returns values &gt; 0).
+    /// </summary>
+    public static double? LoadHeight(string settingsKey)
+    {
+        try
+        {
+            var settings = Load(settingsKey);
+            if (settings?.Height is double height && height > 0)
+            {
+                return height;
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "Failed to load height setting {SettingsKey}, using default", settingsKey);
+            return null;
+        }
+    }
 }

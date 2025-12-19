@@ -45,7 +45,8 @@
         </Style>
     </UserControl.Styles>
     
-    <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+    <Border x:Name="RootBorder"
+            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
             BorderBrush="{DynamicResource SystemControlBackgroundBaseMediumBrush}"
             BorderThickness="0,0,1,0">
         <ItemsControl x:Name="PanelItems">
@@ -55,7 +56,7 @@
                             Command="{Binding #Root.PanelClickCommand}"
                             CommandParameter="{Binding PanelId}"
                             ToolTip.Tip="{Binding DisplayName}">
-                        <TextBlock Text="{Binding IconGlyph}" 
+                        <TextBlock Text="{Binding PanelBarLabel}" 
                                    Classes="PanelBarText"/>
                     </Button>
                 </DataTemplate>
