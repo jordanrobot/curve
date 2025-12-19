@@ -1,4 +1,4 @@
-# Motor Torque Curve Editor - MVP Roadmap
+## Motor Torque Curve Editor - MVP Roadmap
 
 **Related ADRs**
 
@@ -229,19 +229,51 @@ See ADR-0008 (`../../docs/adr/adr-0008-selection-and-editing-coordination.md`) f
 - [X] Show validation errors in UI
 - [X] Prevent saving invalid data
 
-**Deliverable:** Application with working multi-series chart, series visibility toggles, and editable data grid.
-
----
-
-## Phase 3: File Management
-
-### 3.0 Update JSON schema
+### 2.10 Update JSON schema
 - [X] Use new schema file provided by user for JSON schema for motor files
 - [X] Refactor existing JSON serialization/deserialization to match new schema
 
 See ADR-0006 (`../../docs/adr/adr-0006-motor-file-schema-and-versioning.md`) for the motor file schema and versioning strategy.
 - [ ] present options for consolidating series data within drive&voltage sections. This is to group series torque values together so that veiwing and editing raw json files is much easier. 
 - [ ] If the user chooses to adjust series data format within the json schema, implement this change.
+
+**Deliverable:** Application with working multi-series chart, series visibility toggles, and editable data grid.
+
+---
+
+## Phase 3: File Management
+
+
+### 3.0 Generic Panel Expand/Collapse
+- [ ] Implement generic expand/collapse mechanism for existing panels. Use relevant ADRs as reference, but do not be constrained by these ADRs as this functionality is not yet implemented. If we need to adjust ADRs to better fit the implementation, we can do so, please just let me know.
+  - [ ] Implement new panel system to meet the functional requirements detailed in `Phase 3.0 Functional Requirements: Generic Panel Expand/Collapse` in `.github/planning/phase-3-0-requirements.md`
+  - [ ] Add vertical Panel Bar with rotated text labels to control expansion/collapse
+  - [ ] Ensure Panel Bar labels are text-only (no icons/glyphs) and use exact strings:
+    - [ ] Motor Properties = "Properties"
+    - [ ] Curve Data = "Data"
+    - [ ] Directory Browser = "Browser"
+  - [ ] Ensure Panel Bar background color matches panel header background
+  - [ ] Convert existing panels to use the new expand/collapse mechanism, but convert the panels one-at-a-time to ensure stability. Order:
+  - [ ] Directory Browser (empty panel, contents will be be implemented in Phase 3.1)
+  - [ ] Motor Properties
+  - [ ] Curve Data
+  - [ ] Curve Graph
+  - [ ] Locate Curve Data panel in the left zone (remove it from the bottom zone)
+  - [ ] Ensure expanding a panel collapses only panels in the same zone (panels in other zones stay expanded)
+  - [ ] Disable a zone's resize splitter when that zone has no expanded panel
+  - [ ] Enable and apply splitters normally when the zone has an expanded panel
+  - [ ] Default panel states (first run / no persisted state):
+    - [ ] Directory Browser expanded
+    - [ ] Motor Properties expanded
+    - [ ] Curve Data collapsed
+  - Note: after each conversion, we will do a full round of UI/Ux testing to ensure nothing is broken.
+
+
+### 3.0.5 VS Code UI Styling Pass
+- [ ] Adjust main-window UI colors and styling to match the screenshot in `.github/planning/vs-code-ui.png`.
+- [ ] Centralize VS Code-like styling into CurveEditor theme resources and reference them via `DynamicResource`.
+- [ ] Apply styling to Panel Bar, side panel chrome, panel headers, borders, and splitters without changing layout behavior.
+
 
 ### 3.1 Directory Browser (VS Code-style)
 - [ ] Create side pane for directory browsing
