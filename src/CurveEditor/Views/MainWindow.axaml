@@ -179,8 +179,8 @@
                   Grid.Column="1"
                   ColumnDefinitions="200,4,*,4,280">
             
-            <!-- Left Zone: Browser and Data panels -->
-            <Grid Grid.Column="0" RowDefinitions="*,*">
+            <!-- Left Zone: Browser and Data panels (zone exclusivity: only one visible at a time) -->
+            <Grid Grid.Column="0" RowDefinitions="*">
                 <!-- Browser Panel -->
                 <Border Grid.Row="0"
                         IsVisible="{Binding IsBrowserPanelExpanded}"
@@ -207,7 +207,7 @@
                 </Border>
                 
                 <!-- Data Panel -->
-                <Border Grid.Row="1"
+                <Border Grid.Row="0"
                         IsVisible="{Binding IsCurveDataExpanded}"
                         Background="{DynamicResource CurveEditor.SideBar.BackgroundBrush}"
                         BorderBrush="{DynamicResource CurveEditor.SideBar.BorderBrush}"

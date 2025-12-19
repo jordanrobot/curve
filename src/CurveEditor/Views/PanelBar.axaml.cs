@@ -32,6 +32,7 @@ public partial class PanelBar : UserControl
         {
             items.ItemsSource = PanelRegistry.PanelBarPanels;
         }
+
         UpdateDockSideBorder();
     }
 

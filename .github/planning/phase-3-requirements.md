@@ -80,6 +80,7 @@
   - [x] Persisted expanded width (when docked left/right).
   - [x] Persisted expanded height (when docked bottom).
   - [x] Persisted sizes must never "learn" a zero size when a panel is collapsed.
+- [x] Panels within the same zone share a single persisted zone size (e.g., Left zone width). Switching which panel is expanded within a zone must not move the zone edge.
 - [x] Users should be able to resize expanded panels via splitters (right edge for left zone, left edge for right zone, top edge for bottom zone).
 - [x] When a zone has no expanded panel, that zone's resize splitter must be disabled (it should not resize an empty zone).
 - [x] When a zone has an expanded panel, that zone's resize splitter must be enabled and resize the zone normally.
@@ -107,6 +108,7 @@
 - [x] AC 3.0.9: Collapsing a panel shrinks its zone to minimize unused space (no persistent blank gutter/stripe beyond the Panel Bar itself).
 - [x] AC 3.0.10: Collapsing and re-expanding a panel restores the last non-zero size for that panel (collapse does not permanently "learn" a zero size).
 - [x] AC 3.0.11: When a zone has no expanded panel, its splitter is disabled; when a zone has an expanded panel, its splitter is enabled and resizes the zone.
+- [x] AC 3.0.12: When multiple panels share a zone (e.g., Directory Browser and Curve Data in the Left zone), the zone width is persisted per-zone and remains stable when switching which panel is expanded.
 
 
 

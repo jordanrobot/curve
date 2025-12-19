@@ -35,8 +35,8 @@
     - `BottomZoneActivePanelId` (nullable)
 - Persistence:
   - per-panel `Zone`
-  - per-panel last non-zero expanded width
-  - per-panel last non-zero expanded height
+  - per-zone last non-zero expanded width
+  - per-zone last non-zero expanded height
 
 Notes:
 - Panel Bar dock side is independent of panel zones (zones do not "follow" the Panel Bar).
@@ -108,8 +108,9 @@ Defaults (first run / no persisted state):
   - [x] `MainWindow.RightZone.ActivePanelId`
   - [x] `MainWindow.BottomZone.ActivePanelId`
   - [x] `MainWindow.<PanelId>.Zone`
-  - [x] `MainWindow.<PanelId>.Width` (last non-zero expanded width)
-  - [ ] `MainWindow.<PanelId>.Height` (last non-zero expanded height)
+  - [x] `MainWindow.LeftZone.Width` (last non-zero expanded width)
+  - [x] `MainWindow.RightZone.Width` (last non-zero expanded width)
+  - [ ] `MainWindow.BottomZone.Height` (last non-zero expanded height)
 - [x] Extend `PanelLayoutPersistence` as needed to store/load string/enum values.
 - [x] Add logging for persistence load/parse failures (recover with defaults; log once per failure).
 - [x] Add safe fallbacks:
@@ -295,6 +296,18 @@ Defaults (first run / no persisted state):
 ### Done when
 - Keyboard shortcuts behave consistently with the Panel Bar.
 - No regressions in the existing shortcut policy.
+
+---
+
+## [x] PR 8.5: Persist widths per zone (no edge jumping)
+
+### Tasks
+- [x] Persist `MainWindow.LeftZone.Width` and apply it for any panel shown in the Left zone (Browser/Curve Data).
+- [x] Persist `MainWindow.RightZone.Width` and apply it for any panel shown in the Right zone (future-ready).
+- [x] Migration fallback: if per-zone keys are missing, honor existing per-panel/legacy zone widths as defaults and write the per-zone keys on the next resize/toggle.
+
+### Done when
+- Switching between multiple panels in the same zone does not move the zone edge.
 
 ---
 

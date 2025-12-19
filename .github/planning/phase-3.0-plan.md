@@ -104,18 +104,18 @@ Persist the following values across restarts:
   - `MainWindow.LeftZone.ActivePanelId` (nullable)
   - `MainWindow.RightZone.ActivePanelId` (nullable)
   - `MainWindow.BottomZone.ActivePanelId` (nullable)
-- Per-panel last expanded sizes (store both dimensions; apply based on current zone):
-  - `MainWindow.DirectoryBrowser.Width`
-  - `MainWindow.DirectoryBrowser.Height`
-  - `MainWindow.MotorProperties.Width`
-  - `MainWindow.MotorProperties.Height`
-  - `MainWindow.CurveData.Width`
-  - `MainWindow.CurveData.Height`
+- Per-zone last expanded sizes (apply to any panel shown in that zone):
+  - `MainWindow.LeftZone.Width`
+  - `MainWindow.RightZone.Width`
+  - `MainWindow.BottomZone.Height`
 - Per-panel zone assignment:
   - `MainWindow.DirectoryBrowser.Zone`
   - `MainWindow.MotorProperties.Zone`
   - `MainWindow.CurveData.Zone`
   - `MainWindow.CurveGraph.Zone`
+
+Note:
+- The Left zone intentionally contains multiple panels in Phase 3.0 (Directory Browser + Curve Data). Persisting a single per-zone width prevents the zone edge from "jumping" when switching which panel is expanded.
 
 Implementation approach:
 - Keep persistence view-driven and continue to use the existing persistence JSON mechanism (ADR-0004) so we don’t introduce a second settings store.
