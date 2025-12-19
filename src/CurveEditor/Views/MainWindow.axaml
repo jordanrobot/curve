@@ -30,6 +30,22 @@
     </Window.KeyBindings>
     
     <Window.Styles>
+        <!-- Panel Header Style -->
+        <Style Selector="TextBlock.PanelHeader">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{DynamicResource CurveEditor.SideBar.SectionHeader.ForegroundBrush}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="Border.PanelHeaderContainer">
+            <Setter Property="Background" Value="{DynamicResource CurveEditor.SideBar.SectionHeader.BackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource CurveEditor.SideBar.BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+        
         <!-- Collapsible Header Style -->
         <Style Selector="ToggleButton.CollapsibleHeader">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
@@ -76,7 +92,7 @@
         
         <!-- GridSplitter Style -->
         <Style Selector="GridSplitter">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource CurveEditor.Splitter.Brush}"/>
         </Style>
     </Window.Styles>
 
@@ -150,38 +166,75 @@
             </Grid>
         </Border>
 
-        <!-- Main Content Area with resizable panels -->
-        <Grid x:Name="MainLayoutGrid" ColumnDefinitions="200,4,*,4,280">
+        <!-- Main Content Area with Panel Bar and resizable panels -->
+        <Grid x:Name="RootLayoutGrid" ColumnDefinitions="Auto,*,Auto">
             
-            <!-- Left: Directory Browser (placeholder) -->
-            <Border Grid.Column="0" 
-                IsVisible="{Binding IsBrowserPanelExpanded}"
-                    BorderBrush="{DynamicResource SystemControlBackgroundBaseMediumBrush}"
-                    BorderThickness="0,0,1,0"
-                    Padding="8">
-                <StackPanel>
-                    <TextBlock Text="Directory Browser" 
-                               FontWeight="Bold" 
-                               Margin="0,0,0,8"/>
-                    <TextBlock Text="(Coming Soon)" 
-                               Foreground="Gray"
-                               FontStyle="Italic"/>
-                    <Button Content="Open Folder..." 
-                            Margin="0,8,0,0"
-                            HorizontalAlignment="Stretch"
-                            IsEnabled="False"/>
-                </StackPanel>
-            </Border>
+            <!-- Panel Bar (docked left or right based on PanelBarDockSide) -->
+            <views:PanelBar Grid.Column="0" 
+                            x:Name="PanelBarControl"
+                            DockSide="{Binding PanelBarDockSide}"/>
+            
+            <!-- Main Layout Grid with all panels -->
+            <Grid x:Name="MainLayoutGrid" 
+                  Grid.Column="1"
+                  ColumnDefinitions="200,4,*,4,280">
+            
+            <!-- Left Zone: Browser and Data panels (zone exclusivity: only one visible at a time) -->
+            <Grid Grid.Column="0" RowDefinitions="*">
+                <!-- Browser Panel -->
+                <Border Grid.Row="0"
+                        IsVisible="{Binding IsBrowserPanelExpanded}"
+                        Background="{DynamicResource CurveEditor.SideBar.BackgroundBrush}"
+                        BorderBrush="{DynamicResource CurveEditor.SideBar.BorderBrush}"
+                        BorderThickness="0,0,1,0"
+                        Padding="0">
+                    <Grid RowDefinitions="Auto,*">
+                        <Border Grid.Row="0" Classes="PanelHeaderContainer">
+                            <TextBlock Text="Directory Browser"
+                                       Classes="PanelHeader"/>
+                        </Border>
+
+                        <StackPanel Grid.Row="1" Margin="8">
+                            <TextBlock Text="(Coming Soon)"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       FontStyle="Italic"/>
+                            <Button Content="Open Folder..."
+                                    Margin="0,8,0,0"
+                                    HorizontalAlignment="Stretch"
+                                    IsEnabled="False"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+                
+                <!-- Data Panel -->
+                <Border Grid.Row="0"
+                        IsVisible="{Binding IsCurveDataExpanded}"
+                        Background="{DynamicResource CurveEditor.SideBar.BackgroundBrush}"
+                        BorderBrush="{DynamicResource CurveEditor.SideBar.BorderBrush}"
+                        BorderThickness="0,0,1,0"
+                        Padding="0"
+                        IsEnabled="{Binding CurrentMotor, Converter={x:Static ObjectConverters.IsNotNull}}">
+                    <Grid RowDefinitions="Auto,*">
+                        <Border Grid.Row="0" Classes="PanelHeaderContainer">
+                            <TextBlock Text="Curve Data"
+                                       Classes="PanelHeader"/>
+                        </Border>
+                        <ScrollViewer Grid.Row="1" Margin="8">
+                            <views:CurveDataPanel DataContext="{Binding}"/>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+            </Grid>
             
             <!-- Left GridSplitter -->
             <GridSplitter x:Name="LeftSplitter" Grid.Column="1" Width="4" ResizeDirection="Columns"/>
 
-            <!-- Center: Chart Area and Collapsible Data Panel -->
-            <Grid x:Name="CenterGrid" Grid.Column="2" RowDefinitions="*,Auto,Auto">
+            <!-- Center: Chart Area -->
+            <Grid x:Name="CenterGrid" Grid.Column="2">
                 <!-- Chart Area -->
-                <Border Grid.Row="0"
-                        Margin="4"
-                        BorderBrush="{DynamicResource SystemControlBackgroundBaseMediumBrush}"
+                <Border Margin="4"
+                    Background="{DynamicResource CurveEditor.Editor.BackgroundBrush}"
+                    BorderBrush="{DynamicResource CurveEditor.Editor.BorderBrush}"
                         BorderThickness="1"
                         CornerRadius="4">
                     <Grid>
@@ -195,7 +248,7 @@
                                        HorizontalAlignment="Center"/>
                             <TextBlock Text="Create a new motor definition or open an existing file to get started."
                                        Margin="0,16,0,0"
-                                       Foreground="Gray"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        HorizontalAlignment="Center"/>
                             <StackPanel Orientation="Horizontal" 
                                         HorizontalAlignment="Center" 
@@ -215,42 +268,6 @@
                                          IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).CurrentMotor, Converter={x:Static ObjectConverters.IsNotNull}}"/>
                     </Grid>
                 </Border>
-                
-                <!-- Vertical GridSplitter between chart and data table -->
-                <GridSplitter Grid.Row="1" 
-                              Height="4" 
-                              ResizeDirection="Rows"
-                              IsVisible="{Binding IsCurveDataExpanded}"/>
-                
-                <!-- Collapsible Curve Data Panel -->
-                <Border Grid.Row="2"
-                        Margin="4,0,4,4"
-                        BorderBrush="{DynamicResource SystemControlBackgroundBaseMediumBrush}"
-                        BorderThickness="1"
-                        CornerRadius="4"
-                        IsVisible="{Binding CurrentMotor, Converter={x:Static ObjectConverters.IsNotNull}}">
-                    <Grid RowDefinitions="Auto,Auto">
-                        <!-- Collapsible Header -->
-                        <ToggleButton Grid.Row="0" 
-                                      IsChecked="{Binding IsCurveDataExpanded}"
-                                      Classes="CollapsibleHeader">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="▶" FontSize="10" VerticalAlignment="Center"
-                                           IsVisible="{Binding !IsCurveDataExpanded}"/>
-                                <TextBlock Text="▼" FontSize="10" VerticalAlignment="Center"
-                                           IsVisible="{Binding IsCurveDataExpanded}"/>
-                                <TextBlock Text="Curve Data" FontWeight="Bold" FontSize="12"/>
-                            </StackPanel>
-                        </ToggleButton>
-                        
-                        <!-- Data Content - max height to take about half window -->
-                        <Border Grid.Row="1" 
-                                MaxHeight="300"
-                                IsVisible="{Binding IsCurveDataExpanded}">
-                            <views:CurveDataPanel DataContext="{Binding}"/>
-                        </Border>
-                    </Grid>
-                </Border>
             </Grid>
             
             <!-- Right GridSplitter -->
@@ -259,16 +276,18 @@
                 <!-- Right: Properties Panel -->
                 <Border Grid.Column="4" 
                     IsVisible="{Binding IsPropertiesPanelExpanded}"
-                    BorderBrush="{DynamicResource SystemControlBackgroundBaseMediumBrush}"
+                    Background="{DynamicResource CurveEditor.SideBar.BackgroundBrush}"
+                    BorderBrush="{DynamicResource CurveEditor.SideBar.BorderBrush}"
                     BorderThickness="1,0,0,0">
-                <ScrollViewer>
+                <Grid RowDefinitions="Auto,*">
+                    <Border Grid.Row="0" Classes="PanelHeaderContainer">
+                        <TextBlock Text="Motor Properties" 
+                                   Classes="PanelHeader"/>
+                    </Border>
+
+                    <ScrollViewer Grid.Row="1">
                     <StackPanel Margin="6" 
                                 IsVisible="{Binding CurrentMotor, Converter={x:Static ObjectConverters.IsNotNull}}">
-                        
-                        <TextBlock Text="Motor Properties" 
-                                   FontWeight="Bold" 
-                                   FontSize="14"
-                                   Margin="0,0,0,6"/>
                         
                         <!-- Motor Name -->
                         <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
@@ -721,9 +740,12 @@
                         </StackPanel>
                         
                     </StackPanel>
-                </ScrollViewer>
+                    </ScrollViewer>
+                </Grid>
             </Border>
         </Grid>
+        
+        </Grid> <!-- Close RootLayoutGrid -->
     </DockPanel>
 
 </Window>

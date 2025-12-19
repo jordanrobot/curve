@@ -48,7 +48,11 @@ sealed class Program
         }
 
         Log.Logger = new LoggerConfiguration()
+    #if DEBUG
             .MinimumLevel.Debug()
+    #else
+            .MinimumLevel.Information()
+    #endif
 #if DEBUG
             .WriteTo.Console()
 #endif
@@ -84,6 +88,11 @@ sealed class Program
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
+#if RELEASE
+            .WithInterFont();
+#endif
+#if DEBUG
             .WithInterFont()
             .LogToTrace();
+#endif
 }

@@ -23,6 +23,7 @@ A dedicated desktop application for editing motor torque curves stored in JSON f
    - Open a directory to view motor curve files
    - Click file in list to load into editor
    - Shows JSON files in selected directory
+   - Left side pane width persists per zone (no jumping when switching left-zone panels)
 
 3. **Dirty State Tracking**
    - Track unsaved changes ("dirty" state) for each file
