@@ -125,21 +125,21 @@
 
 ### Directory Browser: file browser behavior
 
-- [ ] Only show folders and valid curve definition files in the directory listing.
-  - [ ] To make this efficient, make an initial file list containing only directories and JSON files, then validate each file in a background task to filter out invalid files.
+- [x] Only show folders and valid curve definition files in the directory listing.
+  - [x] To make this efficient, make an initial file list containing only directories and JSON files, then validate each file in a background task to filter out invalid files.
 
 - [x] Browser directory listing and navigation should work like VS Code's file browser.
   - [x] Show directories in a tree view on the left side, allowing navigation into subdirectories via expansion/collapse.
-  - [ ] Directories should be expandable/collapsible via caret icons to the left of the directory name.
-  - [ ] Clicking on a directory expansion icon will expand or collapse the directory.
-  - [ ] NEW: When a folder is collapsed, the icon should change to chevron right. 
+  - [x] Directories should be expandable/collapsible via caret icons to the left of the directory name.
+  - [x] Clicking on a directory expansion icon will expand or collapse the directory.
+  - [x] NEW: When a folder is collapsed, the icon should change to chevron right. 
     - [ ] Chevron Right (Fluent Icons): <svg width="24" height="24" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.293 4.293a1 1 0 0 0 0 1.414L14.586 12l-6.293 6.293a1 1 0 1 0 1.414 1.414l7-7a1 1 0 0 0 0-1.414l-7-7a1 1 0 0 0-1.414 0Z" fill="#ffffff"/></svg>
-  - [ ] New: When a folder is expanded, change the icon to chevron down.
+  - [x] New: When a folder is expanded, change the icon to chevron down.
     - [ ] Chevron Down (Fluent Icons): <svg width="24" height="24" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4.293 8.293a1 1 0 0 1 1.414 0L12 14.586l6.293-6.293a1 1 0 1 1 1.414 1.414l-7 7a1 1 0 0 1-1.414 0l-7-7a1 1 0 0 1 0-1.414Z" fill="#ffffff"/></svg> 
   - [x] Directories should be sorted alphabetically, with folders listed before files.
   - [x] Show valid curve definition files in the selected directory in the tree (single unified tree), not in a separate pane.
   - [x] Single clicking on a file will open it in the curve editor.
-  - [ ] REGRESSION: If a user tries to open a file and the current file is dirty, ask the user if they want to save the existing file first?.
+  - [x] REGRESSION: If a user tries to open a file and the current file is dirty, ask the user if they want to save the existing file first?.
 
   - [x] Clicking on a directory name will expand/collapse it, rather than selecting it.
 
@@ -147,7 +147,7 @@
 
   - [X] Files and directories within a parent directory should be shown as children of that directory in the tree view. They should be indented to indicate they are children.
   
-  - [ ] BUG: The browser file/directory listing should look like this:
+  - [x] BUG: The browser file/directory listing should look like this:
 
 ```text
 top directory
@@ -166,16 +166,16 @@ Note: In this example, you'll notice that `motor profile 1.json` and `motor prof
 
 - [x] The top level directory in the directory browser should not participate in the expand/collapse mechanism. It should always be expanded and does not have a caret icon.
 
-- [ ] New: the top level directory in the directory browser should NOT show its full path; only show the directory name.
+- [x] New: the top level directory in the directory browser should NOT show its full path; only show the directory name.
 
 ### Directory Browser: Behavior
 
 - [x] When the program starts, automatically open the last opened file in the curve editor.
 - [x]  When the user opens a directory, automatically expand the directory tree to show the opened directory.
-- [ ] When the user opens a directory and the directory browser panel is collapsed, the panel should automatically open.
+- [x] When the user opens a directory and the directory browser panel is collapsed, the panel should automatically open.
 - [x] Implement a "Close Directory" button to close the currently opened directory in the directory browser.
-- [ ] New: Move the existing "Open Folder" menu item from the Directory Browser Panel HeaFile menu to the Directory Browser panel header. 
-- [x] When the command "Close Directory" is executed, collapse the directory tree to hide the closed directory.
+- [x] New: Keep the existing "Open Folder" menu item in the File menu (not the Directory Browser panel header).
+- [x] When the command "Close Directory" is executed, the directory tree does not collapse; the opened root directory is cleared (tree becomes empty).
 - [x] When the program starts, automatically open the last opened directory in the directory browser, unless the user had explicitly closed it before exiting the program.
 - [x] When the program starts, remember the expanded/collapsed state of directories in the directory browser from the last session.
 - [x] When the program starts, if the last opened directory no longer exists, collapse the directory browser.
@@ -187,16 +187,16 @@ Note: In this example, you'll notice that `motor profile 1.json` and `motor prof
 - AC 3.1b: If the last opened directory no longer exists, the directory browser starts collapsed with no errors shown to the user beyond any appropriate log entry.
 - AC 3.1c: Clicking a file once in the directory browser always opens it in the CurveEditor, and the selection in the tree matches the active motor definition.
 - AC 3.1d: The directory browser file/directory listing matches the specified tree structure and behavior described above.
-- [ ] AC 3.1e: If the user opens a directory while the directory browser panel is collapsed, the panel automatically expands to show the directory tree.
-- [ ] AC 3.1f: The "Close Folder" menu item is located in the File menu, not Directory Browser panel header.
-- [ ] AC 3.1g: The "Open Folder" menu item is located in the File Menu, not the Directory Browser panel header menu.
-- [ ] AC 3.1h: When the user executes "Close Directory", the directory tree does not collapse.
-- [ ] AC 3.1i: When the user opens a json file while the current file is dirty, the user is prompted to save the current file first.
+- [x] AC 3.1e: If the user opens a directory while the directory browser panel is collapsed, the panel automatically expands to show the directory tree.
+- [x] AC 3.1f: The "Close Folder" menu item is located in the File menu, not Directory Browser panel header.
+- [x] AC 3.1g: The "Open Folder" menu item is located in the File Menu, not the Directory Browser panel header menu.
+- [x] AC 3.1h: When the user executes "Close Directory", the directory tree does not collapse.
+- [x] AC 3.1i: When the user opens a json file while the current file is dirty, the user is prompted to save the current file first.
 
 
 ### Directory Browser: UI
 - [x] Ensure there is an Open Folder button added to the File menu.
-- [x] Ensure there is an Close Folder button added to the main toolbar for easy access.
+- [x] Ensure there is an Close Folder button added to the File menu for easy access.
 - [x] Add a "Refresh Explorer" icon button at the top of the file browser to re-scan the directory tree for files.
 - [x] Implement a keyboard shortcut (F5) to trigger "Refresh Explorer".
 
@@ -257,6 +257,13 @@ Note: In this example, you'll notice that `motor profile 1.json` and `motor prof
     - [ ] `inertia` (string): default is "kg-m^2",
     - [ ] `temperature` (string): default is "C",
     - [ ] `torqueConstant` (string): "Nm/A",
+
+### Json Format: Change Properties
+
+- [ ] Change `drives` array property:
+  - [ ] `manufacturer` should be moved to the top of the drive object. 
+  - [ ] `partNumber` should be moved to the second position in the drive object.
+  - [ ] `name` should be changed to `seriesName` (string), and be the third property in the drive object.
 
 ### Schema Versioning
 

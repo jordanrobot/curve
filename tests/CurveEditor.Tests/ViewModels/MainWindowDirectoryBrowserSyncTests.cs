@@ -10,6 +10,26 @@ namespace CurveEditor.Tests.ViewModels;
 
 public sealed class MainWindowDirectoryBrowserSyncTests
 {
+        private static string TestMotorJson(string motorName) => $$"""
+        {
+            \"schemaVersion\": \"1.0.0\",
+            \"motorName\": \"{{motorName}}\",
+            \"drives\": [
+                {
+                    \"name\": \"Default Drive\",
+                    \"voltages\": [
+                        {
+                            \"voltage\": 220,
+                            \"series\": [
+                                { \"name\": \"Peak\", \"data\": [] }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+        """;
+
     private sealed class InMemorySettingsStore : IUserSettingsStore
     {
         private readonly Dictionary<string, string?> _values = new(StringComparer.Ordinal);
@@ -58,7 +78,7 @@ public sealed class MainWindowDirectoryBrowserSyncTests
         try
         {
             var filePath = Path.Combine(root.FullName, "a.json");
-            await File.WriteAllTextAsync(filePath, "{}");
+            await File.WriteAllTextAsync(filePath, TestMotorJson("a"));
 
             var curveGenerator = new CurveGeneratorService();
             var fileService = new FileService(curveGenerator);

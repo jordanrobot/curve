@@ -4,11 +4,13 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CurveEditor.Services;
+using CurveEditor.Models;
 using Serilog;
 using Avalonia.Threading;
 
@@ -19,6 +21,11 @@ namespace CurveEditor.ViewModels;
 /// </summary>
 public partial class DirectoryBrowserViewModel : ObservableObject
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     public const string LastOpenedDirectoryKey = "DirectoryBrowser.LastOpenedDirectory";
     public const string WasExplicitlyClosedKey = "DirectoryBrowser.WasExplicitlyClosed";
     public const string ExpandedDirectoryPathsKey = "DirectoryBrowser.ExpandedDirectoryPaths";
@@ -257,6 +264,8 @@ public partial class DirectoryBrowserViewModel : ObservableObject
                 RootItems.Clear();
                 RootItems.Add(rootNode);
             }).ConfigureAwait(false);
+
+            StartFilteringInvalidMotorFiles(rootNode.Children, ct);
         }
         catch (OperationCanceledException)
         {
@@ -412,6 +421,8 @@ public partial class DirectoryBrowserViewModel : ObservableObject
 
                 node.HasLoadedChildren = true;
             }).ConfigureAwait(false);
+
+            StartFilteringInvalidMotorFiles(node.Children, cancellationToken);
         }
         catch (OperationCanceledException)
         {
@@ -424,6 +435,98 @@ public partial class DirectoryBrowserViewModel : ObservableObject
         finally
         {
             node.IsLoadingChildren = false;
+        }
+    }
+
+    private void StartFilteringInvalidMotorFiles(ObservableCollection<ExplorerNodeViewModel> children, CancellationToken cancellationToken)
+    {
+        if (children.Count == 0)
+        {
+            return;
+        }
+
+        // Requirement: show folders + *.json candidates first, then validate in the background and
+        // filter out invalid curve definition files.
+        var fileNodes = children.Where(n => !n.IsDirectory).ToArray();
+        if (fileNodes.Length == 0)
+        {
+            return;
+        }
+
+        var task = Task.Run(async () =>
+        {
+            foreach (var fileNode in fileNodes)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var isValid = await IsValidMotorDefinitionFileAsync(fileNode.FullPath, cancellationToken).ConfigureAwait(false);
+                if (isValid)
+                {
+                    continue;
+                }
+
+                await InvokeOnUiAsync(() =>
+                {
+                    // Item may already be gone due to refresh/expand changes.
+                    if (children.Contains(fileNode))
+                    {
+                        if (ReferenceEquals(SelectedNode, fileNode))
+                        {
+                            SelectedNode = null;
+                        }
+
+                        children.Remove(fileNode);
+                    }
+                }).ConfigureAwait(false);
+            }
+        }, cancellationToken);
+
+        _ = task.ContinueWith(
+            t =>
+            {
+                if (t.Exception is not null)
+                {
+                    Log.Information(t.Exception, "Background motor file validation failed.");
+                }
+            },
+            CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted,
+            TaskScheduler.Default);
+    }
+
+    private static async Task<bool> IsValidMotorDefinitionFileAsync(string filePath, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            return false;
+        }
+
+        try
+        {
+            if (!File.Exists(filePath))
+            {
+                return false;
+            }
+
+            var json = await File.ReadAllTextAsync(filePath, cancellationToken).ConfigureAwait(false);
+            var motorDefinition = JsonSerializer.Deserialize<MotorDefinition>(json, JsonOptions);
+
+            if (motorDefinition is null)
+            {
+                return false;
+            }
+
+            // Lightweight validity check: ensure it's plausibly a motor definition (not random JSON).
+            // Keep this cheaper than full domain validation to avoid requiring large series arrays.
+            return !string.IsNullOrWhiteSpace(motorDefinition.MotorName) && motorDefinition.HasValidConfiguration();
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch
+        {
+            return false;
         }
     }
 

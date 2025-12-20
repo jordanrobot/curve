@@ -80,7 +80,7 @@
                         <ToggleButton Grid.Column="0"
                                       Classes="ExplorerChevron"
                                       Focusable="False"
-                                      IsVisible="{Binding IsDirectory}"
+                                      IsVisible="{Binding ShowChevron}"
                                       IsChecked="{Binding IsExpanded, Mode=TwoWay}"
                                       Width="16" Height="16"
                                       Padding="0"

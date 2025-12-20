@@ -2,7 +2,7 @@
 
 ### Status
 
-In Progress (revised after requirements updates)
+Complete
 
 **Related ADRs**
 
@@ -21,10 +21,10 @@ In scope
 - [x] VS Code–style explorer tree (folders + `*.json` files) with folders-first sorting, lazy expansion, and single-click open.
 - [x] Persistence of last opened directory, expanded state, selected file, and explorer font size.
 - [x] Restore last session on startup (with safe behavior when the directory is missing).
-- [ ] Follow-up fixes from updated requirements (Dec 2025): chevron icons, root display name (directory name only), dirty prompt on open, auto-expand Browser panel on Open Folder when collapsed, file-menu placement tweaks.
+- [x] Follow-up fixes from updated requirements (Dec 2025): chevron icons, root display name (directory name only), dirty prompt on open, auto-expand Browser panel on Open Folder when collapsed, file-menu placement tweaks.
+- [x] Filter explorer listing to folders + valid motor definition JSON files (background validation removes invalid candidates).
 
 Out of scope (Phase 3.1)
-- [ ] Filtering/badging “valid motor files only” in the explorer listing (deferred).
 - [ ] Explorer dirty indicators.
 - [ ] Exit/open save prompts outside of the explorer-initiated open prompt.
 - [ ] Multi-root workspaces, tabs, or “open in new tab”.
@@ -62,12 +62,13 @@ Relevant files/components
 #### 1.2 Functional requirements coverage (Phase 3.1)
 
 File filtering + validation
-- [x] Show folders and JSON files in the directory listing.
-- [ ] Future (deferred): validate candidate files using the JSON schema and/or domain validation, and optionally filter or badge invalid files.
 
-Decision (scope adjustment)
-- For Phase 3.1 implementation, we will **not** filter out "invalid" motor files. Instead, we will show all `*.json` files and rely on the existing file-open path to surface errors when the user attempts to open a file.
-- This intentionally relaxes the "only show valid curve definition files" requirement for Phase 3.1 to reduce risk and avoid confusing hidden files.
+- [x] Show folders and JSON files in the directory listing.
+- [x] Validate candidate files in the background and filter out invalid motor definition files.
+
+Decision (implementation)
+- For Phase 3.1 implementation, we filter out obviously non-motor JSON files after initial listing.
+- Validation is intentionally lightweight and runs in the background: if a JSON file does not deserialize into a plausible motor definition shape (non-empty motor name and at least one drive/voltage/series), it is removed from the tree.
 
 Tree behavior (VS Code-like)
 - [x] Use a single unified tree (folders + files in the same tree).

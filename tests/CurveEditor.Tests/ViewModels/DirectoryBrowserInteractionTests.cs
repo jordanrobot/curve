@@ -11,6 +11,26 @@ namespace CurveEditor.Tests.ViewModels;
 
 public sealed class DirectoryBrowserInteractionTests
 {
+        private static string TestMotorJson(string motorName) => $$"""
+        {
+            \"schemaVersion\": \"1.0.0\",
+            \"motorName\": \"{{motorName}}\",
+            \"drives\": [
+                {
+                    \"name\": \"Default Drive\",
+                    \"voltages\": [
+                        {
+                            \"voltage\": 220,
+                            \"series\": [
+                                { \"name\": \"Peak\", \"data\": [] }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+        """;
+
     private sealed class InMemorySettingsStore : IUserSettingsStore
     {
         private readonly Dictionary<string, string?> _values = new(StringComparer.Ordinal);
@@ -77,7 +97,7 @@ public sealed class DirectoryBrowserInteractionTests
         try
         {
             var filePath = Path.Combine(root.FullName, "a.json");
-            await File.WriteAllTextAsync(filePath, "{}");
+            await File.WriteAllTextAsync(filePath, TestMotorJson("a"));
 
             var vm = new TestDirectoryBrowserViewModel(new DirectoryBrowserService(), new StubFolderPicker(), store);
             await vm.SetRootDirectoryAsync(root.FullName);
@@ -111,7 +131,7 @@ public sealed class DirectoryBrowserInteractionTests
         try
         {
             var filePath = Path.Combine(root.FullName, "a.json");
-            await File.WriteAllTextAsync(filePath, "{}");
+            await File.WriteAllTextAsync(filePath, TestMotorJson("a"));
 
             var vm = new TestDirectoryBrowserViewModel(new DirectoryBrowserService(), new StubFolderPicker(), store);
             await vm.SetRootDirectoryAsync(root.FullName);
@@ -180,10 +200,10 @@ public sealed class DirectoryBrowserInteractionTests
             var fileAtRoot3 = Path.Combine(root.FullName, "motor profile 3.json");
             var fileAtRoot4 = Path.Combine(root.FullName, "motor profile 4.json");
 
-            await File.WriteAllTextAsync(fileInMotorProfiles1, "{}");
-            await File.WriteAllTextAsync(fileInMotorProfiles2, "{}");
-            await File.WriteAllTextAsync(fileAtRoot3, "{}");
-            await File.WriteAllTextAsync(fileAtRoot4, "{}");
+            await File.WriteAllTextAsync(fileInMotorProfiles1, TestMotorJson("motor profile 1"));
+            await File.WriteAllTextAsync(fileInMotorProfiles2, TestMotorJson("motor profile 2"));
+            await File.WriteAllTextAsync(fileAtRoot3, TestMotorJson("motor profile 3"));
+            await File.WriteAllTextAsync(fileAtRoot4, TestMotorJson("motor profile 4"));
 
             var vm = new TestDirectoryBrowserViewModel(new DirectoryBrowserService(), new StubFolderPicker(), store);
             await vm.SetRootDirectoryAsync(root.FullName);

@@ -53,7 +53,7 @@ New expected files
 
 ### Assumptions and Constraints
 - The app continues using `PanelLayoutPersistence` (one-file-per-key JSON under `%AppData%/CurveEditor`) for Phase 3.1 settings to avoid introducing a second settings store.
-- Phase 3.1 does not filter out “invalid” files in the explorer; it lists `*.json` and relies on the existing open-file flow to surface errors.
+- Phase 3.1 filters explorer listing to folders + valid motor definition JSON files. It initially lists folders + `*.json` candidates, then validates candidates in the background and removes invalid files.
 - Explorer tree is single-root (one opened folder) for Phase 3.1.
 - Phase 3.1 does not require multi-tab or multi-root explorer.
 - **AC precedence**: when requirements bullets conflict with acceptance criteria, acceptance criteria win.
@@ -225,7 +225,22 @@ Required hygiene
 4. Click Refresh and confirm the tree updates.
 
 ### Deferred follow-on (not Phase 3.1)
-- Add schema-based and/or domain validation and (optionally) filter or badge invalid files.
+- Add schema-based validation and/or explorer badging for partially-valid files.
+
+---
+
+## [x] PR 11: Phase 3.1 follow-up - filter valid motor definition files only
+
+### Goal
+Ensure the explorer only shows folders and valid motor definition JSON files.
+
+### Tasks
+- [x] Start from a list of directories + `*.json` candidates.
+- [x] Validate candidates in the background and remove invalid files from the tree.
+- [x] Keep validation lightweight (do not require full 101-point series) to avoid expensive IO and huge test fixtures.
+
+### Done when
+- The explorer no longer shows obviously non-motor JSON files.
 
 ---
 
@@ -522,6 +537,6 @@ Verification pointers
 
 ## Updated sign-off checklist (for revised Phase 3.1 requirements)
 
-- [ ] PR 7–PR 10 tasks are complete.
-- [ ] All acceptance criteria (AC 3.1.1–3.1.9) have a verification step (test or manual script).
-- [ ] No out-of-scope features were implemented.
+- [x] PR 7–PR 11 tasks are complete.
+- [x] All acceptance criteria (AC 3.1.1–3.1.9) have a verification step (test or manual script).
+- [x] No out-of-scope features were implemented.
