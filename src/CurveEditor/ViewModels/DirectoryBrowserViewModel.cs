@@ -34,6 +34,9 @@ public partial class DirectoryBrowserViewModel : ObservableObject
     [ObservableProperty]
     private string? _rootDirectoryPath;
 
+    public string? RootDirectoryDisplayName
+        => string.IsNullOrWhiteSpace(RootDirectoryPath) ? null : GetRootDisplayName(RootDirectoryPath);
+
     [ObservableProperty]
     private ExplorerNodeViewModel? _selectedNode;
 
@@ -90,6 +93,11 @@ public partial class DirectoryBrowserViewModel : ObservableObject
     }
 
     public ObservableCollection<ExplorerNodeViewModel> RootItems { get; } = [];
+
+    partial void OnRootDirectoryPathChanged(string? value)
+    {
+        OnPropertyChanged(nameof(RootDirectoryDisplayName));
+    }
 
     [RelayCommand]
     private Task RefreshAsync() => RefreshInternalAsync();
@@ -262,11 +270,7 @@ public partial class DirectoryBrowserViewModel : ObservableObject
 
     private ExplorerNodeViewModel CreateRootNode(string rootDirectoryPath)
     {
-        var displayName = Path.GetFileName(rootDirectoryPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-        if (string.IsNullOrWhiteSpace(displayName))
-        {
-            displayName = rootDirectoryPath;
-        }
+        var displayName = GetRootDisplayName(rootDirectoryPath);
 
         var node = new ExplorerNodeViewModel
         {
@@ -282,6 +286,24 @@ public partial class DirectoryBrowserViewModel : ObservableObject
 
         node.PropertyChanged += OnNodePropertyChanged;
         return node;
+    }
+
+    private static string GetRootDisplayName(string rootDirectoryPath)
+    {
+        var trimmed = rootDirectoryPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var displayName = Path.GetFileName(trimmed);
+        if (string.IsNullOrWhiteSpace(displayName))
+        {
+            // Drive roots (e.g., C:\) end up with an empty filename; show "C:".
+            if (Path.GetPathRoot(rootDirectoryPath) is { Length: > 0 } root)
+            {
+                return root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            }
+
+            return trimmed;
+        }
+
+        return displayName;
     }
 
     private ExplorerNodeViewModel CreateNode(DirectoryBrowserEntry entry, string rootDirectoryPath, string relativeBase)

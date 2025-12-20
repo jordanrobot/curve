@@ -18,6 +18,15 @@ namespace CurveEditor.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
+    public enum UnsavedChangesChoice
+    {
+        Save,
+        Ignore,
+        Cancel
+    }
+
+    internal Func<string, Task<UnsavedChangesChoice>> UnsavedChangesPromptAsync { get; set; }
+
     private readonly IFileService _fileService;
     private readonly ICurveGeneratorService _curveGeneratorService;
     private readonly IValidationService _validationService;
@@ -428,6 +437,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _curveDataTableViewModel = new CurveDataTableViewModel();
         _motorConfigurationWorkflow = new MotorConfigurationWorkflow(_driveVoltageSeriesService);
         _settingsStore = new PanelLayoutUserSettingsStore();
+        UnsavedChangesPromptAsync = ShowUnsavedChangesPromptAsync;
         WireEditingCoordinator();
         WireUndoInfrastructure();
         WireDirectoryBrowserIntegration();
@@ -443,6 +453,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _curveDataTableViewModel = new CurveDataTableViewModel();
         _motorConfigurationWorkflow = new MotorConfigurationWorkflow(_driveVoltageSeriesService);
         _settingsStore = new PanelLayoutUserSettingsStore();
+        UnsavedChangesPromptAsync = ShowUnsavedChangesPromptAsync;
         WireEditingCoordinator();
         WireUndoInfrastructure();
         WireDirectoryBrowserIntegration();
@@ -461,7 +472,8 @@ public partial class MainWindowViewModel : ViewModelBase
         IMotorConfigurationWorkflow motorConfigurationWorkflow,
         ChartViewModel chartViewModel,
         CurveDataTableViewModel curveDataTableViewModel,
-        IUserSettingsStore? settingsStore = null)
+        IUserSettingsStore? settingsStore = null,
+        Func<string, Task<UnsavedChangesChoice>>? unsavedChangesPromptAsync = null)
     {
         _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
         _curveGeneratorService = curveGeneratorService ?? throw new ArgumentNullException(nameof(curveGeneratorService));
@@ -471,6 +483,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _chartViewModel = chartViewModel ?? throw new ArgumentNullException(nameof(chartViewModel));
         _curveDataTableViewModel = curveDataTableViewModel ?? throw new ArgumentNullException(nameof(curveDataTableViewModel));
         _settingsStore = settingsStore ?? new PanelLayoutUserSettingsStore();
+        UnsavedChangesPromptAsync = unsavedChangesPromptAsync ?? ShowUnsavedChangesPromptAsync;
 
         WireEditingCoordinator();
         WireUndoInfrastructure();
@@ -496,7 +509,73 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     private Task HandleDirectoryBrowserFileOpenRequestedAsync(string filePath)
-        => OpenMotorFileInternalAsync(filePath, updateExplorerSelection: false);
+        => OpenMotorFileFromDirectoryBrowserAsync(filePath);
+
+    [RelayCommand]
+    private async Task OpenFolderAsync()
+    {
+        if (ActiveLeftPanelId != PanelRegistry.PanelIds.DirectoryBrowser)
+        {
+            ActiveLeftPanelId = PanelRegistry.PanelIds.DirectoryBrowser;
+        }
+
+        try
+        {
+            await DirectoryBrowser.OpenFolderCommand.ExecuteAsync(null).ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to open folder");
+            StatusMessage = $"Error opening folder: {ex.Message}";
+        }
+    }
+
+    private async Task OpenMotorFileFromDirectoryBrowserAsync(string filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            return;
+        }
+
+        if (IsDirty)
+        {
+            var choice = await UnsavedChangesPromptAsync("open another file").ConfigureAwait(true);
+            if (choice == UnsavedChangesChoice.Cancel)
+            {
+                StatusMessage = "Open cancelled.";
+                return;
+            }
+
+            if (choice == UnsavedChangesChoice.Save)
+            {
+                await SaveAsync().ConfigureAwait(true);
+                if (IsDirty)
+                {
+                    StatusMessage = "Open cancelled.";
+                    return;
+                }
+            }
+        }
+
+        await OpenMotorFileInternalAsync(filePath, updateExplorerSelection: false).ConfigureAwait(true);
+    }
+
+    private static async Task<UnsavedChangesChoice> ShowUnsavedChangesPromptAsync(string actionDescription)
+    {
+        if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop || desktop.MainWindow is null)
+        {
+            return UnsavedChangesChoice.Cancel;
+        }
+
+        var dialog = new Views.UnsavedChangesDialog
+        {
+            Title = "Unsaved Changes",
+            ActionDescription = actionDescription
+        };
+
+        await dialog.ShowDialog(desktop.MainWindow);
+        return dialog.Choice;
+    }
 
     /// <summary>
     /// Opens a motor definition by path and synchronizes Directory Browser selection when applicable.

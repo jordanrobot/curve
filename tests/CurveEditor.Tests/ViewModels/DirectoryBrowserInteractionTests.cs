@@ -163,4 +163,49 @@ public sealed class DirectoryBrowserInteractionTests
             try { root.Delete(recursive: true); } catch { }
         }
     }
+
+    [Fact]
+    public async Task TreeStructure_RootShowsRootFilesAndDirectories_AndUnexpandedDirectoryDoesNotShowItsChildren()
+    {
+        var store = new InMemorySettingsStore();
+        var root = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "curve-test-" + Guid.NewGuid().ToString("N")));
+
+        try
+        {
+            var motorProfilesDir = Directory.CreateDirectory(Path.Combine(root.FullName, "motor profiles"));
+            var dir4 = Directory.CreateDirectory(Path.Combine(root.FullName, "directory 4"));
+
+            var fileInMotorProfiles1 = Path.Combine(motorProfilesDir.FullName, "motor profile 1.json");
+            var fileInMotorProfiles2 = Path.Combine(motorProfilesDir.FullName, "motor profile 2.json");
+            var fileAtRoot3 = Path.Combine(root.FullName, "motor profile 3.json");
+            var fileAtRoot4 = Path.Combine(root.FullName, "motor profile 4.json");
+
+            await File.WriteAllTextAsync(fileInMotorProfiles1, "{}");
+            await File.WriteAllTextAsync(fileInMotorProfiles2, "{}");
+            await File.WriteAllTextAsync(fileAtRoot3, "{}");
+            await File.WriteAllTextAsync(fileAtRoot4, "{}");
+
+            var vm = new TestDirectoryBrowserViewModel(new DirectoryBrowserService(), new StubFolderPicker(), store);
+            await vm.SetRootDirectoryAsync(root.FullName);
+
+            var rootNode = Assert.Single(vm.RootItems);
+
+            Assert.Contains(rootNode.Children, n => n.IsDirectory && n.DisplayName == "motor profiles");
+            Assert.Contains(rootNode.Children, n => n.IsDirectory && n.DisplayName == "directory 4");
+
+            Assert.Contains(rootNode.Children, n => !n.IsDirectory && n.DisplayName == "motor profile 3.json");
+            Assert.Contains(rootNode.Children, n => !n.IsDirectory && n.DisplayName == "motor profile 4.json");
+
+            var motorProfilesNode = Assert.Single(rootNode.Children, n => n.IsDirectory && n.DisplayName == "motor profiles");
+            var dir4Node = Assert.Single(rootNode.Children, n => n.IsDirectory && n.DisplayName == "directory 4");
+
+            // Directory children are loaded lazily; until expanded they should not show their contents.
+            Assert.Empty(motorProfilesNode.Children);
+            Assert.Empty(dir4Node.Children);
+        }
+        finally
+        {
+            try { root.Delete(recursive: true); } catch { }
+        }
+    }
 }

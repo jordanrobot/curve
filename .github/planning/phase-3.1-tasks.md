@@ -351,7 +351,7 @@ Required hygiene
 
 ---
 
-## [ ] PR 7: Phase 3.1 follow-up - AC 3.1.4–3.1.7 wiring (panel auto-expand + menu placement + root display name)
+## [x] PR 7: Phase 3.1 follow-up - AC 3.1.4–3.1.7 wiring (panel auto-expand + menu placement + root display name)
 
 ### Goal
 Address newly added Phase 3.1 acceptance criteria around explorer layout fidelity, menu placement, and panel auto-expand behavior.
@@ -359,20 +359,20 @@ Address newly added Phase 3.1 acceptance criteria around explorer layout fidelit
 ### Tasks
 
 AC 3.1.5: Auto-expand browser panel when opening a folder
-- [ ] If the Directory Browser panel is currently collapsed, invoking Open Folder must set the active left panel to Directory Browser before scanning.
-- [ ] Ensure this only occurs for explicit user actions (not during startup restore).
+- [x] If the Directory Browser panel is currently collapsed, invoking Open Folder must set the active left panel to Directory Browser before scanning.
+- [x] Ensure this only occurs for explicit user actions (not during startup restore).
 
 AC 3.1.6 / AC 3.1.7: File menu placement
-- [ ] Add File menu item "Close Folder" bound to the existing close command.
-- [ ] Ensure "Open Folder" remains in the File menu.
-- [ ] Ensure there is no separate Open Folder action in the Directory Browser panel header/menu.
+- [x] Add File menu item "Close Folder" bound to the existing close command.
+- [x] Ensure "Open Folder" remains in the File menu.
+- [x] Ensure there is no separate Open Folder action in the Directory Browser panel header/menu.
 
 Root display name requirement
-- [ ] Change the root node display name to show directory name only (not full path).
-- [ ] Handle drive-root cases (e.g., `C:\` displays as `C:`).
+- [x] Change the root node display name to show directory name only (not full path).
+- [x] Handle drive-root cases (e.g., `C:\` displays as `C:`).
 
 AC 3.1.4 (partial): verify tree structure fidelity
-- [ ] Add a focused test against the view model tree shape that verifies:
+- [x] Add a focused test against the view model tree shape that verifies:
   - Files appear under the correct parent directory.
   - Files do not appear under collapsed directories.
   - A file at root level does not visually imply it is under a collapsed sibling directory.
@@ -398,21 +398,21 @@ AC 3.1.4 (partial): verify tree structure fidelity
 
 ---
 
-## [ ] PR 8: Phase 3.1 follow-up - chevron icons (collapsed/expanded)
+## [x] PR 8: Phase 3.1 follow-up - chevron icons (collapsed/expanded)
 
 ### Goal
 Match the updated VS Code-style visuals: collapsed folder shows chevron right; expanded shows chevron down.
 
 ### Tasks
-- [ ] Replace the folder expander/caret visuals with Fluent chevrons:
-  - [ ] Collapsed: chevron right
-  - [ ] Expanded: chevron down
-- [ ] Ensure the root node shows no expander icon.
-- [ ] Ensure clicking the chevron toggles expand/collapse.
-- [ ] Keep the existing behavior: clicking the folder name toggles expand/collapse without selecting.
+- [x] Replace the folder expander/caret visuals with Fluent chevrons:
+  - [x] Collapsed: chevron right
+  - [x] Expanded: chevron down
+- [x] Ensure the root node shows no expander icon.
+- [x] Ensure clicking the chevron toggles expand/collapse.
+- [x] Keep the existing behavior: clicking the folder name toggles expand/collapse without selecting.
 
 Required hygiene
-- [ ] Do not introduce new colors or styling tokens; reuse existing theme resources.
+- [x] Do not introduce new colors or styling tokens; reuse existing theme resources.
 
 ### Done when
 - Chevron visuals match the requirement and don’t regress folder click behavior.
@@ -429,7 +429,7 @@ Required hygiene
 
 ---
 
-## [ ] PR 9: Phase 3.1 follow-up - dirty prompt on explorer open (AC 3.1.9)
+## [x] PR 9: Phase 3.1 follow-up - dirty prompt on explorer open (AC 3.1.9)
 
 ### Goal
 Fix the regression: when opening a file from the explorer while the current file is dirty, prompt the user to Save / Ignore / Cancel.
@@ -437,25 +437,25 @@ Fix the regression: when opening a file from the explorer while the current file
 ### Tasks
 
 Prompt plumbing (testability)
-- [ ] Introduce a small abstraction for prompting (e.g., `IUnsavedChangesPrompt`) so ViewModel tests can cover the decision logic without UI.
-- [ ] Add a production implementation that uses the existing UI framework to show the prompt.
+- [x] Introduce a small abstraction for prompting (e.g., `IUnsavedChangesPrompt`) so ViewModel tests can cover the decision logic without UI.
+- [x] Add a production implementation that uses the existing UI framework to show the prompt.
 
 Explorer open behavior
-- [ ] When an explorer-initiated open is requested:
-  - [ ] If current document is not dirty: open immediately.
-  - [ ] If dirty: prompt Save / Ignore / Cancel.
-    - [ ] Save: call existing save flow; if save succeeds, proceed opening.
-    - [ ] Ignore: proceed opening without saving.
-    - [ ] Cancel: do not open; keep current file.
+- [x] When an explorer-initiated open is requested:
+  - [x] If current document is not dirty: open immediately.
+  - [x] If dirty: prompt Save / Ignore / Cancel.
+    - [x] Save: call existing save flow; if save succeeds, proceed opening.
+    - [x] Ignore: proceed opening without saving.
+    - [x] Cancel: do not open; keep current file.
 
 Startup restore safety
-- [ ] Ensure startup restore never shows this prompt.
+- [x] Ensure startup restore never shows this prompt.
 
 Tests
-- [ ] Add unit tests verifying:
-  - [ ] Cancel prevents open-by-path.
-  - [ ] Ignore allows open-by-path.
-  - [ ] Save attempts save then opens (if save succeeded).
+- [x] Add unit tests verifying:
+  - [x] Cancel prevents open-by-path.
+  - [x] Ignore allows open-by-path.
+  - [x] Save attempts save then opens (if save succeeded).
 
 ### Done when
 - AC 3.1.9 is satisfied.
@@ -474,17 +474,17 @@ Tests
 
 ---
 
-## [ ] PR 10: Phase 3.1 follow-up - Close Directory behavior (AC 3.1.8) + final validation refresh
+## [x] PR 10: Phase 3.1 follow-up - Close Directory behavior (AC 3.1.8) + final validation refresh
 
 ### Goal
 Resolve the Close Directory behavior conflict and align implementation with AC 3.1.8.
 
 ### Tasks
-- [ ] Update Close Directory behavior to satisfy AC 3.1.8 (directory tree does not collapse):
-  - [ ] Keep the Directory Browser panel expanded/collapsed state unchanged.
-  - [ ] Clear the opened root directory state so the tree is empty (no root directory shown).
-- [ ] Update persistence flags so this does not re-open the directory on restart.
-- [ ] Update manual validation script for AC 3.1.4–3.1.9.
+- [x] Update Close Directory behavior to satisfy AC 3.1.8 (directory tree does not collapse):
+  - [x] Keep the Directory Browser panel expanded/collapsed state unchanged.
+  - [x] Clear the opened root directory state so the tree is empty (no root directory shown).
+- [x] Update persistence flags so this does not re-open the directory on restart.
+- [x] Update manual validation script for AC 3.1.4–3.1.9.
 
 ### Done when
 - AC 3.1.8 passes manual verification.
