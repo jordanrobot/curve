@@ -20,73 +20,47 @@
 - [x] Panels that should use this mechanism include:
   - [x] Directory Browser panel
   - [x] Curve Data panel
-  - [x] Any future panels that may be added to the application.
-  - [x] Motor Properties panel
-  - [x] Curve Graph panel
-    - [x] The Curve Graph panel should never be fully collapsed, but can be resized to a minimal width.
     - [x] The Curve Graph panel should occupy the main content area.
     - [x] The Curve Graph panel should not participate in the "collapse any other expanded panels" behavior by default.
     - [x] The Curve Graph panel not be represented in the icon bar. Presumably this is by setting a property like `EnableIcon = false` on the panel descriptor.
 
-### Panel Headers and Layout
-
 - [x] All window panels within the CurveEditor application should have a header at the top of each panel. This panel header should contain the name of the panel, using terminology defined in 00-terms-and-definitions.
 
 - [x] Collapsed panels should be fully hidden from view (including any per-panel header area), except for their representation in the Panel Bar.
-
-- [x] The CurveEditor application should have a vertical bar that shows a text label button for each collapsible panel. Call this the Panel Bar.
 - [x] Phase 3.0 uses text labels (not icons or glyphs) for Panel Bar items.
 - [x] Panel Bar text labels must use the following text (exactly):
   - [x] Motor Properties = "Properties"
-  - [x] Curve Data = "Data"
-  - [x] Directory Browser = "Browser"
-- [x] Clicking a Panel Bar text label expands/collapses the corresponding panel.
 - [x] Panel Bar button backgrounds should be highlighted when the corresponding panel is expanded.
 - [x] Panel Bar button backgrounds should not be highlighted when the corresponding panel is collapsed.
 - [x] Panel Bar button backgrounds should be independent of each other (each Panel Bar Button background highlights based only on its own panel expanded/collapsed state).
 - [x] When multiple panels are expanded across multiple zones (e.g., Left + Right), the Panel Bar must show highlighted backgrounds for all expanded panels at the same time.
 - [x] Panel Bar text must be oriented sideways (rotated) so it fits without wrapping.
-- [x] This vertical bar with icons should be docked to one side of the main window.
-- [x] The vertical bar should not overlap with the main content area of the application.
 - [x] This vertical bar should be docked to the left side of the application window by default, but users should be able to change its position to the right side via user settings.
 - [x] When the Panel Bar dock side is changed, the Panel Bar actually moves to that side in the layout (and does not merely persist the setting).
 - [x] Changing the Panel Bar dock side should not change panel zones. Panel zones are independent of Panel Bar position.
 - [x] When docked left or right, the separator/border is drawn on the edge between the Panel Bar and the main content.
-- [x] This vertical bar should always be visible.
 - [x] Expanding a panel must not collapse panels in other zones.
 - [x] If the clicked panel is already expanded, clicking its label should collapse it.
 - [x] The size of the vertical bar should be fixed, and should not change when panels are expanded or collapsed.
-- [x] Any collapsed panel should be hidden from view, except for its icon in the vertical bar.
   
 ### Overall Window Layout
 - [x] The main window layout should consist of "zones" that correspond to the target areas for panels (e.g., left, right, bottom, center).
-- [x] Panels should dock to their designated zones when expanded.
-- [ ] Panels may be moved between zones (by the user) in future phases, but for Phase 3.0, each panel should have a fixed zone.
-
-### Panel Behavior in Overall Window Layout
 - [x] Collapsible panels should have a zone property that defines which zone of the window they dock to when expanded (e.g., left, right, bottom, center).
 - [x] This zone property should persist across application restarts.
 - [x] The application should apply the persisted zone at runtime by routing each panel's content to the appropriate zone host.
-- [x] When a panel is expanded, it should occupy its designated zone in the window layout.
-- [x] When a panel is expanded into a zone, it should not overlap with other expanded panels in that zone.
 - [x] When a panel is expanded into a zone, it should collapse any other expanded panels in that zone.
 - [x] Curve Data panel must be located in the left zone for Phase 3.0 (not the bottom zone).
 - [x] When a panel is collapsed from a zone, the zone should adjust to minimize unused space.
 
-### Persistence and Responsiveness
-
 - [x] The expand/collapse state of each panel should persist across application restarts. If a panel is expanded when the application is closed, it should be expanded when the application is reopened.
 - [x] Each expand/collapse panel should have persisted size values that survive restarts:
   - [x] Persisted expanded width (when docked left/right).
-  - [x] Persisted expanded height (when docked bottom).
-  - [x] Persisted sizes must never "learn" a zero size when a panel is collapsed.
 - [x] Panels within the same zone share a single persisted zone size (e.g., Left zone width). Switching which panel is expanded within a zone must not move the zone edge.
 - [x] Users should be able to resize expanded panels via splitters (right edge for left zone, left edge for right zone, top edge for bottom zone).
 - [x] When a zone has no expanded panel, that zone's resize splitter must be disabled (it should not resize an empty zone).
 - [x] When a zone has an expanded panel, that zone's resize splitter must be enabled and resize the zone normally.
 - [x] Defaults (first run / no persisted state):
   - [x] Directory Browser defaults to expanded.
-  - [x] Motor Properties defaults to expanded.
   - [x] Curve Data defaults to collapsed.
 - [x] Phase 3.1 override: once the Directory Browser feature is implemented, the startup default for the Directory Browser panel is controlled by the Phase 3.1 requirements (including "starts collapsed" when no prior state is restored).
 - [x] The expand/collapse mechanism should be implemented in a way that allows for easy addition of new panels in the future.
@@ -101,13 +75,6 @@
 - [x] AC 3.0.3: Adding a new panel type requires only minimal configuration (e.g., registering a name, icon, and content) without changes to core layout logic.
 - [x] AC 3.0.4: Layout changes (panel expand/collapse, width changes) do not participate in the undo/redo history.
 
-- [x] AC 3.0.5: After restarting the application, each panel's persisted `Zone` value is restored (and if a persisted zone is invalid/unknown, the app falls back to the default zone without user-facing errors).
-- [x] AC 3.0.6: The Panel Bar is always visible, fixed-width, and never overlaps the main content (verified for both left-docked and right-docked configurations).
-- [x] AC 3.0.7: Zone exclusivity is enforced: expanding a panel collapses any other expanded panel in the same zone, and does not collapse panels in other zones.
-- [x] AC 3.0.8: The Curve Graph panel is not represented in the Panel Bar (`EnableIcon = false`), and the Curve Graph remains visible in the center zone at all times.
-- [x] AC 3.0.9: Collapsing a panel shrinks its zone to minimize unused space (no persistent blank gutter/stripe beyond the Panel Bar itself).
-- [x] AC 3.0.10: Collapsing and re-expanding a panel restores the last non-zero size for that panel (collapse does not permanently "learn" a zero size).
-- [x] AC 3.0.11: When a zone has no expanded panel, its splitter is disabled; when a zone has an expanded panel, its splitter is enabled and resizes the zone.
 - [x] AC 3.0.12: When multiple panels share a zone (e.g., Directory Browser and Curve Data in the Left zone), the zone width is persisted per-zone and remains stable when switching which panel is expanded.
 
 
@@ -216,15 +183,15 @@ Note: In this example, you'll notice that `motor profile 1.json` and `motor prof
 
 ### Acceptance Criteria (Phase 3.1)
 
-- AC 3.1.1: On restart, if the last opened directory still exists, its expand/collapse state and the directory browser width are restored.
-- AC 3.1.2: If the last opened directory no longer exists, the directory browser starts collapsed with no errors shown to the user beyond any appropriate log entry.
-- AC 3.1.3: Clicking a file once in the directory browser always opens it in the CurveEditor, and the selection in the tree matches the active motor definition.
-- AC 3.1.4: The directory browser file/directory listing matches the specified tree structure and behavior described above.
-- [ ] AC 3.1.5: If the user opens a directory while the directory browser panel is collapsed, the panel automatically expands to show the directory tree.
-- [ ] AC 3.1.6: The "Close Folder" menu item is located in the File menu, not Directory Browser panel header.
-- [ ] AC 3.1.7: The "Open Folder" menu item is located in the File Menu, not the Directory Browser panel header menu.
-- [ ] AC 3.1.8: When the user executes "Close Directory", the directory tree does not collapse.
-- [ ] AC 3.1.9: When the user opens a json file while the current file is dirty, the user is prompted to save the current file first.
+- AC 3.1a: On restart, if the last opened directory still exists, its expand/collapse state and the directory browser width are restored.
+- AC 3.1b: If the last opened directory no longer exists, the directory browser starts collapsed with no errors shown to the user beyond any appropriate log entry.
+- AC 3.1c: Clicking a file once in the directory browser always opens it in the CurveEditor, and the selection in the tree matches the active motor definition.
+- AC 3.1d: The directory browser file/directory listing matches the specified tree structure and behavior described above.
+- [ ] AC 3.1e: If the user opens a directory while the directory browser panel is collapsed, the panel automatically expands to show the directory tree.
+- [ ] AC 3.1f: The "Close Folder" menu item is located in the File menu, not Directory Browser panel header.
+- [ ] AC 3.1g: The "Open Folder" menu item is located in the File Menu, not the Directory Browser panel header menu.
+- [ ] AC 3.1h: When the user executes "Close Directory", the directory tree does not collapse.
+- [ ] AC 3.1i: When the user opens a json file while the current file is dirty, the user is prompted to save the current file first.
 
 
 ### Directory Browser: UI
@@ -244,6 +211,181 @@ Note: In this example, you'll notice that `motor profile 1.json` and `motor prof
 - [x] The text within the directory browser should not wrap; long file and directory names should be truncated with ellipses if they exceed the available width.
 
 
+## Phase 3.1.5 Functional Requirements: Json Schema and Data Model Update
+
+### Scope (Phase 3.1.5)
+
+- Reduce JSON motor definition file size and improve manual edit ergonomics by introducing a table/map representation for curve series data.
+- Preserve explicit `percent` and `rpm` values in the persisted file format.
+- Keep the motor definition schema version at `1.0.0` (no schema version bump).
+- Add new motor properties for brake response time, backlash, and some new units of measure.
+
+### Non-goals (Phase 3.1.5)
+
+- Do not change how curves are edited in the UI beyond what is required to load/save the updated format.
+- Do not change curve interpolation or curve generation logic.
+- Do not add compression (zip/gzip) as the primary solution.
+
+### Json Format: General
+
+- [ ] Update the schema, json samples, object models, and documentation to support the json file changes listed below.
+
+### Json Format: Series Table/Map
+
+- [ ] Each voltage configuration should support persisting curve data using a table/map representation (the “series table” format).
+- [ ] The series table format should store:
+  - [ ] A shared `percent` axis array (0–100) for all series.
+  - [ ] A shared `rpm` axis array aligned 1:1 with `percent`.
+  - [ ] A `series` map keyed by series name (e.g., `Peak`, `Continuous`), where each entry contains:
+    - [ ] `locked` (boolean)
+    - [ ] `notes` (string, optional)
+    - [ ] `torque` array aligned by index with the shared axes.
+- [ ] The series table format must support any number of series (including one) and must allow user-added series.
+
+### Json Format: New Properties
+
+- [ ] Add new properties to the motor properties:
+  - [ ] `brakeResponseTime` (number) indicating the motor brake response time unit of measure.
+  - [ ] `brakeEngageTimeDiode` (number) indicating the motor brake engage time when using a diode.
+  - [ ] `brakeEngageTimeMOV` (number) indicating the motor brake engage time when using an MOV.
+  - [ ] `brakeBacklash` (number) indicating a angular displacement.
+
+- [ ] Add new properties to the units section:
+  - [ ] `responseTime` (string) indicating the motor brake response time unit of measure. Default is milliseconds.
+  - [ ] `backlash` (string) indicating a angular displacement. Default is arc-minutes.
+    - [ ] `percentage` (string) indicates a percentage number. Default is %.
+    - [ ] `inertia` (string): default is "kg-m^2",
+    - [ ] `temperature` (string): default is "C",
+    - [ ] `torqueConstant` (string): "Nm/A",
+
+### Schema Versioning
+
+- [ ] The motor definition schema version remains `1.0.0`.
+- [ ] The schema and file format should define a single representation for curve series data: the series table/map representation.
+- [ ] Add the new properties to the schema with appropriate types and default values.
+- [ ] When saving motor definition files, CurveEditor should write the series table/map representation.
+
+### Validation Rules
+
+- [ ] The shared `percent` axis must be strictly increasing, start at 0, end at 100, and contain 101 entries.
+- [ ] The shared `rpm` axis must:
+  - [ ] Contain 101 entries.
+  - [ ] Be non-negative.
+  - [ ] Be monotonically non-decreasing.
+- [ ] Each series `torque` array must contain exactly 101 entries.
+- [ ] All arrays must remain index-aligned (`percent[i]`, `rpm[i]`, and each series `torque[i]` refer to the same point).
+- [ ] Load failures (schema mismatch, invalid lengths, invalid values) should be logged and handled per the project’s logging/error handling policy.
+
+### Data Model Adjustments
+
+- [ ] Update the in-memory data model so it can:
+  - [ ] Deserialize the series table/map representation.
+  - [ ] Deserialize the new motor properties.
+  - [ ] Serialize the series table/map representation.
+  - [ ] Serialize the new motor properties.
+  - [ ] Normalize internally to a single representation suitable for the rest of the application (recommended: keep existing `CurveSeries` + `DataPoint` as the runtime model and convert on load/save).
+- [ ] Implement conversion logic:
+  - [ ] Series table/map  runtime `CurveSeries`/`DataPoint` (lossless conversion).
+
+### Acceptance Criteria (Phase 3.1.5)
+
+- [ ] AC 3.1.5a: CurveEditor saves motor definition files with `schemaVersion` set to `1.0.0` and persists curve data using the series table/map representation.
+- [ ] AC 3.1.5b: CurveEditor can load and save the series table/map format, and reopening a saved file yields identical curve data (percent/rpm/torque) and series metadata.
+- [ ] AC 3.1.5c: For a representative file with multiple voltages and at least two series per voltage, the saved JSON file is measurably smaller than the current object-per-point representation used before this change (track size reduction in a simple benchmark/test artifact).
+- [ ] AC 3.1.5d: The new motor properties are correctly loaded and saved, and their default values are applied when loading files that omit them.
+
+
+## Phase 3.1.6 Functional Requirements: .NET Client Library Skeleton Project
+
+### Scope (Phase 3.1.6)
+
+- Create a new SDK-style .NET class library project in this repo that is intended to become the reusable client library for the motor definition file format.
+- Establish a clean separation boundary so the library has no dependency on Avalonia UI or CurveEditor application services.
+
+### Non-goals (Phase 3.1.6)
+
+- Do not publish a NuGet package in this phase.
+- Do not require any breaking refactors of CurveEditor UI code in this phase.
+
+### Requirements
+
+- [ ] Add a new class library project (name TBD, e.g., `CurveEditor.MotorFiles`) to the solution.
+- [ ] The library project must not reference Avalonia or CurveEditor UI assemblies.
+- [ ] The library project should contain (initially):
+  - [ ] Schema-aligned models (or rehomed shared models) that represent the motor definition file.
+  - [ ] A single entrypoint for file IO (e.g., `MotorFile` helpers or `MotorFileSerializer`).
+
+### Acceptance Criteria (Phase 3.1.6)
+
+- AC 3.1.6a: `dotnet build` succeeds for the solution with the new library project added.
+- AC 3.1.6b: The library project has zero dependencies on UI frameworks.
+
+
+## Phase 3.1.7 Functional Requirements: NuGet Package Skeleton
+
+### Scope (Phase 3.1.7)
+
+- Prepare the library project for NuGet packaging without necessarily publishing it publicly.
+
+### Non-goals (Phase 3.1.7)
+
+- Do not automate publishing to nuget.org yet (unless separately requested).
+
+### Requirements
+
+- [ ] Configure package metadata in the library project (`PackageId`, `Version`, `Authors`, `Description`, `RepositoryUrl`).
+- [ ] Enable XML documentation output.
+- [ ] Add a minimal README with consumer usage examples for loading + validation.
+- [ ] Add a minimal test project verifying basic round-trip save/load for the current format.
+
+### Acceptance Criteria (Phase 3.1.7)
+
+- AC 3.1.7a: `dotnet pack` produces a `.nupkg` locally.
+- AC 3.1.7b: The package can be referenced by a sample app and successfully loads a motor definition file.
+
+
+## Phase 3.1.8 Functional Requirements: .NET Client Library and NuGet Package (Consumer Validation)
+
+### Scope (Phase 3.1.8)
+
+- Provide a high-quality consumer experience for loading and validating motor definition JSON files.
+- Consumers should not need to write custom schema validators or semantic validators.
+
+### Non-goals (Phase 3.1.8)
+
+- Do not couple the library to Avalonia UI types, CurveEditor ViewModels, or app-specific services.
+- Do not require consumers to reference CurveEditor itself.
+
+### Requirements
+
+- [ ] The client library should provide:
+  - [ ] Public POCO models aligned with the motor definition schema.
+  - [ ] System.Text.Json serialization/deserialization helpers with consistent defaults.
+  - [ ] Parsing for the current motor definition file format (schema `1.0.0` with series table/map curve data).
+  - [ ] Built-in validation that checks schema compliance and semantic rules (axes length/alignment, monotonicity, required fields).
+  - [ ] A non-throwing load API that returns a result object (success + errors) suitable for UI and tooling scenarios.
+  - [ ] A throwing load API that throws a single exception containing a structured list of validation errors.
+  - [ ] A structured validation error model that includes (at minimum):
+    - [ ] A JSON path/pointer to the failing node (for easy user messaging and debugging).
+    - [ ] A stable error code/category (e.g., `InvalidJson`, `SchemaViolation`, `SemanticViolation`).
+    - [ ] A human-readable error message.
+  - [ ] The schema should be embedded in the package (as an internal resource) so consumers do not need to ship a separate schema file.
+- [ ] The NuGet package should:
+  - [ ] Use semantic versioning aligned with the schema versioning strategy.
+  - [ ] Target consumer-friendly frameworks (recommendation to validate: `netstandard2.0` + `net8.0`).
+  - [ ] Include XML docs and a minimal README with usage examples.
+  - [ ] Include unit tests in the repo verifying round-trip behavior and validation behavior.
+
+### Acceptance Criteria (Phase 3.1.8)
+
+- AC 3.1.8a: A small console app can reference the package and load/save a motor definition file without referencing CurveEditor UI assemblies.
+- AC 3.1.8b: When given invalid JSON, the non-throwing load API returns a failure result with an `InvalidJson` error that includes location information.
+- AC 3.1.8c: When given schema-invalid JSON, the non-throwing load API returns a failure result with one or more `SchemaViolation` errors that include JSON paths.
+- AC 3.1.8d: When given schema-valid but semantically invalid JSON (e.g., wrong axis length), the non-throwing load API returns a failure result with one or more `SemanticViolation` errors.
+- AC 3.1.8e: The throwing load API throws a single exception type containing the full error list.
+- AC 3.1.8f: The package successfully round-trips the current format files without data loss.
+- AC 3.1.8g: Package API surface is stable, documented, and does not expose internal CurveEditor-specific concepts.
+
 ## Phase 3.2 Functional Requirements: Curve Data Panel
 
 These requirements will be added in a future update.
@@ -254,4 +396,4 @@ These requirements will be added in a future update.
 
 ### Open Questions (Phase 3.2)
 
-- Q 3.2.1: Which Curve Data Panel behaviors, if any, are planned for Phase 3.2 versus later phases (e.g., advanced editing vs. read-only enhancements)?
+- Q 3.2a: Which Curve Data Panel behaviors, if any, are planned for Phase 3.2 versus later phases (e.g., advanced editing vs. read-only enhancements)?
