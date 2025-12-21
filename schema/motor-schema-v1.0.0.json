@@ -85,7 +85,7 @@
     "brakeReleaseTime": {
       "type": "number",
       "minimum": 0,
-      "description": "Brake release time (units defined by units.responseTime)."
+      "description": "Brake release time (units defined by units.time)."
     },
     "brakeEngageTimeDiode": {
       "type": "number",
@@ -133,6 +133,11 @@
         },
         "backlash": {
           "type": "string"
+        },
+        "time": {
+          "type": "string",
+          "default": "ms",
+          "description": "Time unit label. If omitted, defaults to 'ms'."
         },
         "responseTime": {
           "type": "string"

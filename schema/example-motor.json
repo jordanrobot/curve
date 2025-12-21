@@ -29,6 +29,7 @@
     "inertia": "kg-m^2",
     "torqueConstant": "Nm/A",
     "backlash": "arcmin",
+    "time": "ms",
     "responseTime": "ms",
     "percentage": "%",
     "temperature": "C"

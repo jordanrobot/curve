@@ -402,6 +402,11 @@ public partial class MainWindowViewModel : ViewModelBase
     public static string[] BacklashUnits => UnitSettings.SupportedBacklashUnits;
 
     /// <summary>
+    /// Supported time units for dropdowns.
+    /// </summary>
+    public static string[] TimeUnits => UnitSettings.SupportedResponseTimeUnits;
+
+    /// <summary>
     /// Opens the folder where application log files are stored.
     /// </summary>
     [RelayCommand]

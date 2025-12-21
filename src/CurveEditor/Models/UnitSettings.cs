@@ -214,7 +214,7 @@ public class UnitSettings : INotifyPropertyChanged
     /// <summary>
     /// Gets the supported response time units.
     /// </summary>
-    public static string[] SupportedResponseTimeUnits => ["ms"];
+    public static string[] SupportedResponseTimeUnits => ["ms", "s"];
 
     /// <summary>
     /// Gets the supported percentage units.
