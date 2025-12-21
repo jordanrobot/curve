@@ -82,10 +82,10 @@
       "minimum": 0,
       "description": "The voltage requirement of the brake (V)."
     },
-    "brakeResponseTime": {
+    "brakeReleaseTime": {
       "type": "number",
       "minimum": 0,
-      "description": "Brake response time (units defined by units.responseTime)."
+      "description": "Brake release time (units defined by units.responseTime)."
     },
     "brakeEngageTimeDiode": {
       "type": "number",

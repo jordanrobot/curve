@@ -427,6 +427,38 @@ public partial class MainWindow : Window
         }
     }
 
+    private void OnBrakeReleaseTimeLostFocus(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel viewModel)
+        {
+            viewModel.EditMotorBrakeReleaseTime();
+        }
+    }
+
+    private void OnBrakeEngageTimeMovLostFocus(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel viewModel)
+        {
+            viewModel.EditMotorBrakeEngageTimeMov();
+        }
+    }
+
+    private void OnBrakeEngageTimeDiodeLostFocus(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel viewModel)
+        {
+            viewModel.EditMotorBrakeEngageTimeDiode();
+        }
+    }
+
+    private void OnBrakeBacklashLostFocus(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel viewModel)
+        {
+            viewModel.EditMotorBrakeBacklash();
+        }
+    }
+
     private void OnDriveNameLostFocus(object? sender, RoutedEventArgs e)
     {
         if (DataContext is MainWindowViewModel viewModel)

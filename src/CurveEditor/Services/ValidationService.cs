@@ -177,9 +177,9 @@ public class ValidationService : IValidationService
             errors.Add($"Continuous torque cannot be negative (current: {motor.RatedContinuousTorque}).");
         }
 
-        if (motor.BrakeResponseTime < 0)
+        if (motor.BrakeReleaseTime < 0)
         {
-            errors.Add($"Brake response time cannot be negative (current: {motor.BrakeResponseTime}).");
+            errors.Add($"Brake release time cannot be negative (current: {motor.BrakeReleaseTime}).");
         }
 
         if (motor.BrakeEngageTimeDiode < 0)

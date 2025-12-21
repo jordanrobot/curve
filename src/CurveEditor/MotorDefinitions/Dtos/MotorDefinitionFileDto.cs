@@ -56,8 +56,8 @@ internal sealed class MotorDefinitionFileDto
     [JsonPropertyName("brakeVoltage")]
     public double BrakeVoltage { get; set; }
 
-    [JsonPropertyName("brakeResponseTime")]
-    public double BrakeResponseTime { get; set; }
+    [JsonPropertyName("brakeReleaseTime")]
+    public double BrakeReleaseTime { get; set; }
 
     [JsonPropertyName("brakeEngageTimeDiode")]
     public double BrakeEngageTimeDiode { get; set; }

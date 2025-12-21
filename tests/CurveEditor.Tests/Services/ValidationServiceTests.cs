@@ -254,14 +254,14 @@ public class ValidationServiceTests
     }
 
     [Fact]
-    public void ValidateMotorDefinition_NegativeBrakeResponse_ReturnsErrors()
+    public void ValidateMotorDefinition_NegativeBrakeReleaseTime_ReturnsErrors()
     {
         var motor = CreateValidMotorDefinition();
-        motor.BrakeResponseTime = -1;
+        motor.BrakeReleaseTime = -1;
 
         var errors = _service.ValidateMotorDefinition(motor);
 
-        Assert.Contains(errors, e => e.Contains("Brake response time"));
+        Assert.Contains(errors, e => e.Contains("Brake release time"));
     }
 
     #endregion

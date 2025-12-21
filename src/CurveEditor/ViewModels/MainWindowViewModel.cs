@@ -277,6 +277,18 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private string _brakeVoltageEditor = string.Empty;
 
+    [ObservableProperty]
+    private string _brakeReleaseTimeEditor = string.Empty;
+
+    [ObservableProperty]
+    private string _brakeEngageTimeMovEditor = string.Empty;
+
+    [ObservableProperty]
+    private string _brakeEngageTimeDiodeEditor = string.Empty;
+
+    [ObservableProperty]
+    private string _brakeBacklashEditor = string.Empty;
+
     // Drive editor buffers used to drive command-based edits.
 
     [ObservableProperty]
@@ -703,6 +715,10 @@ public partial class MainWindowViewModel : ViewModelBase
             BrakeTorqueEditor = string.Empty;
             BrakeAmperageEditor = string.Empty;
             BrakeVoltageEditor = string.Empty;
+            BrakeReleaseTimeEditor = string.Empty;
+            BrakeEngageTimeMovEditor = string.Empty;
+            BrakeEngageTimeDiodeEditor = string.Empty;
+            BrakeBacklashEditor = string.Empty;
             DriveNameEditor = string.Empty;
             DrivePartNumberEditor = string.Empty;
             DriveManufacturerEditor = string.Empty;
@@ -731,6 +747,10 @@ public partial class MainWindowViewModel : ViewModelBase
         BrakeTorqueEditor = CurrentMotor.BrakeTorque.ToString(System.Globalization.CultureInfo.InvariantCulture);
         BrakeAmperageEditor = CurrentMotor.BrakeAmperage.ToString(System.Globalization.CultureInfo.InvariantCulture);
         BrakeVoltageEditor = CurrentMotor.BrakeVoltage.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        BrakeReleaseTimeEditor = CurrentMotor.BrakeReleaseTime.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        BrakeEngageTimeMovEditor = CurrentMotor.BrakeEngageTimeMov.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        BrakeEngageTimeDiodeEditor = CurrentMotor.BrakeEngageTimeDiode.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        BrakeBacklashEditor = CurrentMotor.BrakeBacklash.ToString(System.Globalization.CultureInfo.InvariantCulture);
         DriveNameEditor = SelectedDrive?.Name ?? string.Empty;
         DrivePartNumberEditor = SelectedDrive?.PartNumber ?? string.Empty;
         DriveManufacturerEditor = SelectedDrive?.Manufacturer ?? string.Empty;
@@ -1427,6 +1447,106 @@ public partial class MainWindowViewModel : ViewModelBase
         IsDirty = true;
     }
 
+    public void EditMotorBrakeReleaseTime()
+    {
+        if (CurrentMotor is null)
+        {
+            return;
+        }
+
+        var oldValue = CurrentMotor.BrakeReleaseTime;
+        if (!TryParseDouble(BrakeReleaseTimeEditor, oldValue, out var newValue))
+        {
+            BrakeReleaseTimeEditor = oldValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return;
+        }
+
+        if (Math.Abs(oldValue - newValue) < 0.000001)
+        {
+            return;
+        }
+
+        var command = new EditMotorPropertyCommand(CurrentMotor, nameof(MotorDefinition.BrakeReleaseTime), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        BrakeReleaseTimeEditor = newValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        IsDirty = true;
+    }
+
+    public void EditMotorBrakeEngageTimeMov()
+    {
+        if (CurrentMotor is null)
+        {
+            return;
+        }
+
+        var oldValue = CurrentMotor.BrakeEngageTimeMov;
+        if (!TryParseDouble(BrakeEngageTimeMovEditor, oldValue, out var newValue))
+        {
+            BrakeEngageTimeMovEditor = oldValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return;
+        }
+
+        if (Math.Abs(oldValue - newValue) < 0.000001)
+        {
+            return;
+        }
+
+        var command = new EditMotorPropertyCommand(CurrentMotor, nameof(MotorDefinition.BrakeEngageTimeMov), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        BrakeEngageTimeMovEditor = newValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        IsDirty = true;
+    }
+
+    public void EditMotorBrakeEngageTimeDiode()
+    {
+        if (CurrentMotor is null)
+        {
+            return;
+        }
+
+        var oldValue = CurrentMotor.BrakeEngageTimeDiode;
+        if (!TryParseDouble(BrakeEngageTimeDiodeEditor, oldValue, out var newValue))
+        {
+            BrakeEngageTimeDiodeEditor = oldValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return;
+        }
+
+        if (Math.Abs(oldValue - newValue) < 0.000001)
+        {
+            return;
+        }
+
+        var command = new EditMotorPropertyCommand(CurrentMotor, nameof(MotorDefinition.BrakeEngageTimeDiode), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        BrakeEngageTimeDiodeEditor = newValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        IsDirty = true;
+    }
+
+    public void EditMotorBrakeBacklash()
+    {
+        if (CurrentMotor is null)
+        {
+            return;
+        }
+
+        var oldValue = CurrentMotor.BrakeBacklash;
+        if (!TryParseDouble(BrakeBacklashEditor, oldValue, out var newValue))
+        {
+            BrakeBacklashEditor = oldValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return;
+        }
+
+        if (Math.Abs(oldValue - newValue) < 0.000001)
+        {
+            return;
+        }
+
+        var command = new EditMotorPropertyCommand(CurrentMotor, nameof(MotorDefinition.BrakeBacklash), oldValue, newValue);
+        _undoStack.PushAndExecute(command);
+        BrakeBacklashEditor = newValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        IsDirty = true;
+    }
+
     /// <summary>
     /// Refreshes the available series collection from the selected voltage.
     /// </summary>
@@ -1479,6 +1599,10 @@ public partial class MainWindowViewModel : ViewModelBase
             BrakeTorqueEditor = string.Empty;
             BrakeAmperageEditor = string.Empty;
             BrakeVoltageEditor = string.Empty;
+            BrakeReleaseTimeEditor = string.Empty;
+            BrakeEngageTimeMovEditor = string.Empty;
+            BrakeEngageTimeDiodeEditor = string.Empty;
+            BrakeBacklashEditor = string.Empty;
             DriveNameEditor = string.Empty;
             DrivePartNumberEditor = string.Empty;
             DriveManufacturerEditor = string.Empty;
@@ -1504,6 +1628,10 @@ public partial class MainWindowViewModel : ViewModelBase
             BrakeTorqueEditor = value.BrakeTorque.ToString(System.Globalization.CultureInfo.InvariantCulture);
             BrakeAmperageEditor = value.BrakeAmperage.ToString(System.Globalization.CultureInfo.InvariantCulture);
             BrakeVoltageEditor = value.BrakeVoltage.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            BrakeReleaseTimeEditor = value.BrakeReleaseTime.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            BrakeEngageTimeMovEditor = value.BrakeEngageTimeMov.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            BrakeEngageTimeDiodeEditor = value.BrakeEngageTimeDiode.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            BrakeBacklashEditor = value.BrakeBacklash.ToString(System.Globalization.CultureInfo.InvariantCulture);
             DriveNameEditor = SelectedDrive?.Name ?? string.Empty;
             DrivePartNumberEditor = SelectedDrive?.PartNumber ?? string.Empty;
             DriveManufacturerEditor = SelectedDrive?.Manufacturer ?? string.Empty;

@@ -428,45 +428,100 @@
                                       VerticalAlignment="Center"
                                       Click="OnHasBrakeChanged"/>
                         </Grid>
-                        
-                        <!-- Brake Torque -->
-                        <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
-                            <TextBlock Grid.Column="0" Text="Brake Torque" Classes="PropertyLabel"/>
-                            <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
-                                <TextBox Grid.Column="0"
-                                         Classes="PropertyInput"
-                                         Text="{Binding BrakeTorqueEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
-                                         IsUndoEnabled="False"
-                                         LostFocus="OnBrakeTorqueLostFocus"/>
-                                <TextBlock Grid.Column="1" Text="{Binding CurrentMotor.Units.Torque}" Classes="PropertyValue" Margin="4,0,0,0"/>
+
+                        <!-- Brake Properties (visible only when Has Brake is enabled) -->
+                        <StackPanel IsVisible="{Binding HasBrakeEditor}">
+                            <!-- Brake Torque -->
+                            <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
+                                <TextBlock Grid.Column="0" Text="Brake Torque" Classes="PropertyLabel"/>
+                                <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
+                                    <TextBox Grid.Column="0"
+                                             Classes="PropertyInput"
+                                             Text="{Binding BrakeTorqueEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                             IsUndoEnabled="False"
+                                             LostFocus="OnBrakeTorqueLostFocus"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding CurrentMotor.Units.Torque}" Classes="PropertyValue" Margin="4,0,0,0"/>
+                                </Grid>
                             </Grid>
-                        </Grid>
-                        
-                        <!-- Brake Amperage -->
-                        <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
-                            <TextBlock Grid.Column="0" Text="Brake Amps" Classes="PropertyLabel"/>
-                            <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
-                                <TextBox Grid.Column="0"
-                                         Classes="PropertyInput"
-                                         Text="{Binding BrakeAmperageEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
-                                         IsUndoEnabled="False"
-                                         LostFocus="OnBrakeAmperageLostFocus"/>
-                                <TextBlock Grid.Column="1" Text="A" Classes="PropertyValue" Margin="4,0,0,0"/>
+
+                            <!-- Brake Amperage -->
+                            <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
+                                <TextBlock Grid.Column="0" Text="Brake Amps" Classes="PropertyLabel"/>
+                                <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
+                                    <TextBox Grid.Column="0"
+                                             Classes="PropertyInput"
+                                             Text="{Binding BrakeAmperageEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                             IsUndoEnabled="False"
+                                             LostFocus="OnBrakeAmperageLostFocus"/>
+                                    <TextBlock Grid.Column="1" Text="A" Classes="PropertyValue" Margin="4,0,0,0"/>
+                                </Grid>
                             </Grid>
-                        </Grid>
-                        
-                        <!-- Brake Voltage -->
-                        <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
-                            <TextBlock Grid.Column="0" Text="Brake Voltage" Classes="PropertyLabel"/>
-                            <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
-                                <TextBox Grid.Column="0"
-                                         Classes="PropertyInput"
-                                         Text="{Binding BrakeVoltageEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
-                                         IsUndoEnabled="False"
-                                         LostFocus="OnBrakeVoltageLostFocus"/>
-                                <TextBlock Grid.Column="1" Text="V" Classes="PropertyValue" Margin="4,0,0,0"/>
+
+                            <!-- Brake Voltage -->
+                            <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
+                                <TextBlock Grid.Column="0" Text="Brake Voltage" Classes="PropertyLabel"/>
+                                <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
+                                    <TextBox Grid.Column="0"
+                                             Classes="PropertyInput"
+                                             Text="{Binding BrakeVoltageEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                             IsUndoEnabled="False"
+                                             LostFocus="OnBrakeVoltageLostFocus"/>
+                                    <TextBlock Grid.Column="1" Text="V" Classes="PropertyValue" Margin="4,0,0,0"/>
+                                </Grid>
                             </Grid>
-                        </Grid>
+
+                            <!-- Brake Release Time -->
+                            <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
+                                <TextBlock Grid.Column="0" Text="Release Time" Classes="PropertyLabel"/>
+                                <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
+                                    <TextBox Grid.Column="0"
+                                             Classes="PropertyInput"
+                                             Text="{Binding BrakeReleaseTimeEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                             IsUndoEnabled="False"
+                                             LostFocus="OnBrakeReleaseTimeLostFocus"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding CurrentMotor.Units.ResponseTime}" Classes="PropertyValue" Margin="4,0,0,0"/>
+                                </Grid>
+                            </Grid>
+
+                            <!-- Brake Engage Time (MOV) -->
+                            <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
+                                <TextBlock Grid.Column="0" Text="Engage MOV" Classes="PropertyLabel"/>
+                                <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
+                                    <TextBox Grid.Column="0"
+                                             Classes="PropertyInput"
+                                             Text="{Binding BrakeEngageTimeMovEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                             IsUndoEnabled="False"
+                                             LostFocus="OnBrakeEngageTimeMovLostFocus"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding CurrentMotor.Units.ResponseTime}" Classes="PropertyValue" Margin="4,0,0,0"/>
+                                </Grid>
+                            </Grid>
+
+                            <!-- Brake Engage Time (Diode) -->
+                            <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
+                                <TextBlock Grid.Column="0" Text="Engage Diode" Classes="PropertyLabel"/>
+                                <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
+                                    <TextBox Grid.Column="0"
+                                             Classes="PropertyInput"
+                                             Text="{Binding BrakeEngageTimeDiodeEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                             IsUndoEnabled="False"
+                                             LostFocus="OnBrakeEngageTimeDiodeLostFocus"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding CurrentMotor.Units.ResponseTime}" Classes="PropertyValue" Margin="4,0,0,0"/>
+                                </Grid>
+                            </Grid>
+
+                            <!-- Brake Backlash -->
+                            <Grid Classes="PropertyRow" ColumnDefinitions="Auto,*">
+                                <TextBlock Grid.Column="0" Text="Backlash" Classes="PropertyLabel"/>
+                                <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
+                                    <TextBox Grid.Column="0"
+                                             Classes="PropertyInput"
+                                             Text="{Binding BrakeBacklashEditor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                             IsUndoEnabled="False"
+                                             LostFocus="OnBrakeBacklashLostFocus"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding CurrentMotor.Units.Backlash}" Classes="PropertyValue" Margin="4,0,0,0"/>
+                                </Grid>
+                            </Grid>
+                        </StackPanel>
                         
                         <!-- UNITS SECTION (Collapsible) -->
                         <ToggleButton IsChecked="{Binding IsUnitsExpanded}"

@@ -18,14 +18,14 @@ public class MotorFileMapperTests
         motor.Units.Temperature = "C";
         motor.Units.Backlash = "arcmin";
         motor.BrakeBacklash = 0.5;
-        motor.BrakeResponseTime = 12.5;
+        motor.BrakeReleaseTime = 12.5;
 
         var dto = MotorFileMapper.ToFileDto(motor);
         var roundTrip = MotorFileMapper.ToRuntimeModel(dto);
 
         Assert.Equal(motor.MotorName, roundTrip.MotorName);
         Assert.Equal(motor.Manufacturer, roundTrip.Manufacturer);
-        Assert.Equal(motor.BrakeResponseTime, roundTrip.BrakeResponseTime);
+        Assert.Equal(motor.BrakeReleaseTime, roundTrip.BrakeReleaseTime);
         Assert.Equal(motor.BrakeBacklash, roundTrip.BrakeBacklash);
         Assert.Equal(motor.Units.ResponseTime, roundTrip.Units.ResponseTime);
         Assert.Equal(motor.Units.Percentage, roundTrip.Units.Percentage);

@@ -15,7 +15,7 @@
   "brakeTorque": 12.0,
   "brakeAmperage": 0.5,
   "brakeVoltage": 24,
-  "brakeResponseTime": 12.5,
+  "brakeReleaseTime": 12.5,
   "brakeEngageTimeDiode": 6.5,
   "brakeEngageTimeMOV": 8.1,
   "brakeBacklash": 0.35,

@@ -163,7 +163,7 @@ Change persistence so saving and loading both use the new format, so the PR is m
   - [x] On read, map `name` -> runtime `DriveConfiguration.Name`.
   - [x] Ensure property ordering on write: `name`, `manufacturer`, `partNumber`, then `voltages` (DTO `JsonPropertyOrder`).
 - [x] Add new motor scalar properties end-to-end:
-  - [x] `brakeResponseTime`
+  - [x] `brakeReleaseTime`
   - [x] `brakeEngageTimeDiode`
   - [x] `brakeEngageTimeMOV`
   - [x] `brakeBacklash`
@@ -265,7 +265,7 @@ Update schema and sample files to match the new representation, and add proof of
 ### Tasks
 - [x] Update [schema/motor-schema-v1.0.0.json](schema/motor-schema-v1.0.0.json):
   - [x] Replace voltage `series` definition from array-of-series-with-data[] to series table/map format.
-  - [x] Add new motor properties (`brakeResponseTime`, `brakeEngageTimeDiode`, `brakeEngageTimeMOV`, `brakeBacklash`).
+  - [x] Add new motor properties (`brakeReleaseTime`, `brakeEngageTimeDiode`, `brakeEngageTimeMOV`, `brakeBacklash`).
   - [x] Expand `units` schema to include: `responseTime`, `backlash`, `percentage`, `inertia`, `temperature`, `torqueConstant`.
   - [x] Ensure `backlash` default is `arcmin`.
   - [x] Add array length constraints (101) where practical (`minItems`/`maxItems`).

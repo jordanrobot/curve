@@ -218,7 +218,7 @@ Note: In this example, you'll notice that `motor profile 1.json` and `motor prof
 - Reduce JSON motor definition file size and improve manual edit ergonomics by introducing a table/map representation for curve series data.
 - Preserve explicit `percent` and `rpm` values in the persisted file format.
 - Keep the motor definition schema version at `1.0.0` (no schema version bump).
-- Add new motor properties for brake response time, backlash, and some new units of measure.
+- Add new motor properties for brake release time, backlash, and some new units of measure.
 
 ### Non-goals (Phase 3.1.5)
 
@@ -245,13 +245,13 @@ Note: In this example, you'll notice that `motor profile 1.json` and `motor prof
 ### Json Format: New Properties
 
 - [ ] Add new properties to the motor properties:
-  - [ ] `brakeResponseTime` (number) indicating the motor brake response time unit of measure.
+  - [ ] `brakeReleaseTime` (number) indicating the motor brake release time unit of measure.
   - [ ] `brakeEngageTimeDiode` (number) indicating the motor brake engage time when using a diode.
   - [ ] `brakeEngageTimeMOV` (number) indicating the motor brake engage time when using an MOV.
   - [ ] `brakeBacklash` (number) indicating a angular displacement.
 
 - [ ] Add new properties to the units section:
-  - [ ] `responseTime` (string) indicating the motor brake response time unit of measure. Default is milliseconds.
+  - [ ] `responseTime` (string) indicating the motor brake release time unit of measure. Default is milliseconds.
   - [ ] `backlash` (string) indicating a angular displacement. Default is arcmin.
     - [ ] `percentage` (string) indicates a percentage number. Default is %.
     - [ ] `inertia` (string): default is "kg-m^2",

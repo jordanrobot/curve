@@ -118,10 +118,10 @@ public class MotorDefinition
     public double BrakeVoltage { get; set; }
 
     /// <summary>
-    /// The response time of the brake engagement.
+    /// The release time of the brake.
     /// </summary>
-    [JsonPropertyName("brakeResponseTime")]
-    public double BrakeResponseTime { get; set; }
+    [JsonPropertyName("brakeReleaseTime")]
+    public double BrakeReleaseTime { get; set; }
 
     /// <summary>
     /// The brake engage time when using a diode.

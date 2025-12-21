@@ -22,7 +22,7 @@ Complete
   - [x] Update persistence code so CurveEditor **writes** the series table/map representation.
   - [x] Update load logic so CurveEditor can **read** the series table/map representation.
   - [x] Add new motor scalar properties:
-    - [x] `brakeResponseTime`
+    - [x] `brakeReleaseTime`
     - [x] `brakeEngageTimeDiode`
     - [x] `brakeEngageTimeMOV`
     - [x] `brakeBacklash`

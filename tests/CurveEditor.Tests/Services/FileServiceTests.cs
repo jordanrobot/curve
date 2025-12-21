@@ -52,7 +52,7 @@ public class FileServiceTests : IDisposable
             RatedPeakTorque = 55.0,
             RatedContinuousTorque = 45.0,
             HasBrake = true,
-            BrakeResponseTime = 12,
+            BrakeReleaseTime = 12,
             BrakeEngageTimeDiode = 5,
             BrakeEngageTimeMov = 7,
             BrakeBacklash = 0.5,
@@ -255,7 +255,7 @@ public class FileServiceTests : IDisposable
         Assert.Equal(original.MaxSpeed, loaded.MaxSpeed);
         Assert.Equal(original.RatedPeakTorque, loaded.RatedPeakTorque);
         Assert.Equal(original.HasBrake, loaded.HasBrake);
-        Assert.Equal(original.BrakeResponseTime, loaded.BrakeResponseTime);
+        Assert.Equal(original.BrakeReleaseTime, loaded.BrakeReleaseTime);
         Assert.Equal(original.Units.Torque, loaded.Units.Torque);
         Assert.Equal(original.Units.Backlash, loaded.Units.Backlash);
         Assert.Equal(original.Metadata.Notes, loaded.Metadata.Notes);
