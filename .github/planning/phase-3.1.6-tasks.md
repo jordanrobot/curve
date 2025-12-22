@@ -252,17 +252,17 @@ Make the library own the DTO/mapper/probe/validation code and provide a function
 
 ---
 
-## [ ] PR 4: Rename the program CurveEditor → MotorEditor (VERIFY BUILD)
+## [x] PR 4: Rename the program CurveEditor → MotorEditor (VERIFY BUILD)
 
 ### Goal
 Rename the product/program naming (without changing layout/persistence behavior) and verify build immediately afterward.
 
 ### Tasks
-- [ ] Update program branding:
-  - [ ] Update [src/CurveEditor/Program.cs](src/CurveEditor/Program.cs) log messages and log directory path (e.g., `%AppData%/MotorEditor/logs`).
-  - [ ] Update [src/CurveEditor/CurveEditor.csproj](src/CurveEditor/CurveEditor.csproj): `AssemblyName`, `Product`, and description if needed.
-  - [ ] Update [src/CurveEditor/app.manifest](src/CurveEditor/app.manifest) assembly identity name.
-- [ ] Verify build immediately after the rename (required by Phase 3.1.6).
+- [x] Update program branding:
+  - [x] Update [src/CurveEditor/Program.cs](src/CurveEditor/Program.cs) log messages and log directory path (e.g., `%AppData%/MotorEditor/logs`).
+  - [x] Update [src/CurveEditor/CurveEditor.csproj](src/CurveEditor/CurveEditor.csproj): `AssemblyName`, `Product`, and description if needed.
+  - [x] Update [src/CurveEditor/app.manifest](src/CurveEditor/app.manifest) assembly identity name.
+- [x] Verify build immediately after the rename (required by Phase 3.1.6).
 
 Required hygiene:
 - [ ] Do not rename persisted settings keys in this phase.

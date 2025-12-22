@@ -7,9 +7,9 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
 
     <!-- Application Info -->
-    <AssemblyName>CurveEditor</AssemblyName>
+    <AssemblyName>MotorEditor</AssemblyName>
     <Version>1.0.0</Version>
-    <Product>Motor Torque Curve Editor</Product>
+    <Product>MotorEditor</Product>
     <Description>A desktop application for editing motor torque curves</Description>
   </PropertyGroup>
 

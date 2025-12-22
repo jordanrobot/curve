@@ -17,7 +17,7 @@ sealed class Program
 
         try
         {
-            Log.Information("Starting CurveEditor application");
+            Log.Information("Starting MotorEditor application");
             Log.Information("Log files are written to {LogDirectory}", GetLogDirectory());
 
             AppDomain.CurrentDomain.UnhandledException += OnUnhandledAppDomainException;
@@ -38,7 +38,7 @@ sealed class Program
     {
         var logPath = Path.Combine(
             GetLogDirectory(),
-            "curveeditor-.log");
+            "motoreditor-.log");
 
         // Ensure directory exists
         var logDir = Path.GetDirectoryName(logPath);
@@ -68,7 +68,7 @@ sealed class Program
     {
         return Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "CurveEditor",
+            "MotorEditor",
             "logs");
     }
 
