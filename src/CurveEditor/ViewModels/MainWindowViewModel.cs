@@ -1828,6 +1828,60 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
+    [RelayCommand(CanExecute = nameof(CanCloseFile))]
+    private async Task CloseFileAsync()
+    {
+        if (CurrentMotor is null)
+        {
+            return;
+        }
+
+        if (IsDirty)
+        {
+            var choice = await UnsavedChangesPromptAsync("close this file").ConfigureAwait(true);
+            if (choice == UnsavedChangesChoice.Cancel)
+            {
+                StatusMessage = "Close cancelled.";
+                return;
+            }
+
+            if (choice == UnsavedChangesChoice.Save)
+            {
+                await SaveAsync().ConfigureAwait(true);
+                if (IsDirty)
+                {
+                    StatusMessage = "Close cancelled.";
+                    return;
+                }
+            }
+        }
+
+        CloseCurrentFileInternal();
+        StatusMessage = "Closed file.";
+    }
+
+    private bool CanCloseFile() => CurrentMotor is not null;
+
+    private void CloseCurrentFileInternal()
+    {
+        _fileService.Reset();
+
+        _undoStack.Clear();
+        MarkCleanCheckpoint();
+
+        CurrentFilePath = null;
+        CurrentMotor = null;
+        SelectedDrive = null;
+        SelectedVoltage = null;
+        SelectedSeries = null;
+
+        ChartViewModel.CurrentVoltage = null;
+        CurveDataTableViewModel.CurrentVoltage = null;
+
+        ValidationErrors = string.Empty;
+        HasValidationErrors = false;
+    }
+
     [RelayCommand(CanExecute = nameof(CanSave))]
     private async Task SaveAsync()
     {
