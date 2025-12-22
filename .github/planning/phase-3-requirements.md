@@ -324,13 +324,22 @@ Note: In this example, you'll notice that `motor profile 1.json` and `motor prof
 
 ### Requirements
 
-- [ ] Add a new class library project `jordanrobot.MotorDefinitions` to the solution.
-- [ ] The library project must not reference Avalonia or CurveEditor UI assemblies.
+- [ ] Add a new class library project `jordanrobot.MotorDefinition` to the solution.
+- [ ] The library project must not reference Avalonia or MotorEditor UI assemblies.
 - [ ] The library project should contain (initially):
   - [ ] Schema-aligned models (or rehomed shared models) that represent the motor definition file.
   - [ ] A single entrypoint for file IO (e.g., `MotorFile` helpers or `MotorFileSerializer`).
+  - [ ] A copy of the Schema.
   - [ ] Rehome/move the Phase 3.1.5 persistence DTOs + mapper + validators into the library with minimal churn (ideally a file move and minor namespace/project-reference updates).
+  - [ ] Unit test as needed to verify functionality.
 
+- AFTER EACH OF THESE YOU MUST VERIFY BUILD BEFORE MOVING TO THE NEXT STEP:
+- [ ] Rename the program CurveEditor to MotorEditor.
+- [ ] Rename the project CurveEditor to MotorEditor.Avalonia.
+- [ ] Move the curve editor application codebase to a `src/MotorEditor.Avalonia/` directory.
+- [ ] Update the MotorEditor.Avalonia project to reference the new library project for motor definition file IO.
+ 
+  
 ### Acceptance Criteria (Phase 3.1.6)
 
 - AC 3.1.6a: `dotnet build` succeeds for the solution with the new library project added.
