@@ -106,20 +106,21 @@ Out of scope reminders:
 
 ---
 
-## [ ] PR 0: Lock down naming + build gates (no behavior change)
+## [x] PR 0: Lock down naming + build gates (no behavior change)
 
 ### Goal
 Make the Phase 3.1.6 migration mechanically safe by locking down naming, paths, and build-verification rules before moving code.
 
 ### Tasks
-- [ ] Decide and document (in this file) the library API type name: `MotorFile` vs `MotorFileSerializer` (pick one and do not rename later).
-- [ ] Decide and document the library project folder path: `src/jordanrobot.MotorDefinition/` (keep as-is).
-- [ ] Decide how tests will access persistence behavior:
-  - [ ] Preferred: test only via the new public library entrypoint.
-  - [ ] If needed: plan `InternalsVisibleTo` in the library assembly.
-- [ ] Define build gate commands to use for every PR in this phase:
-  - [ ] `dotnet build CurveEditor.sln`
-  - [ ] `dotnet test CurveEditor.sln` (run when PR touches tests or IO paths)
+- [x] Decide and document (in this file) the library API type name: `MotorFile` vs `MotorFileSerializer` (pick one and do not rename later).  
+  - Chosen: `MotorFile`.
+- [x] Decide and document the library project folder path: `src/jordanrobot.MotorDefinition/` (keep as-is).
+- [x] Decide how tests will access persistence behavior:
+  - [x] Preferred: test only via the new public library entrypoint.
+  - [x] If needed: plan `InternalsVisibleTo` in the library assembly (use if specific internals remain necessary).
+- [x] Define build gate commands to use for every PR in this phase:
+  - [x] `dotnet build CurveEditor.sln`
+  - [x] `dotnet test CurveEditor.sln` (run when PR touches tests or IO paths)
 
 Required hygiene:
 - [ ] No production code behavior changes in this PR.
