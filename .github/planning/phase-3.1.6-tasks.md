@@ -281,18 +281,18 @@ Required hygiene:
 
 ---
 
-## [ ] PR 5: Rename the project CurveEditor → MotorEditor.Avalonia (VERIFY BUILD)
+## [x] PR 5: Rename the project CurveEditor → MotorEditor.Avalonia (VERIFY BUILD)
 
 ### Goal
 Rename the app project and update all references (solution + test references), verifying build immediately afterward.
 
 ### Tasks
-- [ ] Rename project file:
-  - [ ] `src/CurveEditor/CurveEditor.csproj` → `src/CurveEditor/MotorEditor.Avalonia.csproj`.
-- [ ] Update solution to reference the new project path/name.
-- [ ] Update test project reference:
-  - [ ] Update [tests/CurveEditor.Tests/CurveEditor.Tests.csproj](tests/CurveEditor.Tests/CurveEditor.Tests.csproj) to point at the renamed csproj.
-- [ ] Verify build immediately after the rename (required by Phase 3.1.6).
+- [x] Rename project file:
+  - [x] `src/CurveEditor/CurveEditor.csproj` → `src/CurveEditor/MotorEditor.Avalonia.csproj`.
+- [x] Update solution to reference the new project path/name.
+- [x] Update test project reference:
+  - [x] Update [tests/CurveEditor.Tests/CurveEditor.Tests.csproj](tests/CurveEditor.Tests/CurveEditor.Tests.csproj) to point at the renamed csproj.
+- [x] Verify build immediately after the rename (required by Phase 3.1.6).
 
 Required hygiene:
 - [ ] Do not rename namespaces en masse in this phase unless required to compile.
