@@ -1,11 +1,11 @@
+using CurveEditor.Models;
+using JordanRobot.MotorDefinitions;
 using System;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using CurveEditor.Models;
-using jordanrobot.MotorDefinitions;
 using Xunit;
 
 namespace CurveEditor.Tests.MotorDefinitions;

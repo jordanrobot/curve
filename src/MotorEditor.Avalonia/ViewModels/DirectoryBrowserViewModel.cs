@@ -1,3 +1,10 @@
+using Avalonia.Threading;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using CurveEditor.Models;
+using CurveEditor.Services;
+using JordanRobot.MotorDefinitions;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -7,13 +14,6 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using CurveEditor.Services;
-using CurveEditor.Models;
-using jordanrobot.MotorDefinitions;
-using Serilog;
-using Avalonia.Threading;
 
 namespace CurveEditor.ViewModels;
 
@@ -507,8 +507,8 @@ public partial class DirectoryBrowserViewModel : ObservableObject
             await using var stream = File.OpenRead(filePath);
             using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-        return MotorFile.IsLikelyMotorDefinition(document);
-    }
+            return MotorFile.IsLikelyMotorDefinition(document);
+        }
         catch (OperationCanceledException)
         {
             throw;

@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Schema/motor-schema-v1.0.0.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+	  <PackageReference Include="DefaultDocumentation" Version="1.2.2" PrivateAssets="all" />
+	  <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="all" />
+  </ItemGroup>
+
+	<ItemGroup>
+		<None Include="README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="README.md" />
+	</ItemGroup>
+	
+	<!-- Documentation generation settings -->
+	<PropertyGroup>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<DefaultDocumentationFolder>..\..\docs\api\</DefaultDocumentationFolder>
+		<DefaultDocumentationGeneratedPages>Namespaces,Types</DefaultDocumentationGeneratedPages>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="MotorEditor.Tests" />
+	</ItemGroup>
+</Project>

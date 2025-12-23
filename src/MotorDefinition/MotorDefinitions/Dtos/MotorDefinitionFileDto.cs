@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace jordanrobot.MotorDefinitions.Dtos;
+namespace JordanRobot.MotorDefinitions.Dtos;
 
 /// <summary>
 /// Root DTO representing the persisted motor definition file.

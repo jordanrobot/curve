@@ -1,15 +1,15 @@
+using CurveEditor.Models;
+using JordanRobot.MotorDefinitions.Dtos;
+using JordanRobot.MotorDefinitions.Mapping;
+using JordanRobot.MotorDefinitions.Probing;
 using System;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using CurveEditor.Models;
-using jordanrobot.MotorDefinitions.Dtos;
-using jordanrobot.MotorDefinitions.Mapping;
-using jordanrobot.MotorDefinitions.Probing;
 
-namespace jordanrobot.MotorDefinitions;
+namespace JordanRobot.MotorDefinitions;
 
 /// <summary>
 /// Provides entrypoints for loading and saving motor definition files.

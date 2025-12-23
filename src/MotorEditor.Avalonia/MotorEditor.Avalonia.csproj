@@ -43,7 +43,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\jordanrobot.MotorDefinition\jordanrobot.MotorDefinition.csproj" />
+    <ProjectReference Include="..\MotorDefinition\MotorDefinition.csproj" />
   </ItemGroup>
  
   

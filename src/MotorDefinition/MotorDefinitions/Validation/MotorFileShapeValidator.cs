@@ -1,10 +1,10 @@
+using CurveEditor.Models;
+using JordanRobot.MotorDefinitions.Dtos;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using CurveEditor.Models;
-using jordanrobot.MotorDefinitions.Dtos;
 
-namespace jordanrobot.MotorDefinitions.Validation;
+namespace JordanRobot.MotorDefinitions.Validation;
 
 /// <summary>
 /// Provides shape validation helpers for motor definition persistence DTOs.

@@ -1,11 +1,11 @@
+using CurveEditor.Models;
+using JordanRobot.MotorDefinitions;
+using Serilog;
 using System;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
-using CurveEditor.Models;
-using jordanrobot.MotorDefinitions;
 using System.Text.Json;
-using Serilog;
+using System.Threading.Tasks;
 
 namespace CurveEditor.Services;
 

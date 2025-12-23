@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace jordanrobot.MotorDefinitions.Dtos;
+namespace JordanRobot.MotorDefinitions.Dtos;
 
 /// <summary>
 /// Represents a series entry in the persisted series map.
