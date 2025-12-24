@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Globalization;
 using System.Text.Json.Serialization;
 
 namespace CurveEditor.Models;
@@ -36,6 +37,13 @@ public class VoltageConfiguration : INotifyPropertyChanged
             OnPropertyChanged();
         }
     }
+
+    /// <summary>
+    /// Gets a display-friendly name for this voltage configuration (e.g., "208 V").
+    /// Useful for populating UI lists and combo-boxes.
+    /// </summary>
+    [JsonIgnore]
+    public string DisplayName => string.Create(CultureInfo.InvariantCulture, $"{Voltage:0.##} V");
 
     /// <summary>
     /// The power output at this voltage (in the unit specified by Units.Power).

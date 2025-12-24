@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 
@@ -92,6 +93,24 @@ public class CurveSeries : INotifyPropertyChanged
     public List<DataPoint> Data { get; set; } = [];
 
     /// <summary>
+    /// Gets the percentage axis (0..100) for this series.
+    /// </summary>
+    [JsonIgnore]
+    public IEnumerable<int> Percents => Data.Select(p => p.Percent);
+
+    /// <summary>
+    /// Gets the RPM values for this series.
+    /// </summary>
+    [JsonIgnore]
+    public IEnumerable<double> Rpms => Data.Select(p => p.Rpm);
+
+    /// <summary>
+    /// Gets the torque values for this series.
+    /// </summary>
+    [JsonIgnore]
+    public IEnumerable<double> Torques => Data.Select(p => p.Torque);
+
+    /// <summary>
     /// Creates a new CurveSeries with default values.
     /// </summary>
     public CurveSeries()
@@ -155,6 +174,71 @@ public class CurveSeries : INotifyPropertyChanged
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Gets the data point for a given percent (0..100).
+    /// Prefer this for quick lookups when exporting or rendering tables.
+    /// </summary>
+    /// <param name="percent">The percent (0..100).</param>
+    /// <returns>The matching data point.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="percent"/> is outside 0..100.</exception>
+    /// <exception cref="KeyNotFoundException">Thrown when no point exists for <paramref name="percent"/>.</exception>
+    public DataPoint GetPointByPercent(int percent)
+    {
+        if (percent is < 0 or > 100)
+        {
+            throw new ArgumentOutOfRangeException(nameof(percent), percent, "Percent must be between 0 and 100.");
+        }
+
+        if (Data.Count == 101 && percent < Data.Count && Data[percent].Percent == percent)
+        {
+            return Data[percent];
+        }
+
+        var point = Data.FirstOrDefault(p => p.Percent == percent);
+        if (point is null)
+        {
+            throw new KeyNotFoundException($"No data point exists for {percent}%.");
+        }
+
+        return point;
+    }
+
+    /// <summary>
+    /// Attempts to get the data point for a given percent (0..100).
+    /// </summary>
+    /// <param name="percent">The percent (0..100).</param>
+    /// <param name="point">When this method returns, contains the matching point if found; otherwise null.</param>
+    /// <returns>True if found; otherwise false.</returns>
+    public bool TryGetPointByPercent(int percent, out DataPoint? point)
+    {
+        point = null;
+
+        if (percent is < 0 or > 100)
+        {
+            return false;
+        }
+
+        if (Data.Count == 101 && percent < Data.Count && Data[percent].Percent == percent)
+        {
+            point = Data[percent];
+            return true;
+        }
+
+        point = Data.FirstOrDefault(p => p.Percent == percent);
+        return point is not null;
+    }
+
+    /// <summary>
+    /// Creates a lookup dictionary keyed by percent (0..100).
+    /// This is useful for caching fast lookups in client applications.
+    /// </summary>
+    /// <returns>A dictionary mapping percent to data point.</returns>
+    /// <exception cref="ArgumentException">Thrown if the series contains duplicate percent values.</exception>
+    public IReadOnlyDictionary<int, DataPoint> ToPercentLookup()
+    {
+        return Data.ToDictionary(p => p.Percent);
     }
 
     /// <summary>

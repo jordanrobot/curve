@@ -96,6 +96,34 @@ public string PartNumber { get; set; }
 #### Property Value
 [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
 
+<a name='CurveEditor.Models.DriveConfiguration.VoltageConfigurations'></a>
+
+## DriveConfiguration\.VoltageConfigurations Property
+
+Gets a LINQ\-friendly enumeration of voltage configurations\.
+This is a convenience alias for [Voltages](CurveEditor.Models.DriveConfiguration.md#CurveEditor.Models.DriveConfiguration.Voltages 'CurveEditor\.Models\.DriveConfiguration\.Voltages')\.
+
+```csharp
+public System.Collections.Generic.IEnumerable<CurveEditor.Models.VoltageConfiguration> VoltageConfigurations { get; }
+```
+
+#### Property Value
+[System\.Collections\.Generic\.IEnumerable&lt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1 'System\.Collections\.Generic\.IEnumerable\`1')[VoltageConfiguration](CurveEditor.Models.VoltageConfiguration.md 'CurveEditor\.Models\.VoltageConfiguration')[&gt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1 'System\.Collections\.Generic\.IEnumerable\`1')
+
+<a name='CurveEditor.Models.DriveConfiguration.VoltageNames'></a>
+
+## DriveConfiguration\.VoltageNames Property
+
+Gets display\-friendly voltage names \(e\.g\., "208 V"\)\.
+Useful for populating UI lists and combo\-boxes\.
+
+```csharp
+public System.Collections.Generic.IEnumerable<string> VoltageNames { get; }
+```
+
+#### Property Value
+[System\.Collections\.Generic\.IEnumerable&lt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1 'System\.Collections\.Generic\.IEnumerable\`1')[System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')[&gt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1 'System\.Collections\.Generic\.IEnumerable\`1')
+
 <a name='CurveEditor.Models.DriveConfiguration.Voltages'></a>
 
 ## DriveConfiguration\.Voltages Property
@@ -108,6 +136,20 @@ public System.Collections.Generic.List<CurveEditor.Models.VoltageConfiguration> 
 
 #### Property Value
 [System\.Collections\.Generic\.List&lt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1 'System\.Collections\.Generic\.List\`1')[VoltageConfiguration](CurveEditor.Models.VoltageConfiguration.md 'CurveEditor\.Models\.VoltageConfiguration')[&gt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1 'System\.Collections\.Generic\.List\`1')
+
+<a name='CurveEditor.Models.DriveConfiguration.VoltageValues'></a>
+
+## DriveConfiguration\.VoltageValues Property
+
+Gets the numeric voltage values\.
+Useful for populating UI lists and combo\-boxes\.
+
+```csharp
+public System.Collections.Generic.IEnumerable<double> VoltageValues { get; }
+```
+
+#### Property Value
+[System\.Collections\.Generic\.IEnumerable&lt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1 'System\.Collections\.Generic\.IEnumerable\`1')[System\.Double](https://learn.microsoft.com/en-us/dotnet/api/system.double 'System\.Double')[&gt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1 'System\.Collections\.Generic\.IEnumerable\`1')
 ### Methods
 
 <a name='CurveEditor.Models.DriveConfiguration.AddVoltageConfiguration(double)'></a>

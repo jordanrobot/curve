@@ -156,6 +156,33 @@ public class MotorDefinition
     [JsonPropertyName("drives")]
     public List<DriveConfiguration> Drives { get; set; } = [];
 
+    /// <summary>
+    /// Gets a LINQ-friendly enumeration of all drive configurations.
+    /// This is a convenience alias for <see cref="Drives"/>.
+    /// </summary>
+    [JsonIgnore]
+    public IEnumerable<DriveConfiguration> DriveConfigurations => Drives;
+
+    /// <summary>
+    /// Gets the drive names in this motor definition.
+    /// Useful for populating UI lists and combo-boxes.
+    /// </summary>
+    [JsonIgnore]
+    public IEnumerable<string> DriveNames => Drives.Select(d => d.Name);
+
+    /// <summary>
+    /// Gets a LINQ-friendly enumeration of all voltage configurations across all drives.
+    /// </summary>
+    [JsonIgnore]
+    public IEnumerable<VoltageConfiguration> VoltageConfigurations => Drives.SelectMany(d => d.Voltages);
+
+    /// <summary>
+    /// Gets display-friendly voltage names (e.g., "208 V") across all drives.
+    /// Useful for populating UI lists and combo-boxes.
+    /// </summary>
+    [JsonIgnore]
+    public IEnumerable<string> VoltageNames => VoltageConfigurations.Select(v => v.DisplayName);
+
     // Metadata
     /// <summary>
     /// Metadata about the motor definition file.

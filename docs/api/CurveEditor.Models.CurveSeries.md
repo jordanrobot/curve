@@ -111,6 +111,19 @@ public string Notes { get; set; }
 #### Property Value
 [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
 
+<a name='CurveEditor.Models.CurveSeries.Percents'></a>
+
+## CurveSeries\.Percents Property
+
+Gets the percentage axis \(0\.\.100\) for this series\.
+
+```csharp
+public System.Collections.Generic.IEnumerable<int> Percents { get; }
+```
+
+#### Property Value
+[System\.Collections\.Generic\.IEnumerable&lt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1 'System\.Collections\.Generic\.IEnumerable\`1')[System\.Int32](https://learn.microsoft.com/en-us/dotnet/api/system.int32 'System\.Int32')[&gt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1 'System\.Collections\.Generic\.IEnumerable\`1')
+
 <a name='CurveEditor.Models.CurveSeries.PointCount'></a>
 
 ## CurveSeries\.PointCount Property
@@ -123,7 +136,63 @@ public int PointCount { get; }
 
 #### Property Value
 [System\.Int32](https://learn.microsoft.com/en-us/dotnet/api/system.int32 'System\.Int32')
+
+<a name='CurveEditor.Models.CurveSeries.Rpms'></a>
+
+## CurveSeries\.Rpms Property
+
+Gets the RPM values for this series\.
+
+```csharp
+public System.Collections.Generic.IEnumerable<double> Rpms { get; }
+```
+
+#### Property Value
+[System\.Collections\.Generic\.IEnumerable&lt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1 'System\.Collections\.Generic\.IEnumerable\`1')[System\.Double](https://learn.microsoft.com/en-us/dotnet/api/system.double 'System\.Double')[&gt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1 'System\.Collections\.Generic\.IEnumerable\`1')
+
+<a name='CurveEditor.Models.CurveSeries.Torques'></a>
+
+## CurveSeries\.Torques Property
+
+Gets the torque values for this series\.
+
+```csharp
+public System.Collections.Generic.IEnumerable<double> Torques { get; }
+```
+
+#### Property Value
+[System\.Collections\.Generic\.IEnumerable&lt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1 'System\.Collections\.Generic\.IEnumerable\`1')[System\.Double](https://learn.microsoft.com/en-us/dotnet/api/system.double 'System\.Double')[&gt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1 'System\.Collections\.Generic\.IEnumerable\`1')
 ### Methods
+
+<a name='CurveEditor.Models.CurveSeries.GetPointByPercent(int)'></a>
+
+## CurveSeries\.GetPointByPercent\(int\) Method
+
+Gets the data point for a given percent \(0\.\.100\)\.
+Prefer this for quick lookups when exporting or rendering tables\.
+
+```csharp
+public CurveEditor.Models.DataPoint GetPointByPercent(int percent);
+```
+#### Parameters
+
+<a name='CurveEditor.Models.CurveSeries.GetPointByPercent(int).percent'></a>
+
+`percent` [System\.Int32](https://learn.microsoft.com/en-us/dotnet/api/system.int32 'System\.Int32')
+
+The percent \(0\.\.100\)\.
+
+#### Returns
+[DataPoint](CurveEditor.Models.DataPoint.md 'CurveEditor\.Models\.DataPoint')  
+The matching data point\.
+
+#### Exceptions
+
+[System\.ArgumentOutOfRangeException](https://learn.microsoft.com/en-us/dotnet/api/system.argumentoutofrangeexception 'System\.ArgumentOutOfRangeException')  
+Thrown when [percent](CurveEditor.Models.CurveSeries.md#CurveEditor.Models.CurveSeries.GetPointByPercent(int).percent 'CurveEditor\.Models\.CurveSeries\.GetPointByPercent\(int\)\.percent') is outside 0\.\.100\.
+
+[System\.Collections\.Generic\.KeyNotFoundException](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.keynotfoundexception 'System\.Collections\.Generic\.KeyNotFoundException')  
+Thrown when no point exists for [percent](CurveEditor.Models.CurveSeries.md#CurveEditor.Models.CurveSeries.GetPointByPercent(int).percent 'CurveEditor\.Models\.CurveSeries\.GetPointByPercent\(int\)\.percent')\.
 
 <a name='CurveEditor.Models.CurveSeries.InitializeData(double,double)'></a>
 
@@ -164,6 +233,53 @@ protected virtual void OnPropertyChanged(string? propertyName=null);
 `propertyName` [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
 
 The name of the property that changed\.
+
+<a name='CurveEditor.Models.CurveSeries.ToPercentLookup()'></a>
+
+## CurveSeries\.ToPercentLookup\(\) Method
+
+Creates a lookup dictionary keyed by percent \(0\.\.100\)\.
+This is useful for caching fast lookups in client applications\.
+
+```csharp
+public System.Collections.Generic.IReadOnlyDictionary<int,CurveEditor.Models.DataPoint> ToPercentLookup();
+```
+
+#### Returns
+[System\.Collections\.Generic\.IReadOnlyDictionary&lt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ireadonlydictionary-2 'System\.Collections\.Generic\.IReadOnlyDictionary\`2')[System\.Int32](https://learn.microsoft.com/en-us/dotnet/api/system.int32 'System\.Int32')[,](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ireadonlydictionary-2 'System\.Collections\.Generic\.IReadOnlyDictionary\`2')[DataPoint](CurveEditor.Models.DataPoint.md 'CurveEditor\.Models\.DataPoint')[&gt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ireadonlydictionary-2 'System\.Collections\.Generic\.IReadOnlyDictionary\`2')  
+A dictionary mapping percent to data point\.
+
+#### Exceptions
+
+[System\.ArgumentException](https://learn.microsoft.com/en-us/dotnet/api/system.argumentexception 'System\.ArgumentException')  
+Thrown if the series contains duplicate percent values\.
+
+<a name='CurveEditor.Models.CurveSeries.TryGetPointByPercent(int,CurveEditor.Models.DataPoint)'></a>
+
+## CurveSeries\.TryGetPointByPercent\(int, DataPoint\) Method
+
+Attempts to get the data point for a given percent \(0\.\.100\)\.
+
+```csharp
+public bool TryGetPointByPercent(int percent, out CurveEditor.Models.DataPoint? point);
+```
+#### Parameters
+
+<a name='CurveEditor.Models.CurveSeries.TryGetPointByPercent(int,CurveEditor.Models.DataPoint).percent'></a>
+
+`percent` [System\.Int32](https://learn.microsoft.com/en-us/dotnet/api/system.int32 'System\.Int32')
+
+The percent \(0\.\.100\)\.
+
+<a name='CurveEditor.Models.CurveSeries.TryGetPointByPercent(int,CurveEditor.Models.DataPoint).point'></a>
+
+`point` [DataPoint](CurveEditor.Models.DataPoint.md 'CurveEditor\.Models\.DataPoint')
+
+When this method returns, contains the matching point if found; otherwise null\.
+
+#### Returns
+[System\.Boolean](https://learn.microsoft.com/en-us/dotnet/api/system.boolean 'System\.Boolean')  
+True if found; otherwise false\.
 
 <a name='CurveEditor.Models.CurveSeries.ValidateDataIntegrity()'></a>
 

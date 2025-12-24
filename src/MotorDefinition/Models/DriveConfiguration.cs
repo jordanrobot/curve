@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 
@@ -57,6 +58,27 @@ public class DriveConfiguration : INotifyPropertyChanged
     /// </summary>
     [JsonPropertyName("voltages")]
     public List<VoltageConfiguration> Voltages { get; set; } = [];
+
+    /// <summary>
+    /// Gets a LINQ-friendly enumeration of voltage configurations.
+    /// This is a convenience alias for <see cref="Voltages"/>.
+    /// </summary>
+    [JsonIgnore]
+    public IEnumerable<VoltageConfiguration> VoltageConfigurations => Voltages;
+
+    /// <summary>
+    /// Gets display-friendly voltage names (e.g., "208 V").
+    /// Useful for populating UI lists and combo-boxes.
+    /// </summary>
+    [JsonIgnore]
+    public IEnumerable<string> VoltageNames => Voltages.Select(v => v.DisplayName);
+
+    /// <summary>
+    /// Gets the numeric voltage values.
+    /// Useful for populating UI lists and combo-boxes.
+    /// </summary>
+    [JsonIgnore]
+    public IEnumerable<double> VoltageValues => Voltages.Select(v => v.Voltage);
 
     /// <summary>
     /// Creates a new DriveConfiguration with default values.

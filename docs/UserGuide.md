@@ -49,6 +49,40 @@ var motor = MotorFile.Load("motor.json");
 var drive = motor.GetDriveByName("Servo Drive Pro X-203");
 ```
 
+#### Populate UI lists (drive names and voltages)
+
+If you're populating combo-boxes or lists, you can use the convenience name enumerables:
+
+```csharp
+// Drive names for a combo-box
+var driveNames = motor.DriveNames;
+
+// Voltage names (flattened across all drives) for a combo-box
+var voltageNames = motor.VoltageNames;
+```
+
+If you already have a drive and want just that drive's voltages:
+
+```csharp
+var drive = motor.GetDriveByName("Drive A");
+var voltageNamesForDrive = drive?.VoltageNames ?? Enumerable.Empty<string>();
+```
+
+#### LINQ query access (drives and voltages)
+
+For LINQ queries, use the LINQ-friendly enumerables:
+
+```csharp
+// All drives
+var servoDrives = motor.DriveConfigurations
+    .Where(d => d.Manufacturer.Contains("Servo", StringComparison.OrdinalIgnoreCase));
+
+// All voltages across all drives
+var highVoltages = motor.VoltageConfigurations
+    .Where(v => v.Voltage >= 400)
+    .OrderBy(v => v.Voltage);
+```
+
 If you’re dealing with “unknown JSON” and want to quickly detect whether it resembles a motor definition:
 
 ```csharp
@@ -119,6 +153,36 @@ if (!peak.ValidateDataIntegrity())
 {
     throw new InvalidOperationException("Invalid series data. Expected 101 points (0%..100%).");
 }
+```
+
+#### Fast curve lookups and exporting rows
+
+If you want quick lookups by percent (0..100), use percent-based accessors on `CurveSeries`:
+
+```csharp
+// Get RPM + torque for a specific percent
+var point50 = peak.GetPointByPercent(50);
+var rpmAt50 = point50.Rpm;
+var torqueAt50 = point50.Torque;
+
+// Build a lookup dictionary keyed by percent (cache this in your client if needed)
+var byPercent = peak.ToPercentLookup();
+var point75 = byPercent[75];
+```
+
+For exporting rows (e.g., to Excel), the `Data` list is already row-friendly, and these helper sequences are also available:
+
+```csharp
+foreach (var p in peak.Data)
+{
+    // Percent, RPM, Torque
+    // Write a row to your output here
+}
+
+// Or, if you want separate columns
+var percents = peak.Percents;
+var rpms = peak.Rpms;
+var torques = peak.Torques;
 ```
 
 ### JSON schema and examples

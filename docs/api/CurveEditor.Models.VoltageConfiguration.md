@@ -56,6 +56,20 @@ public double ContinuousAmperage { get; set; }
 #### Property Value
 [System\.Double](https://learn.microsoft.com/en-us/dotnet/api/system.double 'System\.Double')
 
+<a name='CurveEditor.Models.VoltageConfiguration.DisplayName'></a>
+
+## VoltageConfiguration\.DisplayName Property
+
+Gets a display\-friendly name for this voltage configuration \(e\.g\., "208 V"\)\.
+Useful for populating UI lists and combo\-boxes\.
+
+```csharp
+public string DisplayName { get; }
+```
+
+#### Property Value
+[System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
+
 <a name='CurveEditor.Models.VoltageConfiguration.MaxSpeed'></a>
 
 ## VoltageConfiguration\.MaxSpeed Property

@@ -146,6 +146,34 @@ public double BrakeVoltage { get; set; }
 #### Property Value
 [System\.Double](https://learn.microsoft.com/en-us/dotnet/api/system.double 'System\.Double')
 
+<a name='CurveEditor.Models.MotorDefinition.DriveConfigurations'></a>
+
+## MotorDefinition\.DriveConfigurations Property
+
+Gets a LINQ\-friendly enumeration of all drive configurations\.
+This is a convenience alias for [Drives](CurveEditor.Models.MotorDefinition.md#CurveEditor.Models.MotorDefinition.Drives 'CurveEditor\.Models\.MotorDefinition\.Drives')\.
+
+```csharp
+public System.Collections.Generic.IEnumerable<CurveEditor.Models.DriveConfiguration> DriveConfigurations { get; }
+```
+
+#### Property Value
+[System\.Collections\.Generic\.IEnumerable&lt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1 'System\.Collections\.Generic\.IEnumerable\`1')[DriveConfiguration](CurveEditor.Models.DriveConfiguration.md 'CurveEditor\.Models\.DriveConfiguration')[&gt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1 'System\.Collections\.Generic\.IEnumerable\`1')
+
+<a name='CurveEditor.Models.MotorDefinition.DriveNames'></a>
+
+## MotorDefinition\.DriveNames Property
+
+Gets the drive names in this motor definition\.
+Useful for populating UI lists and combo\-boxes\.
+
+```csharp
+public System.Collections.Generic.IEnumerable<string> DriveNames { get; }
+```
+
+#### Property Value
+[System\.Collections\.Generic\.IEnumerable&lt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1 'System\.Collections\.Generic\.IEnumerable\`1')[System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')[&gt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1 'System\.Collections\.Generic\.IEnumerable\`1')
+
 <a name='CurveEditor.Models.MotorDefinition.Drives'></a>
 
 ## MotorDefinition\.Drives Property
@@ -342,6 +370,33 @@ public CurveEditor.Models.UnitSettings Units { get; set; }
 
 #### Property Value
 [UnitSettings](CurveEditor.Models.UnitSettings.md 'CurveEditor\.Models\.UnitSettings')
+
+<a name='CurveEditor.Models.MotorDefinition.VoltageConfigurations'></a>
+
+## MotorDefinition\.VoltageConfigurations Property
+
+Gets a LINQ\-friendly enumeration of all voltage configurations across all drives\.
+
+```csharp
+public System.Collections.Generic.IEnumerable<CurveEditor.Models.VoltageConfiguration> VoltageConfigurations { get; }
+```
+
+#### Property Value
+[System\.Collections\.Generic\.IEnumerable&lt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1 'System\.Collections\.Generic\.IEnumerable\`1')[VoltageConfiguration](CurveEditor.Models.VoltageConfiguration.md 'CurveEditor\.Models\.VoltageConfiguration')[&gt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1 'System\.Collections\.Generic\.IEnumerable\`1')
+
+<a name='CurveEditor.Models.MotorDefinition.VoltageNames'></a>
+
+## MotorDefinition\.VoltageNames Property
+
+Gets display\-friendly voltage names \(e\.g\., "208 V"\) across all drives\.
+Useful for populating UI lists and combo\-boxes\.
+
+```csharp
+public System.Collections.Generic.IEnumerable<string> VoltageNames { get; }
+```
+
+#### Property Value
+[System\.Collections\.Generic\.IEnumerable&lt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1 'System\.Collections\.Generic\.IEnumerable\`1')[System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')[&gt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1 'System\.Collections\.Generic\.IEnumerable\`1')
 
 <a name='CurveEditor.Models.MotorDefinition.Weight'></a>
 
