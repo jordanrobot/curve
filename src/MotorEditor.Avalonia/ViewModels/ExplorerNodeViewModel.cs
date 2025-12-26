@@ -35,6 +35,9 @@ public partial class ExplorerNodeViewModel : ObservableObject
     [ObservableProperty]
     private bool _isLoadingChildren;
 
+    [ObservableProperty]
+    private bool _isPlaceholder;
+
     public bool ShowChevron => IsDirectory && !IsRoot;
 
     public ObservableCollection<ExplorerNodeViewModel> Children { get; } = [];

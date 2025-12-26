@@ -261,7 +261,7 @@ public partial class DirectoryBrowserViewModel : ObservableObject
                 RootItems.Add(rootNode);
             }).ConfigureAwait(false);
 
-            StartFilteringInvalidMotorFiles(rootNode.Children, ct);
+            StartFilteringInvalidMotorFiles(rootNode, ct);
         }
         catch (OperationCanceledException)
         {
@@ -289,9 +289,27 @@ public partial class DirectoryBrowserViewModel : ObservableObject
             IsLoadingChildren = false
         };
 
+        // Ensure consistent TreeView indentation by making directories appear to have children
+        // even before the first async load populates them.
+        node.Children.Add(CreatePlaceholderChild());
+
         node.PropertyChanged += OnNodePropertyChanged;
         return node;
     }
+
+    private static ExplorerNodeViewModel CreatePlaceholderChild()
+        => new()
+        {
+            DisplayName = string.Empty,
+            FullPath = string.Empty,
+            RelativePath = string.Empty,
+            IsDirectory = true,
+            IsRoot = false,
+            IsExpanded = false,
+            HasLoadedChildren = true,
+            IsLoadingChildren = false,
+            IsPlaceholder = true
+        };
 
     private static string GetRootDisplayName(string rootDirectoryPath)
     {
@@ -327,6 +345,12 @@ public partial class DirectoryBrowserViewModel : ObservableObject
             HasLoadedChildren = false,
             IsLoadingChildren = false
         };
+
+        if (node.IsDirectory)
+        {
+            // Keep indentation stable before the first child load.
+            node.Children.Add(CreatePlaceholderChild());
+        }
 
         node.PropertyChanged += OnNodePropertyChanged;
 
@@ -410,15 +434,23 @@ public partial class DirectoryBrowserViewModel : ObservableObject
             await InvokeOnUiAsync(() =>
             {
                 node.Children.Clear();
-                foreach (var child in childNodes)
+                if (childNodes.Length == 0)
                 {
-                    node.Children.Add(child);
+                    // Keep indentation stable for empty directories.
+                    node.Children.Add(CreatePlaceholderChild());
+                }
+                else
+                {
+                    foreach (var child in childNodes)
+                    {
+                        node.Children.Add(child);
+                    }
                 }
 
                 node.HasLoadedChildren = true;
             }).ConfigureAwait(false);
 
-            StartFilteringInvalidMotorFiles(node.Children, cancellationToken);
+            StartFilteringInvalidMotorFiles(node, cancellationToken);
         }
         catch (OperationCanceledException)
         {
@@ -434,8 +466,11 @@ public partial class DirectoryBrowserViewModel : ObservableObject
         }
     }
 
-    private void StartFilteringInvalidMotorFiles(ObservableCollection<ExplorerNodeViewModel> children, CancellationToken cancellationToken)
+    private void StartFilteringInvalidMotorFiles(ExplorerNodeViewModel parentNode, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(parentNode);
+
+        var children = parentNode.Children;
         if (children.Count == 0)
         {
             return;
@@ -472,6 +507,12 @@ public partial class DirectoryBrowserViewModel : ObservableObject
                         }
 
                         children.Remove(fileNode);
+
+                        if (parentNode.IsDirectory && children.Count == 0)
+                        {
+                            // Keep indentation stable if all JSON nodes are filtered out.
+                            children.Add(CreatePlaceholderChild());
+                        }
                     }
                 }).ConfigureAwait(false);
             }

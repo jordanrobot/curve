@@ -239,8 +239,8 @@ public sealed class DirectoryBrowserInteractionTests
             var dir4Node = Assert.Single(rootNode.Children, n => n.IsDirectory && n.DisplayName == "directory 4");
 
             // Directory children are loaded lazily; until expanded they should not show their contents.
-            Assert.Empty(motorProfilesNode.Children);
-            Assert.Empty(dir4Node.Children);
+            Assert.Empty(motorProfilesNode.Children.Where(c => !c.IsPlaceholder));
+            Assert.Empty(dir4Node.Children.Where(c => !c.IsPlaceholder));
         }
         finally
         {

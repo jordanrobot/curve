@@ -312,6 +312,20 @@ See ADR-0006 (`../../docs/adr/adr-0006-motor-file-schema-and-versioning.md`) for
 
 ---
 
+## Phase 3.7: Rename objects for clarity
+- [ ] Rename `MotorDefinition` to `Motor` throughout codebase
+- [ ] Rename `CurveSeries` to `Curve` throughout codebase
+- [ ] Rename `DriveConfiguration` to `Drive` throughout codebase
+- [ ] Rename `VoltageConfiguration` to `Voltage` throughout codebase
+- [ ] Rename collection object accessors/properties accordingly:
+  - `MotorDefinition.DriveConfigurations` -> `Motor.Drives`
+  - `DriveConfiguration.VoltageConfigurations` -> `Drive.Voltages`
+  - `VoltageConfiguration.CurveSeries` -> `Voltage.Curves`
+- [ ] Update all related files, namespaces, and references accordingly
+- [ ] Update all /docs/ to reflect new names
+- [ ] Update Readme.md to reflect new names
+- [ ] Update unit tests to reflect new names
+
 ## Phase 4: Advanced Editing
 
 ### 4.0 Series Data Adjustment

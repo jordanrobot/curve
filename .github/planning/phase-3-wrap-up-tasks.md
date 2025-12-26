@@ -56,11 +56,11 @@
   - [x] The prompt offers exactly: Save / Don’t Save / Cancel.
   - [x] Button text is centered within each button.
   - [x] “Don’t Save” maps to `UnsavedChangesChoice.Ignore`.
-- [ ] AC 3W.2 — Open file prompts
-  - [ ] When dirty, opening another file via directory browser prompts; Cancel aborts.
-  - [ ] When dirty, opening another file via the file picker prompts; Cancel aborts.
-- [ ] AC 3W.3 — New file prompt
-  - [ ] When dirty, creating a new file prompts; Cancel aborts.
+- [x] AC 3W.2 — Open file prompts
+  - [x] When dirty, opening another file via directory browser prompts; Cancel aborts.
+  - [x] When dirty, opening another file via the file picker prompts; Cancel aborts.
+- [x] AC 3W.3 — New file prompt
+  - [x] When dirty, creating a new file prompts; Cancel aborts.
 - [ ] AC 3W.4 — App/window close prompt
   - [ ] When dirty, closing the app/window prompts; Cancel aborts app/window close.
   - [ ] If Save is chosen and save is cancelled/fails (still dirty), closing is aborted.
@@ -164,7 +164,7 @@ Required hygiene:
 
 ---
 
-## [ ] PR 2: Unify Dirty Prompts for File Picker Open + New File
+## [x] PR 2: Unify Dirty Prompts for File Picker Open + New File
 
 ### Goal
 
@@ -172,20 +172,20 @@ All “lose changes” entry points use the same Save / Don’t Save / Cancel pr
 
 ### Tasks
 
-- [ ] Add a single ViewModel helper that encapsulates the dirty-check + prompt + save semantics:
-  - [ ] Inputs: action description string
-  - [ ] Output: proceed/cancel decision
-  - [ ] Behavior:
-    - [ ] If not dirty, proceeds without prompting
-    - [ ] If Cancel, aborts
-    - [ ] If Save, invokes `SaveAsync`; if still dirty, aborts
-    - [ ] If Don’t Save, proceeds
-- [ ] Update `MainWindowViewModel.OpenFileAsync`:
-  - [ ] If dirty, prompt *before* showing the file picker.
-  - [ ] Cancel aborts opening.
-- [ ] Update `MainWindowViewModel.NewMotorAsync`:
-  - [ ] Replace `MessageDialog` flow with `UnsavedChangesPromptAsync` via the helper.
-  - [ ] Cancel aborts new-file creation.
+- [x] Add a single ViewModel helper that encapsulates the dirty-check + prompt + save semantics:
+  - [x] Inputs: action description string
+  - [x] Output: proceed/cancel decision
+  - [x] Behavior:
+    - [x] If not dirty, proceeds without prompting
+    - [x] If Cancel, aborts
+    - [x] If Save, invokes `SaveAsync`; if still dirty, aborts
+    - [x] If Don’t Save, proceeds
+- [x] Update `MainWindowViewModel.OpenFileAsync`:
+  - [x] If dirty, prompt *before* showing the file picker.
+  - [x] Cancel aborts opening.
+- [x] Update `MainWindowViewModel.NewMotorAsync`:
+  - [x] Replace `MessageDialog` flow with `UnsavedChangesPromptAsync` via the helper.
+  - [x] Cancel aborts new-file creation.
 
 Required hygiene:
 
@@ -201,7 +201,7 @@ Required hygiene:
 - [src/MotorEditor.Avalonia/ViewModels/MainWindowViewModel.cs](src/MotorEditor.Avalonia/ViewModels/MainWindowViewModel.cs)
 - (tests) add/update one or more:
   - [tests/CurveEditor.Tests/ViewModels/MainWindowViewModelDirtyPromptTests.cs](tests/CurveEditor.Tests/ViewModels/MainWindowViewModelDirtyPromptTests.cs)
-  - (new) `tests/CurveEditor.Tests/ViewModels/MainWindowViewModelNewMotorDirtyPromptTests.cs` (if needed)
+  - [tests/CurveEditor.Tests/ViewModels/MainWindowViewModelOpenAndNewDirtyPromptTests.cs](tests/CurveEditor.Tests/ViewModels/MainWindowViewModelOpenAndNewDirtyPromptTests.cs)
 
 ### Quick manual test
 

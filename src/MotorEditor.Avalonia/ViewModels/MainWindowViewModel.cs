@@ -555,24 +555,9 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        if (IsDirty)
+        if (!await ConfirmLoseUnsavedChangesOrCancelAsync("open another file", "Open cancelled.").ConfigureAwait(true))
         {
-            var choice = await UnsavedChangesPromptAsync("open another file").ConfigureAwait(true);
-            if (choice == UnsavedChangesChoice.Cancel)
-            {
-                StatusMessage = "Open cancelled.";
-                return;
-            }
-
-            if (choice == UnsavedChangesChoice.Save)
-            {
-                await SaveAsync().ConfigureAwait(true);
-                if (IsDirty)
-                {
-                    StatusMessage = "Open cancelled.";
-                    return;
-                }
-            }
+            return;
         }
 
         await OpenMotorFileInternalAsync(filePath, updateExplorerSelection: false).ConfigureAwait(true);
@@ -593,6 +578,33 @@ public partial class MainWindowViewModel : ViewModelBase
 
         await dialog.ShowDialog(desktop.MainWindow);
         return dialog.Choice;
+    }
+
+    private async Task<bool> ConfirmLoseUnsavedChangesOrCancelAsync(string actionDescription, string cancelledStatusMessage)
+    {
+        if (!IsDirty)
+        {
+            return true;
+        }
+
+        var choice = await UnsavedChangesPromptAsync(actionDescription).ConfigureAwait(true);
+        if (choice == UnsavedChangesChoice.Cancel)
+        {
+            StatusMessage = cancelledStatusMessage;
+            return false;
+        }
+
+        if (choice == UnsavedChangesChoice.Save)
+        {
+            await SaveAsync().ConfigureAwait(true);
+            if (IsDirty)
+            {
+                StatusMessage = cancelledStatusMessage;
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -1738,40 +1750,9 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         Log.Information("Creating new motor definition");
 
-        // Check if current file is dirty and prompt user
-        if (IsDirty)
+        if (!await ConfirmLoseUnsavedChangesOrCancelAsync("create a new file", "New file cancelled.").ConfigureAwait(true))
         {
-            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            {
-                var dialog = new Views.MessageDialog
-                {
-                    Title = "Unsaved Changes",
-                    Message = "You have unsaved changes. Would you like to save them before creating a new file?",
-                    ShowCancelButton = true,
-                    OkButtonText = "Save",
-                    CancelButtonText = "Ignore"
-                };
-                await dialog.ShowDialog(desktop.MainWindow!);
-
-                if (dialog.Result == true)
-                {
-                    // User wants to save
-                    await SaveAsync();
-                    if (IsDirty)
-                    {
-                        // Save was cancelled or failed
-                        StatusMessage = "New file cancelled.";
-                        return;
-                    }
-                }
-                else if (dialog.Result is null)
-                {
-                    // User closed dialog without choosing
-                    StatusMessage = "New file cancelled.";
-                    return;
-                }
-                // If dialog.Result == false, user chose "Ignore", continue with new file
-            }
+            return;
         }
 
         // Create a new motor with default values
@@ -1797,6 +1778,11 @@ public partial class MainWindowViewModel : ViewModelBase
 
         try
         {
+            if (!await ConfirmLoseUnsavedChangesOrCancelAsync("open another file", "Open cancelled.").ConfigureAwait(true))
+            {
+                return;
+            }
+
             var storageProvider = GetStorageProvider();
             if (storageProvider is null)
             {
@@ -1837,24 +1823,9 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        if (IsDirty)
+        if (!await ConfirmLoseUnsavedChangesOrCancelAsync("close this file", "Close cancelled.").ConfigureAwait(true))
         {
-            var choice = await UnsavedChangesPromptAsync("close this file").ConfigureAwait(true);
-            if (choice == UnsavedChangesChoice.Cancel)
-            {
-                StatusMessage = "Close cancelled.";
-                return;
-            }
-
-            if (choice == UnsavedChangesChoice.Save)
-            {
-                await SaveAsync().ConfigureAwait(true);
-                if (IsDirty)
-                {
-                    StatusMessage = "Close cancelled.";
-                    return;
-                }
-            }
+            return;
         }
 
         CloseCurrentFileInternal();

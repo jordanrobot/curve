@@ -47,6 +47,7 @@
                 <Style Selector="TreeViewItem" x:DataType="vm:ExplorerNodeViewModel">
                     <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
                     <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
+                    <Setter Property="IsVisible" Value="{Binding IsPlaceholder, Converter={StaticResource InverseBooleanConverter}}"/>
                 </Style>
 
                 <!-- Keep custom chevrons unhighlighted in all states (including checked/expanded). -->
