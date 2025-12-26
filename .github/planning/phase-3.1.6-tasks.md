@@ -8,6 +8,16 @@
   - Regression test added: `tests/CurveEditor.Tests/Services/MotorFileVariablePointsLoadTests.cs`.
   - Example updated with a 21-point curve: `schema/example-motor.json`.
 
+- UI-only panel layout types were moved out of the shared model namespace.
+  - Goal: avoid confusing `CurveEditor.Models` collisions and prepare for library namespace cleanup.
+  - New namespace: `MotorEditor.Avalonia.Models`.
+  - Files:
+    - `src/MotorEditor.Avalonia/Models/PanelRegistry.cs`
+    - `src/MotorEditor.Avalonia/Models/PanelDescriptor.cs`
+    - `src/MotorEditor.Avalonia/Models/PanelZone.cs`
+    - `src/MotorEditor.Avalonia/Models/PanelBarDockSide.cs`
+    - Updated references in app/test + XAML `xmlns` where required.
+
 ### Purpose
 - Provide a PR-sliceable task list for implementing Phase 3.1.6 with minimal rework.
 - Make it easy to validate each Phase 3.1.6 acceptance criterion incrementally.
@@ -111,6 +121,49 @@ Out of scope reminders:
   - app services (`IFileService`, `IUserSettingsStore`, etc.)
 - Prefer moving tests away from internal DTOs/mapper and toward the public `MotorFile` API.
 - Renames/moves must be performed in small PRs and must include explicit build verification tasks.
+
+---
+
+## [ ] PR 8: Namespace cleanup for API clarity (source-breaking, no behavior change)
+
+### Goal
+
+Make the library API self-explanatory by separating:
+
+- Runtime model types under `JordanRobot.MotorDefinitions.Model`.
+- Persistence plumbing under `JordanRobot.MotorDefinitions.Persistence.*`.
+- Keep IO entrypoint shallow as `JordanRobot.MotorDefinitions.MotorFile`.
+
+This PR series is intentionally separate from Phase 3.1.6 acceptance criteria, but is a prerequisite for a clean consumer-facing package.
+
+### Tasks
+
+- [ ] Rename runtime model namespace:
+  - [ ] `CurveEditor.Models` → `JordanRobot.MotorDefinitions.Model` in the library model files.
+  - [ ] Update all app references (`using` + fully-qualified types).
+  - [ ] Update all tests referencing model types.
+
+- [ ] Rename persistence namespaces (keep types `internal`):
+  - [ ] `JordanRobot.MotorDefinitions.Dtos` → `JordanRobot.MotorDefinitions.Persistence.Dtos`
+  - [ ] `JordanRobot.MotorDefinitions.Mapping` → `JordanRobot.MotorDefinitions.Persistence.Mapping`
+  - [ ] `JordanRobot.MotorDefinitions.Validation` → `JordanRobot.MotorDefinitions.Persistence.Validation`
+  - [ ] `JordanRobot.MotorDefinitions.Probing` → `JordanRobot.MotorDefinitions.Persistence.Probing`
+  - [ ] Update `MotorFile` to reference the renamed namespaces.
+
+- [ ] Update documentation and generated API docs:
+  - [ ] Update README + `docs/UserGuide.md` snippets to use `JordanRobot.MotorDefinitions.Model` and `JordanRobot.MotorDefinitions.MotorFile`.
+  - [ ] Clean and regenerate `docs/api` (DefaultDocumentation output) to avoid stale namespace pages.
+
+### Done when
+
+- `dotnet build CurveEditor.sln` succeeds.
+- `dotnet test CurveEditor.sln` succeeds.
+- `docs/api` reflects the new namespaces (no stale `CurveEditor.Models` namespace pages).
+
+### Quick manual test
+
+1. Run `dotnet test CurveEditor.sln`.
+2. Launch the app, open a motor JSON, save it, re-open it.
 
 ---
 

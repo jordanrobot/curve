@@ -247,3 +247,78 @@ Completed
 - [ ] Decide final public namespaces and visibility for consumer usage (Phase 3.1.8).
 - [ ] Add non-throwing load API and structured error model (Phase 3.1.8).
 - [ ] Add packaging metadata + README for NuGet (Phase 3.1.7).
+
+---
+
+## Post-Phase Addendum: Namespace Cleanup Plan (Prep for Publishing)
+
+### Status
+
+Planned (not executed as part of Phase 3.1.6).
+
+### Goal
+
+Improve API clarity by separating:
+
+- Runtime motor definition model types (consumer-facing) from UI-only types.
+- Persistence schema/DTO/mapping/validation (internal plumbing) from public IO entry points.
+
+No existing external consumers means we can accept source-breaking namespace changes.
+
+### Target Namespace Map
+
+Library (MotorDefinition):
+
+- Runtime model (public): `JordanRobot.MotorDefinitions.Model`
+  - `MotorDefinition`, `DriveConfiguration`, `VoltageConfiguration`, `CurveSeries`, `DataPoint`, `UnitSettings`, `MotorMetadata`
+- IO entry point (public): `JordanRobot.MotorDefinitions.MotorFile`
+  - Keep the entrypoint shallow (do not bury under Persistence).
+- Persistence plumbing (internal):
+  - DTOs: `JordanRobot.MotorDefinitions.Persistence.Dtos`
+  - Mapping: `JordanRobot.MotorDefinitions.Persistence.Mapping`
+  - Validation: `JordanRobot.MotorDefinitions.Persistence.Validation`
+  - Probing: `JordanRobot.MotorDefinitions.Persistence.Probing`
+
+App (MotorEditor.Avalonia):
+
+- UI-only panel layout types: `MotorEditor.Avalonia.Models`
+  - `PanelRegistry`, `PanelDescriptor`, `PanelZone`, `PanelBarDockSide`
+
+### Why this structure
+
+- Keeps the public surface area easy to explain: consumers see `Model` + `MotorFile`.
+- Keeps file-format concerns clearly internal and grouped (Persistence).
+- Prevents confusion from legacy naming like `CurveEditor.Models` (which reads as app/UI).
+
+### PR-Sliceable Implementation Steps
+
+1. **App UI-only panel model rename** (already implemented)
+   - Move panel layout types out of the shared model namespace into the app-specific namespace.
+   - Update XAML `xmlns` and any references.
+
+2. **Rename runtime model namespace** (`CurveEditor.Models` → `JordanRobot.MotorDefinitions.Model`)
+   - Update all runtime model files in the library.
+   - Update all app and test references (`using` statements + fully-qualified references).
+   - Verify that DefaultDocumentation output regenerates cleanly under `docs/api`.
+
+3. **Rename persistence namespaces** (`JordanRobot.MotorDefinitions.{Dtos,Mapping,Validation,Probing}` → `JordanRobot.MotorDefinitions.Persistence.*`)
+   - Keep types internal; only their namespaces move.
+   - Update `MotorFile` to reference the new namespaces.
+   - Update tests that currently import DTOs directly.
+
+4. **Documentation + examples refresh**
+   - Update code snippets in `docs/QuickStart.md`, `docs/UserGuide.md`, and README(s) to use the new namespaces.
+   - Clean and regenerate `docs/api` to avoid stale namespace pages.
+
+### Build / Test Gates
+
+Use the same gates as Phase 3.1.6 to keep the rename safe:
+
+1. `dotnet build CurveEditor.sln`
+2. `dotnet test CurveEditor.sln`
+
+### Notes
+
+- DefaultDocumentation writes into `docs/api` (see `src/MotorDefinition/MotorDefinition.csproj`).
+  - For namespace cleanups, prefer cleaning that folder before regenerating to avoid stale pages.
+- Keep `MotorFile` as the single primary entrypoint while the API stabilizes.
