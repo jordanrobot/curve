@@ -1,4 +1,4 @@
-using JordanRobot.MotorDefinitions;
+using JordanRobot.MotorDefinition;
 using System.IO;
 
 namespace CurveEditor.Tests.Services;

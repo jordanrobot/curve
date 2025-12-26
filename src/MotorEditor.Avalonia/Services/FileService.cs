@@ -1,5 +1,5 @@
-using JordanRobot.MotorDefinitions.Model;
-using JordanRobot.MotorDefinitions;
+using JordanRobot.MotorDefinition;
+using JordanRobot.MotorDefinition.Model;
 using Serilog;
 using System;
 using System.IO;

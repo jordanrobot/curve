@@ -1,11 +1,11 @@
-using JordanRobot.MotorDefinitions.Model;
-using JordanRobot.MotorDefinitions.Persistence.Dtos;
-using JordanRobot.MotorDefinitions.Persistence.Validation;
+using JordanRobot.MotorDefinition.Model;
+using JordanRobot.MotorDefinition.Persistence.Dtos;
+using JordanRobot.MotorDefinition.Persistence.Validation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace JordanRobot.MotorDefinitions.Persistence.Mapping;
+namespace JordanRobot.MotorDefinition.Persistence.Mapping;
 
 /// <summary>
 /// Converts between persisted motor definition DTOs and runtime models.
@@ -13,17 +13,17 @@ namespace JordanRobot.MotorDefinitions.Persistence.Mapping;
 internal static class MotorFileMapper
 {
     /// <summary>
-    /// Maps a runtime <see cref="MotorDefinition"/> into a persistence DTO.
+    /// Maps a runtime <see cref="Model.MotorDefinition"/> into a persistence DTO.
     /// </summary>
     /// <param name="motor">The runtime motor definition.</param>
     /// <returns>A DTO ready for serialization.</returns>
-    public static MotorDefinitionFileDto ToFileDto(MotorDefinition motor)
+    public static MotorDefinitionFileDto ToFileDto(Model.MotorDefinition motor)
     {
         ArgumentNullException.ThrowIfNull(motor);
 
         var dto = new MotorDefinitionFileDto
         {
-            SchemaVersion = MotorDefinition.CurrentSchemaVersion,
+            SchemaVersion = Model.MotorDefinition.CurrentSchemaVersion,
             MotorName = motor.MotorName,
             Manufacturer = motor.Manufacturer,
             PartNumber = motor.PartNumber,
@@ -112,17 +112,17 @@ internal static class MotorFileMapper
     }
 
     /// <summary>
-    /// Maps a persistence DTO into a runtime <see cref="MotorDefinition"/>.
+    /// Maps a persistence DTO into a runtime <see cref="Model.MotorDefinition"/>.
     /// </summary>
     /// <param name="dto">The deserialized DTO.</param>
     /// <returns>A runtime motor definition model.</returns>
-    public static MotorDefinition ToRuntimeModel(MotorDefinitionFileDto dto)
+    public static Model.MotorDefinition ToRuntimeModel(MotorDefinitionFileDto dto)
     {
         ArgumentNullException.ThrowIfNull(dto);
 
-        var motor = new MotorDefinition(dto.MotorName)
+        var motor = new Model.MotorDefinition(dto.MotorName)
         {
-            SchemaVersion = string.IsNullOrWhiteSpace(dto.SchemaVersion) ? MotorDefinition.CurrentSchemaVersion : dto.SchemaVersion,
+            SchemaVersion = string.IsNullOrWhiteSpace(dto.SchemaVersion) ? Model.MotorDefinition.CurrentSchemaVersion : dto.SchemaVersion,
             Manufacturer = dto.Manufacturer,
             PartNumber = dto.PartNumber,
             Power = dto.Power,

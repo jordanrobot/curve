@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 
-namespace JordanRobot.MotorDefinitions.Model;
+namespace JordanRobot.MotorDefinition.Model;
 
 /// <summary>
 /// Represents a complete motor definition including all properties, drive configurations, and metadata.
@@ -199,8 +199,8 @@ public class MotorDefinition
     /// <returns>True if valid; otherwise false.</returns>
     public bool HasValidConfiguration()
     {
-        return Drives.Count > 0 && 
-               Drives.Any(d => d.Voltages.Count > 0 && 
+        return Drives.Count > 0 &&
+               Drives.Any(d => d.Voltages.Count > 0 &&
                               d.Voltages.Any(v => v.Series.Count > 0));
     }
 

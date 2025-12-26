@@ -1,9 +1,9 @@
-using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
-using JordanRobot.MotorDefinitions.Model;
 using CurveEditor.ViewModels;
 using CurveEditor.Views;
+using JordanRobot.MotorDefinition.Model;
+using System.Linq;
 using Xunit;
 
 namespace CurveEditor.Tests.Views;

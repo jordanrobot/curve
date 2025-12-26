@@ -1,8 +1,8 @@
-using System.Threading.Tasks;
-using JordanRobot.MotorDefinitions.Model;
 using CurveEditor.Services;
 using CurveEditor.ViewModels;
+using JordanRobot.MotorDefinition.Model;
 using Moq;
+using System.Threading.Tasks;
 
 namespace CurveEditor.Tests.ViewModels;
 

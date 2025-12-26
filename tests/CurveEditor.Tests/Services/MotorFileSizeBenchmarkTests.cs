@@ -1,5 +1,5 @@
-using JordanRobot.MotorDefinitions.Model;
-using JordanRobot.MotorDefinitions;
+using JordanRobot.MotorDefinition;
+using JordanRobot.MotorDefinition.Model;
 using System;
 using System.IO;
 using System.Linq;

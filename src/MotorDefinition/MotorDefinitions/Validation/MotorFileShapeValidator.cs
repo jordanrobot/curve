@@ -1,10 +1,10 @@
-using JordanRobot.MotorDefinitions.Model;
-using JordanRobot.MotorDefinitions.Persistence.Dtos;
+using JordanRobot.MotorDefinition.Model;
+using JordanRobot.MotorDefinition.Persistence.Dtos;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace JordanRobot.MotorDefinitions.Persistence.Validation;
+namespace JordanRobot.MotorDefinition.Persistence.Validation;
 
 /// <summary>
 /// Provides shape validation helpers for motor definition persistence DTOs.

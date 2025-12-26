@@ -1,7 +1,7 @@
 using CurveEditor.Services;
 using CurveEditor.ViewModels;
-using JordanRobot.MotorDefinitions.Model;
-using JordanRobot.MotorDefinitions.Persistence.Dtos;
+using JordanRobot.MotorDefinition.Model;
+using JordanRobot.MotorDefinition.Persistence.Dtos;
 using System;
 using System.Collections.Generic;
 using System.IO;

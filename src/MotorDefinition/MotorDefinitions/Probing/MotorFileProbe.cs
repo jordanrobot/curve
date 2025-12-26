@@ -1,9 +1,9 @@
-using JordanRobot.MotorDefinitions.Model;
+using JordanRobot.MotorDefinition.Model;
 using System;
 using System.Linq;
 using System.Text.Json;
 
-namespace JordanRobot.MotorDefinitions.Persistence.Probing;
+namespace JordanRobot.MotorDefinition.Persistence.Probing;
 
 /// <summary>
 /// Lightweight shape probe for motor definition files to avoid full deserialization.
@@ -26,7 +26,7 @@ internal static class MotorFileProbe
             }
 
             if (!TryGetString(root, "schemaVersion", out var schemaVersion) ||
-                !string.Equals(schemaVersion, MotorDefinition.CurrentSchemaVersion, StringComparison.Ordinal))
+                !string.Equals(schemaVersion, Model.MotorDefinition.CurrentSchemaVersion, StringComparison.Ordinal))
             {
                 return false;
             }

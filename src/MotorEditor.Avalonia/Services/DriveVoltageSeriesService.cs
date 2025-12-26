@@ -1,4 +1,4 @@
-using JordanRobot.MotorDefinitions.Model;
+using JordanRobot.MotorDefinition.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;

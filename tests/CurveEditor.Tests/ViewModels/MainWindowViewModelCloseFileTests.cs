@@ -1,11 +1,11 @@
+using CommunityToolkit.Mvvm.Input;
+using CurveEditor.Services;
+using CurveEditor.ViewModels;
+using JordanRobot.MotorDefinition.Model;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.Input;
-using JordanRobot.MotorDefinitions.Model;
-using CurveEditor.Services;
-using CurveEditor.ViewModels;
-using Moq;
 using Xunit;
 
 namespace CurveEditor.Tests.ViewModels;
@@ -90,7 +90,7 @@ public class MainWindowViewModelCloseFileTests
         vm.CurrentFilePath = "c:/tmp/current.json";
         vm.IsDirty = false;
 
-        await ((IAsyncRelayCommand)vm.CloseFileCommand).ExecuteAsync(null);
+        await (vm.CloseFileCommand).ExecuteAsync(null);
 
         Assert.Null(vm.CurrentMotor);
         Assert.Null(vm.CurrentFilePath);
@@ -110,7 +110,7 @@ public class MainWindowViewModelCloseFileTests
         vm.CurrentFilePath = "c:/tmp/current.json";
         vm.IsDirty = true;
 
-        await ((IAsyncRelayCommand)vm.CloseFileCommand).ExecuteAsync(null);
+        await (vm.CloseFileCommand).ExecuteAsync(null);
 
         Assert.NotNull(vm.CurrentMotor);
         Assert.Equal("c:/tmp/current.json", vm.CurrentFilePath);
@@ -132,7 +132,7 @@ public class MainWindowViewModelCloseFileTests
         vm.CurrentFilePath = "c:/tmp/current.json";
         vm.IsDirty = true;
 
-        await ((IAsyncRelayCommand)vm.CloseFileCommand).ExecuteAsync(null);
+        await (vm.CloseFileCommand).ExecuteAsync(null);
 
         fileServiceMock.Verify(f => f.SaveAsync(It.IsAny<MotorDefinition>()), Times.Once);
         fileServiceMock.Verify(f => f.Reset(), Times.Once);

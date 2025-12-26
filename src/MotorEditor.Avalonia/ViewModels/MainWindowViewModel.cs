@@ -4,8 +4,8 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using JordanRobot.MotorDefinitions.Model;
 using CurveEditor.Services;
+using JordanRobot.MotorDefinition.Model;
 using MotorEditor.Avalonia.Models;
 using Serilog;
 using System;
@@ -117,21 +117,21 @@ public partial class MainWindowViewModel : ViewModelBase
     /// Whether the curve data panel is expanded.
     /// Derived from ActiveLeftPanelId since Curve Data is in the left zone.
     /// </summary>
-    public bool IsCurveDataExpanded => 
+    public bool IsCurveDataExpanded =>
         ActiveLeftPanelId == PanelRegistry.PanelIds.CurveData;
 
     /// <summary>
     /// Whether the directory browser panel is expanded.
     /// Derived from ActiveLeftPanelId since Browser is in the left zone.
     /// </summary>
-    public bool IsBrowserPanelExpanded => 
+    public bool IsBrowserPanelExpanded =>
         ActiveLeftPanelId == PanelRegistry.PanelIds.DirectoryBrowser;
 
     /// <summary>
     /// Whether the properties panel is expanded.
     /// Derived from ActivePanelBarPanelId since Properties is in the right zone.
     /// </summary>
-    public bool IsPropertiesPanelExpanded => 
+    public bool IsPropertiesPanelExpanded =>
         ActivePanelBarPanelId == PanelRegistry.PanelIds.MotorProperties;
 
     /// <summary>
@@ -311,7 +311,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     private string _voltageMaxSpeedEditor = string.Empty;
-    
+
     [ObservableProperty]
     private string _voltagePeakTorqueEditor = string.Empty;
 
@@ -662,7 +662,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 ? Path.GetFileName(CurrentFilePath)
                 : CurrentMotor?.MotorName ?? "Untitled";
 
-            var dirtyIndicator = IsDirty ? " *" : "";
+            var dirtyIndicator = IsDirty ? " *" : string.Empty;
             return $"{fileName}{dirtyIndicator} - Curve Editor";
         }
     }
@@ -1580,7 +1580,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         // Refresh the drives collection
         RefreshAvailableDrives();
-        
+
         // When motor changes, select the first drive
         SelectedDrive = value?.Drives.FirstOrDefault();
 
@@ -1655,13 +1655,13 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         // Refresh the available voltages collection
         RefreshAvailableVoltages();
-        
+
         if (value is null)
         {
             SelectedVoltage = null;
             return;
         }
-        
+
         // Prefer 208V if available, otherwise use the first voltage
         var preferred = value.Voltages.FirstOrDefault(v => Math.Abs(v.Voltage - 208) < 0.1);
         SelectedVoltage = preferred ?? value.Voltages.FirstOrDefault();
@@ -1675,10 +1675,10 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         // Refresh the available series collection
         RefreshAvailableSeries();
-        
+
         // When voltage changes, update series selection
         SelectedSeries = value?.Series.FirstOrDefault();
-        
+
         // Update chart with new voltage configuration
         ChartViewModel.TorqueUnit = CurrentMotor?.Units.Torque ?? "Nm";
         ChartViewModel.MotorMaxSpeed = CurrentMotor?.MaxSpeed ?? 0;
@@ -1752,7 +1752,7 @@ public partial class MainWindowViewModel : ViewModelBase
                     CancelButtonText = "Ignore"
                 };
                 await dialog.ShowDialog(desktop.MainWindow!);
-                
+
                 if (dialog.Result == true)
                 {
                     // User wants to save

@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 
-namespace JordanRobot.MotorDefinitions.Model;
+namespace JordanRobot.MotorDefinition.Model;
 
 /// <summary>
 /// Represents voltage-specific configuration and performance data for a motor/drive combination.

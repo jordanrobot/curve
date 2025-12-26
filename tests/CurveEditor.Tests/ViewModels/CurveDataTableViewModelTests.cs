@@ -1,5 +1,5 @@
-using JordanRobot.MotorDefinitions.Model;
 using CurveEditor.ViewModels;
+using JordanRobot.MotorDefinition.Model;
 
 namespace CurveEditor.Tests.ViewModels;
 
@@ -834,7 +834,7 @@ public class CurveDataTableViewModelTests
 
         var peakSeries = new CurveSeries("Peak");
         peakSeries.InitializeData(5000, 55);
-        
+
         var continuousSeries = new CurveSeries("Continuous");
         continuousSeries.InitializeData(5000, 45);
 

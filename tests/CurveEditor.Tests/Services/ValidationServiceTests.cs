@@ -1,5 +1,5 @@
-using JordanRobot.MotorDefinitions.Model;
 using CurveEditor.Services;
+using JordanRobot.MotorDefinition.Model;
 
 namespace CurveEditor.Tests.Services;
 
@@ -227,7 +227,7 @@ public class ValidationServiceTests
     {
         // Arrange
         var motor = CreateValidMotorDefinition();
-        motor.MotorName = "";
+        motor.MotorName = string.Empty;
 
         // Act
         var errors = _service.ValidateMotorDefinition(motor);

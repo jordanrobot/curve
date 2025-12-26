@@ -1,7 +1,7 @@
+using JordanRobot.MotorDefinition.Model;
+using Serilog;
 using System;
 using System.Collections.Generic;
-using JordanRobot.MotorDefinitions.Model;
-using Serilog;
 
 namespace CurveEditor.Services;
 

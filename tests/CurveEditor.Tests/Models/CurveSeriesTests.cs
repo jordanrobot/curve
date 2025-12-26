@@ -1,5 +1,5 @@
+using JordanRobot.MotorDefinition.Model;
 using System;
-using JordanRobot.MotorDefinitions.Model;
 using Xunit;
 
 namespace CurveEditor.Tests.Models;
@@ -247,10 +247,10 @@ public class CurveSeriesTests
     public void IsVisible_CanBeToggled()
     {
         var series = new CurveSeries("Peak");
-        
+
         series.IsVisible = false;
         Assert.False(series.IsVisible);
-        
+
         series.IsVisible = true;
         Assert.True(series.IsVisible);
     }

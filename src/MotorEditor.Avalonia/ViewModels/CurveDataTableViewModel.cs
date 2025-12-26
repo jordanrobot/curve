@@ -1,6 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using JordanRobot.MotorDefinitions.Model;
 using CurveEditor.Services;
+using JordanRobot.MotorDefinition.Model;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -944,10 +944,10 @@ public partial class CurveDataTableViewModel : ViewModelBase
         // Special case: single scalar replicated across all selected cells
         if (lines.Length == 1)
         {
-                var parts = lines[0].Split('\t', StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length == 1 && double.TryParse(parts[0], out var scalar))
-                {
-                    var anyScalarChanged = false;
+            var parts = lines[0].Split('\t', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 1 && double.TryParse(parts[0], out var scalar))
+            {
+                var anyScalarChanged = false;
 
                 foreach (var cell in selectedCellsSnapshot)
                 {

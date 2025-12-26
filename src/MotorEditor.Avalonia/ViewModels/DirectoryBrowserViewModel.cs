@@ -1,9 +1,9 @@
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using JordanRobot.MotorDefinitions.Model;
 using CurveEditor.Services;
-using JordanRobot.MotorDefinitions;
+using JordanRobot.MotorDefinition;
+using JordanRobot.MotorDefinition.Model;
 using Serilog;
 using System;
 using System.Collections.Generic;

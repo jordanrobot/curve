@@ -1,6 +1,6 @@
+using JordanRobot.MotorDefinition.Model;
 using System;
 using System.Linq;
-using JordanRobot.MotorDefinitions.Model;
 using Xunit;
 
 namespace CurveEditor.Tests.Models;
@@ -199,17 +199,17 @@ public class MotorDefinitionTests
     public void GetAllSeries_ReturnsAllSeriesAcrossAllDrivesAndVoltages()
     {
         var motor = new MotorDefinition { MaxSpeed = 5000 };
-        
+
         var drive1 = motor.AddDrive("Drive 1");
         var voltage1a = drive1.AddVoltageConfiguration(208);
         voltage1a.MaxSpeed = 5000;
         voltage1a.AddSeries("Peak", 50);
         voltage1a.AddSeries("Continuous", 40);
-        
+
         var voltage1b = drive1.AddVoltageConfiguration(220);
         voltage1b.MaxSpeed = 5000;
         voltage1b.AddSeries("Peak", 55);
-        
+
         var drive2 = motor.AddDrive("Drive 2");
         var voltage2 = drive2.AddVoltageConfiguration(208);
         voltage2.MaxSpeed = 5000;

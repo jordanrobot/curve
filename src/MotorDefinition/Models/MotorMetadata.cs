@@ -1,7 +1,7 @@
 using System;
 using System.Text.Json.Serialization;
 
-namespace JordanRobot.MotorDefinitions.Model;
+namespace JordanRobot.MotorDefinition.Model;
 
 /// <summary>
 /// Contains metadata about the motor definition file.

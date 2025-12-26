@@ -1,5 +1,5 @@
+using JordanRobot.MotorDefinition.Model;
 using System;
-using JordanRobot.MotorDefinitions.Model;
 
 namespace CurveEditor.Services;
 

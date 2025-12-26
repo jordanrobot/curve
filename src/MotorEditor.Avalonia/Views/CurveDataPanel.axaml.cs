@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -9,8 +6,11 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.VisualTree;
-using JordanRobot.MotorDefinitions.Model;
 using CurveEditor.ViewModels;
+using JordanRobot.MotorDefinition.Model;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace CurveEditor.Views;
 
@@ -25,11 +25,11 @@ public partial class CurveDataPanel : UserControl
     private CellPosition? _dragStartCell;
     private readonly Dictionary<CellPosition, Border> _cellBorders = [];
     private bool _eventHandlersRegistered;
-    
+
     // Override Mode: when user types while cells are selected (not in edit mode),
     // the typed value replaces the existing values of all selected cells
     private bool _isInOverrideMode;
-    private string _overrideText = "";
+    private string _overrideText = string.Empty;
     private readonly Dictionary<CellPosition, double> _originalValues = [];
     private CellPosition? _editCell;
     private double? _editOriginalTorque;
@@ -68,7 +68,7 @@ public partial class CurveDataPanel : UserControl
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
         Unloaded += OnUnloaded;
-        
+
         // Use tunnel routing to capture pointer and key events before the DataGrid handles them
         // This is necessary because DataGrid intercepts these events for its own selection handling
         Loaded += OnLoaded;
@@ -78,7 +78,7 @@ public partial class CurveDataPanel : UserControl
     {
         // Prevent duplicate event handler registrations
         if (_eventHandlersRegistered || DataTable is null) return;
-        
+
         DataTable.BeginningEdit += DataTable_BeginningEdit;
         DataTable.AddHandler(PointerPressedEvent, DataTable_PointerPressed, Avalonia.Interactivity.RoutingStrategies.Tunnel);
         DataTable.AddHandler(PointerMovedEvent, DataTable_PointerMoved, Avalonia.Interactivity.RoutingStrategies.Tunnel);
@@ -98,7 +98,7 @@ public partial class CurveDataPanel : UserControl
             _subscribedViewModel.AvailableSeries.CollectionChanged -= OnAvailableSeriesCollectionChanged;
             _subscribedViewModel = null;
         }
-        
+
         // Remove event handlers when unloaded
         if (_eventHandlersRegistered && DataTable is not null)
         {
@@ -179,7 +179,7 @@ public partial class CurveDataPanel : UserControl
         if (DataContext is not MainWindowViewModel vm) return;
 
         var bordersToRemove = new List<CellPosition>();
-        
+
         // First pass: Reset ALL borders to unselected state and clean up stale entries
         foreach (var kvp in _cellBorders)
         {
@@ -190,19 +190,19 @@ public partial class CurveDataPanel : UserControl
                 bordersToRemove.Add(kvp.Key);
                 continue;
             }
-            
+
             // Reset ALL borders to unselected state first
             // This ensures that when selection changes (e.g., after edit mode or arrow keys),
             // previously selected borders are properly cleared
             UpdateCellBorderVisual(kvp.Value, false);
         }
-        
+
         // Clean up stale entries
         foreach (var pos in bordersToRemove)
         {
             _cellBorders.Remove(pos);
         }
-        
+
         // Second pass: Apply selected state only to currently selected cells
         foreach (var cellPos in vm.CurveDataTableViewModel.SelectedCells)
         {
@@ -234,14 +234,14 @@ public partial class CurveDataPanel : UserControl
         // Skip if we're already in the middle of rebuilding columns
         // This prevents race conditions when RefreshAvailableSeries() clears and repopulates the collection
         if (_isRebuildingColumns) return;
-        
+
         // Only rebuild on Add action, not on Reset (Clear) which would cause empty columns
         // The columns will be properly rebuilt when all items are added
         if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset)
         {
             return;
         }
-        
+
         // Rebuild columns when series are added or removed
         RebuildDataGridColumns();
     }
@@ -250,7 +250,7 @@ public partial class CurveDataPanel : UserControl
     {
         // Skip if we're already in the middle of rebuilding columns
         if (_isRebuildingColumns) return;
-        
+
         if (e.PropertyName == nameof(CurveDataTableViewModel.SeriesColumns) ||
             e.PropertyName == nameof(CurveDataTableViewModel.CurrentVoltage))
         {
@@ -266,7 +266,7 @@ public partial class CurveDataPanel : UserControl
 
         _isRebuildingColumns = true;
         _cellBorders.Clear();
-        
+
         try
         {
             // Critical fix: Temporarily disconnect ItemsSource to prevent layout issues
@@ -274,7 +274,7 @@ public partial class CurveDataPanel : UserControl
             // existing rows that expect a different column count
             var savedItemsSource = DataTable.ItemsSource;
             DataTable.ItemsSource = null;
-            
+
             // Remove all columns except the first two (% and RPM)
             while (DataTable.Columns.Count > 2)
             {
@@ -289,7 +289,7 @@ public partial class CurveDataPanel : UserControl
                 var seriesName = series.Name;
                 var isLocked = series.Locked;
                 var currentColumnIndex = columnIndex;
-                
+
                 var column = new DataGridTemplateColumn
                 {
                     Header = seriesName,
@@ -301,7 +301,7 @@ public partial class CurveDataPanel : UserControl
                 var cellTemplate = new FuncDataTemplate<CurveDataRow>((row, _) =>
                 {
                     if (row is null) return new TextBlock { Text = "0.00" };
-                    
+
                     var border = new Border
                     {
                         BorderThickness = new Thickness(1),
@@ -316,20 +316,20 @@ public partial class CurveDataPanel : UserControl
                         Margin = new Thickness(2),
                         Text = row.GetTorque(seriesName).ToString("N2")
                     };
-                    
+
                     border.Child = textBlock;
-                    
+
                     // Register the border for selection updates
                     var cellPos = new CellPosition(row.RowIndex, currentColumnIndex);
                     _cellBorders[cellPos] = border;
-                    
+
                     // Update visual based on current selection state
                     if (DataContext is MainWindowViewModel viewModel)
                     {
                         var isSelected = viewModel.CurveDataTableViewModel.IsCellSelected(row.RowIndex, currentColumnIndex);
                         UpdateCellBorderVisual(border, isSelected);
                     }
-                    
+
                     return border;
                 });
                 column.CellTemplate = cellTemplate;
@@ -351,7 +351,7 @@ public partial class CurveDataPanel : UserControl
                             // undo/redo commands backed by the shared UndoStack.
                             IsUndoEnabled = false
                         };
-                        
+
                         // Select all text when the TextBox is attached to visual tree (edit mode starts)
                         textBox.AttachedToVisualTree += (sender, e) =>
                         {
@@ -361,7 +361,7 @@ public partial class CurveDataPanel : UserControl
                                 tb.Focus();
                             }
                         };
-                        
+
                         // Commit edits via the view-model helper so that changes
                         // participate in the shared undo/redo history when an
                         // UndoStack is available.
@@ -391,7 +391,7 @@ public partial class CurveDataPanel : UserControl
                                 viewModel.ChartViewModel.RefreshChart();
                             }
                         };
-                        
+
                         return textBox;
                     });
                     column.CellEditingTemplate = editingTemplate;
@@ -400,7 +400,7 @@ public partial class CurveDataPanel : UserControl
                 DataTable.Columns.Add(column);
                 columnIndex++;
             }
-            
+
             // Restore ItemsSource after columns are rebuilt
             DataTable.ItemsSource = savedItemsSource;
         }
@@ -424,7 +424,7 @@ public partial class CurveDataPanel : UserControl
         // Try to find elements at the point using visual tree traversal
         // First, try InputHitTest which is the standard approach
         var hitElement = DataTable.InputHitTest(point);
-        
+
         // Walk up the visual tree to find the DataGridCell and DataGridRow
         // We capture the first (innermost) cell found as we traverse upward
         var element = hitElement as Visual;
@@ -489,7 +489,7 @@ public partial class CurveDataPanel : UserControl
                 columnIndex = cells.IndexOf(cell);
             }
         }
-        
+
         // Fallback: calculate column from X position if cell wasn't found or IndexOf failed
         if (columnIndex < 0)
         {
@@ -499,7 +499,7 @@ public partial class CurveDataPanel : UserControl
             {
                 var colWidth = DataTable.Columns[i].ActualWidth;
                 if (colWidth <= 0) colWidth = 80; // Default width
-                
+
                 if (x >= accumulatedWidth && x < accumulatedWidth + colWidth)
                 {
                     columnIndex = i;
@@ -510,7 +510,7 @@ public partial class CurveDataPanel : UserControl
         }
 
         if (rowIndex < 0 || columnIndex < 0) return null;
-        
+
         return new CellPosition(rowIndex, columnIndex);
     }
 
@@ -521,22 +521,22 @@ public partial class CurveDataPanel : UserControl
     {
         if (DataContext is not MainWindowViewModel vm) return;
         if (DataTable is null) return;
-        
+
         // If we're in Override Mode, commit it when clicking
         if (_isInOverrideMode)
         {
             CommitOverrideMode();
         }
-        
+
         var point = e.GetPosition(DataTable);
         var cellPos = GetCellPositionFromPoint(point);
-        
+
         if (cellPos is null) return;
 
         var pos = cellPos.Value;
         var properties = e.GetCurrentPoint(DataTable).Properties;
 
-            if (properties.IsLeftButtonPressed)
+        if (properties.IsLeftButtonPressed)
         {
             // If a TextBox editor currently has focus inside the DataGrid, commit
             // its edit before we change the selection via mouse. This keeps the
@@ -546,14 +546,14 @@ public partial class CurveDataPanel : UserControl
                 DataTable.CommitEdit();
             }
 
-                // Check for double-click to enter edit mode
-                // Let the event bubble through to DataGrid for native edit mode handling
+            // Check for double-click to enter edit mode
+            // Let the event bubble through to DataGrid for native edit mode handling
             if (e.ClickCount >= 2)
             {
                 // Cancel any ongoing drag operation
                 _isDragging = false;
                 _dragStartCell = null;
-                
+
                 // Select the cell in our tracking
                 vm.CurveDataTableViewModel.SelectCell(pos.RowIndex, pos.ColumnIndex);
                 // Snapshot the original value for this cell for potential Esc revert
@@ -561,15 +561,15 @@ public partial class CurveDataPanel : UserControl
                 _editCell = pos;
                 // Ensure visuals are in sync before DataGrid enters edit mode
                 UpdateCellSelectionVisuals();
-                
+
                 // Select the row and column in the DataGrid to enable editing the correct cell
                 SelectDataGridCell(pos.RowIndex, pos.ColumnIndex);
-                
+
                 // DON'T set e.Handled = true - let the DataGrid handle the double-click
                 // for its native edit mode functionality
                 return;
             }
-            
+
             if (e.KeyModifiers.HasFlag(KeyModifiers.Control))
             {
                 // Ctrl+click: Toggle selection without clearing existing selection
@@ -587,14 +587,14 @@ public partial class CurveDataPanel : UserControl
                 UpdateCellSelectionVisuals();
                 _isDragging = true;
                 _dragStartCell = pos;
-                
+
                 // Capture pointer for reliable drag tracking
                 e.Pointer.Capture(DataTable);
             }
-            
+
             // Ensure the DataGrid has focus for keyboard events
             DataTable.Focus();
-            
+
             e.Handled = true;
         }
     }
@@ -609,7 +609,7 @@ public partial class CurveDataPanel : UserControl
 
         var point = e.GetPosition(DataTable);
         var cellPos = GetCellPositionFromPoint(point);
-        
+
         if (cellPos is null) return;
 
         // Update selection to cover the range from drag start to current position
@@ -626,7 +626,7 @@ public partial class CurveDataPanel : UserControl
             // Release pointer capture
             e.Pointer.Capture(null);
         }
-        
+
         _isDragging = false;
         _dragStartCell = null;
     }
@@ -642,7 +642,7 @@ public partial class CurveDataPanel : UserControl
             viewModel.MarkDirty();
             viewModel.ChartViewModel.RefreshChart();
         }
-        
+
         // Update cell selection visuals after edit ends
         // This ensures the white border is properly cleared/updated
         UpdateCellSelectionVisuals();
@@ -819,7 +819,7 @@ public partial class CurveDataPanel : UserControl
         // If we're in edit mode (event source is a TextBox), let most keys pass through
         // to allow normal text editing behavior
         var isInEditMode = e.Source is TextBox;
-        
+
         if (isInEditMode)
         {
             // In edit mode, explicitly handle navigation keys so our
@@ -861,17 +861,17 @@ public partial class CurveDataPanel : UserControl
                     return;
 
                 case Key.Tab:
-                {
-                    // Commit edit and move horizontally, honoring Shift for reverse tab
-                    dataGrid.CommitEdit();
-                    var deltaCol = e.KeyModifiers.HasFlag(KeyModifiers.Shift) ? -1 : 1;
-                    vm.CurveDataTableViewModel.MoveSelection(0, deltaCol);
-                    ScrollToSelection(dataGrid);
-                    UpdateCellSelectionVisuals();
-                    e.Handled = true;
-                    _editCell = null;
-                    return;
-                }
+                    {
+                        // Commit edit and move horizontally, honoring Shift for reverse tab
+                        dataGrid.CommitEdit();
+                        var deltaCol = e.KeyModifiers.HasFlag(KeyModifiers.Shift) ? -1 : 1;
+                        vm.CurveDataTableViewModel.MoveSelection(0, deltaCol);
+                        ScrollToSelection(dataGrid);
+                        UpdateCellSelectionVisuals();
+                        e.Handled = true;
+                        _editCell = null;
+                        return;
+                    }
 
                 case Key.Left:
                     dataGrid.CommitEdit();
@@ -994,7 +994,7 @@ public partial class CurveDataPanel : UserControl
                 e.Handled = true;
                 return;
             }
-            
+
             // Handle character input while in Override Mode
             var charInOverride = GetCharacterFromKey(e.Key, e.KeyModifiers);
             if (charInOverride is not null)
@@ -1165,7 +1165,7 @@ public partial class CurveDataPanel : UserControl
                     break;
             }
         }
-        
+
         // Handle character input for Override Mode (start new override)
         // If the key is a digit, minus, or decimal point, enter Override Mode
         var character = GetCharacterFromKey(e.Key, e.KeyModifiers);
@@ -1174,9 +1174,9 @@ public partial class CurveDataPanel : UserControl
             if (!_isInOverrideMode)
             {
                 _isInOverrideMode = true;
-                _overrideText = "";
+                _overrideText = string.Empty;
             }
-            
+
             // Enforce a single leading minus sign and a single decimal
             // separator even when starting a new override via key down.
             if (character == '-' && _overrideText.Length > 0)
@@ -1192,15 +1192,15 @@ public partial class CurveDataPanel : UserControl
             }
 
             _overrideText += character;
-            
+
             // Update cell displays immediately as user types
             UpdateOverrideModeDisplay();
             ForceDataGridRefresh(dataGrid);
-            
+
             e.Handled = true;
         }
     }
-    
+
     /// <summary>
     /// Converts a key to a character for Override Mode input.
     /// Returns null if the key is not a valid input character (digit, minus, decimal point).
@@ -1208,11 +1208,11 @@ public partial class CurveDataPanel : UserControl
     private static char? GetCharacterFromKey(Key key, KeyModifiers modifiers)
     {
         // Only handle unmodified keys (Ctrl, Alt, and Shift all produce different characters)
-        if (modifiers.HasFlag(KeyModifiers.Control) || 
+        if (modifiers.HasFlag(KeyModifiers.Control) ||
             modifiers.HasFlag(KeyModifiers.Alt) ||
             modifiers.HasFlag(KeyModifiers.Shift))
             return null;
-            
+
         return key switch
         {
             Key.D0 => '0',
@@ -1246,7 +1246,7 @@ public partial class CurveDataPanel : UserControl
     private void ScrollToSelection(DataGrid dataGrid)
     {
         if (DataContext is not MainWindowViewModel vm) return;
-        
+
         var selectedCells = vm.CurveDataTableViewModel.SelectedCells;
         if (selectedCells.Count == 0) return;
 
@@ -1264,18 +1264,18 @@ public partial class CurveDataPanel : UserControl
     private void SelectDataGridCell(int rowIndex, int columnIndex)
     {
         if (DataContext is not MainWindowViewModel vm || DataTable is null) return;
-        
+
         if (rowIndex >= 0 && rowIndex < vm.CurveDataTableViewModel.Rows.Count)
         {
             var row = vm.CurveDataTableViewModel.Rows[rowIndex];
             DataTable.SelectedItem = row;
-            
+
             // Set the current column if within bounds
             if (columnIndex >= 0 && columnIndex < DataTable.Columns.Count)
             {
                 DataTable.CurrentColumn = DataTable.Columns[columnIndex];
             }
-            
+
             DataTable.ScrollIntoView(row, DataTable.CurrentColumn);
         }
     }
@@ -1286,7 +1286,7 @@ public partial class CurveDataPanel : UserControl
     private void SelectDataGridRow(int rowIndex)
     {
         if (DataContext is not MainWindowViewModel vm || DataTable is null) return;
-        
+
         if (rowIndex >= 0 && rowIndex < vm.CurveDataTableViewModel.Rows.Count)
         {
             var row = vm.CurveDataTableViewModel.Rows[rowIndex];
@@ -1481,19 +1481,19 @@ public partial class CurveDataPanel : UserControl
     private void DataTable_TextInput(object? sender, TextInputEventArgs e)
     {
         if (DataContext is not MainWindowViewModel vm) return;
-        
+
         // Don't handle if we're in edit mode (TextBox is focused)
         var isInEditMode = e.Source is TextBox;
         if (isInEditMode) return;
-        
+
         // If we're already in Override Mode, rely on key handling for
         // additional characters so we don't double-append input.
         if (_isInOverrideMode) return;
-        
+
         // Don't handle if no cells selected
         var selectedCells = vm.CurveDataTableViewModel.SelectedCells;
         if (selectedCells.Count == 0) return;
-        
+
         var text = e.Text;
         if (string.IsNullOrEmpty(text)) return;
 
@@ -1516,7 +1516,7 @@ public partial class CurveDataPanel : UserControl
             // not written into the cells at all.
             return;
         }
-        
+
         // Enter Override Mode and accumulate typed text
         _isInOverrideMode = true;
         _overrideText = text;
@@ -1535,7 +1535,7 @@ public partial class CurveDataPanel : UserControl
         {
             ForceDataGridRefresh(DataTable);
         }
-        
+
         // Prevent the event from reaching the DataGrid
         e.Handled = true;
     }
@@ -1548,7 +1548,7 @@ public partial class CurveDataPanel : UserControl
     {
         if (!_isInOverrideMode) return;
         if (DataContext is not MainWindowViewModel vm) return;
-        
+
         // Try to parse the accumulated text as a number
         if (double.TryParse(_overrideText, out var value))
         {
@@ -1573,10 +1573,10 @@ public partial class CurveDataPanel : UserControl
             // If parsing failed, restore original values
             RestoreOriginalValues();
         }
-        
+
         // Exit Override Mode and clean up
         _isInOverrideMode = false;
-        _overrideText = "";
+        _overrideText = string.Empty;
         _originalValues.Clear();
     }
 
@@ -1587,7 +1587,7 @@ public partial class CurveDataPanel : UserControl
     {
         RestoreOriginalValues();
         _isInOverrideMode = false;
-        _overrideText = "";
+        _overrideText = string.Empty;
         _originalValues.Clear();
     }
 
@@ -1672,12 +1672,12 @@ public partial class CurveDataPanel : UserControl
     private void RestoreOriginalValues()
     {
         if (DataContext is not MainWindowViewModel vm) return;
-        
+
         foreach (var kvp in _originalValues)
         {
             var cellPos = kvp.Key;
             var originalValue = kvp.Value;
-            
+
             if (!vm.CurveDataTableViewModel.TrySetTorqueAtCell(cellPos, originalValue))
             {
                 continue;
@@ -1689,7 +1689,7 @@ public partial class CurveDataPanel : UserControl
                 textBlock.Text = originalValue.ToString("N2");
             }
         }
-        
+
         // Refresh chart to show restored values
         vm.ChartViewModel.RefreshChart();
     }
@@ -1712,7 +1712,7 @@ public partial class CurveDataPanel : UserControl
         vm.MarkDirty();
         vm.ChartViewModel.RefreshChart();
     }
-    
+
     /// <summary>
     /// Forces the DataGrid to refresh its visual display.
     /// This is needed because virtualized cells don't always update when data changes.
@@ -1721,11 +1721,11 @@ public partial class CurveDataPanel : UserControl
     {
         // Force visual refresh by invalidating the visual
         dataGrid.InvalidateVisual();
-        
+
         // Force re-measure and re-arrange which causes cells to re-render
         dataGrid.InvalidateMeasure();
         dataGrid.InvalidateArrange();
-        
+
         // Update layout immediately
         dataGrid.UpdateLayout();
     }

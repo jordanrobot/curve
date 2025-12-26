@@ -1,7 +1,7 @@
+using CurveEditor.Views;
+using JordanRobot.MotorDefinition.Model;
 using System;
 using System.Linq;
-using JordanRobot.MotorDefinitions.Model;
-using CurveEditor.Views;
 
 namespace CurveEditor.Services;
 

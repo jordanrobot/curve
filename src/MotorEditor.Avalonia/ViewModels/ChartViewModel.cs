@@ -1,6 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using JordanRobot.MotorDefinitions.Model;
 using CurveEditor.Services;
+using JordanRobot.MotorDefinition.Model;
 using LiveChartsCore;
 using LiveChartsCore.Defaults;
 using LiveChartsCore.SkiaSharpView;
