@@ -6,12 +6,9 @@ This guide explains the concepts and common workflows for the `JordanRobot.Motor
 
 ### What this library provides
 
-- A runtime object model for motor definition data (in the `JordanRobot.MotorDefinitions.Model` namespace).
+- A runtime object model for motor definition data (`JordanRobot.MotorDefinitions.Model`).
 - Simple load/save entry points via `JordanRobot.MotorDefinitions.MotorFile`.
-- A JSON format designed for motor/drive/voltage torque curves, supporting 0–101 points per curve.
-    - 101 points corresponds to the standard 1% increment curve (0%..100%).
-    - Fewer points are allowed for coarse datasets.
-    - Percent values above 100% may be used to represent overspeed ranges.
+- A JSON format designed for motor/drive/voltage torque curves, supporting a variable number of data points per performance curve.
 
 The generated API reference lives under [docs/api](api/index.md).
 
@@ -27,20 +24,50 @@ Motor definition files follow this structure:
 - **Series** (`CurveSeries`)
 - **Points** (`DataPoint`)
 
-This mirrors how a motor can be paired with different drives and operated at different voltages.
+This mirrors how a motor can be powered by different drives, and drives may be operated at different voltages. Each of these configurations may result in different motor performance torque curves.
 
-#### Axes and data shape
+#### Motor Definition
 
-Each `CurveSeries` contains `DataPoint` entries.
+The base object is `MotorDefinition`. It contains metadata about the motor (name, manufacturer, part number, max speed, rated torques, weight, brake properties) and a collection of `DriveConfiguration` entries. The motor metadata are inherent to the motor itself, and are not changed by the drive or voltage used. These are accessed via properties on the `MotorDefinition` object itself.
 
-- Point count is supported from 0 to 101.
-- In the standard case, a series uses 101 points at 1% increments (0%..100%).
+#### Drive Configuration
 
-- `Percent`: integer >= 0 (may exceed 100% for overspeed ranges)
-- `Rpm`: typically derived from max RPM (e.g., `percent / 100.0 * maxRpm`)
-- `Torque`: torque value at that point (can be negative)
+Each `DriveConfiguration` represents a specific motor drive that can power the motor. It contains metadata about the drive (name, manufacturer, part number) and a collection of `VoltageConfiguration` entries. Drives may have different capabilities and characteristics that affect motor performance, using a 3.0 kW drive vs an 11kW drive may drastically different torque curves for the same motor.
 
-Within a single `VoltageConfiguration`, all series are expected to share the same percent and RPM axes.
+These `DriveConfiguration` entries are accessed via the `MotorDefinition.DriveConfigurations` collection.
+
+#### Voltage Configuration
+
+Each `VoltageConfiguration` represents a specific voltage level at which the motor can be driven by the associated drive. It contains metadata about the voltage (nominal voltage, max speed at that voltage) and a collection of `CurveSeries` entries. Different voltages can significantly affect motor performance, with higher voltages typically allowing for higher speeds and torques.
+
+For example, running a 240V drive with 110V typically results in a lower output speed for the motor.
+
+The `VoltageConfiguration` entries are accessed via the `DriveConfiguration.VoltageConfigurations` collection.
+
+#### Performance Curves
+
+Each `CurveSeries` represents a specific performance curve for the motor at that voltage, such as "Continuous" or "Peak" torque curves. These curves define how the motor performs across its speed range at that voltage. They are specific to each voltage configuration.
+
+The `CurveSeries` entries are accessed via the `VoltageConfiguration.CurveSeries` collection. 
+
+#### Performance Data Points
+
+Each `CurveSeries` contains `DataPoint` entries. These points define the motor's performance characteristics at a specific speed. Each `DataPoint` if defined by three main attributes:
+- `Percent`: The percentage of the motor's maximum speed.
+- `Rpm`: The revolutions per minute corresponding to that percentage.
+- `Torque`: The torque value at that speed.
+
+It is important to note that:
+- The smallest valid `Percent` value is `0`.
+- Percentage values are saved as whole numbers, i.e. decimals cannot be used.
+- A performance curve that fully defines 0% - 100% performance is composed of 101 data points (1% increments).
+- Performance curves may use fewer data points to define a coarser performance curve. (E.g. 0%, 10%, 20%...).
+- There is no maximum valid `Percent` value.
+- Percent values above 100% are allowed in the file format, and represent motor performance at overspeed. Currently the Motor Editor Application does not provide a UI to author overspeed data, though it will show them in the performance graph if present.
+- A performance curve may contain 0 data points. In this case clients may fall back to rated continuous/peak torque values for visualization purposes.
+
+**Critical note**: Within a single `VoltageConfiguration`, all performance curves are expected to share the same percent and RPM axes.
+
 
 ### Common workflows
 
