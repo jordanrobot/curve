@@ -4,9 +4,9 @@
 
 | Namespaces | |
 | :--- | :--- |
-| [JordanRobot\.MotorDefinitions](JordanRobot.MotorDefinitions.md 'JordanRobot\.MotorDefinitions') | |
-| [JordanRobot\.MotorDefinitions\.Model](JordanRobot.MotorDefinitions.Model.md 'JordanRobot\.MotorDefinitions\.Model') | |
-| [JordanRobot\.MotorDefinitions\.Persistence\.Dtos](JordanRobot.MotorDefinitions.Persistence.Dtos.md 'JordanRobot\.MotorDefinitions\.Persistence\.Dtos') | |
-| [JordanRobot\.MotorDefinitions\.Persistence\.Mapping](JordanRobot.MotorDefinitions.Persistence.Mapping.md 'JordanRobot\.MotorDefinitions\.Persistence\.Mapping') | |
-| [JordanRobot\.MotorDefinitions\.Persistence\.Probing](JordanRobot.MotorDefinitions.Persistence.Probing.md 'JordanRobot\.MotorDefinitions\.Persistence\.Probing') | |
-| [JordanRobot\.MotorDefinitions\.Persistence\.Validation](JordanRobot.MotorDefinitions.Persistence.Validation.md 'JordanRobot\.MotorDefinitions\.Persistence\.Validation') | |
+| [JordanRobot\.MotorDefinition](JordanRobot.MotorDefinition.md 'JordanRobot\.MotorDefinition') | |
+| [JordanRobot\.MotorDefinition\.Model](JordanRobot.MotorDefinition.Model.md 'JordanRobot\.MotorDefinition\.Model') | |
+| [JordanRobot\.MotorDefinition\.Persistence\.Dtos](JordanRobot.MotorDefinition.Persistence.Dtos.md 'JordanRobot\.MotorDefinition\.Persistence\.Dtos') | |
+| [JordanRobot\.MotorDefinition\.Persistence\.Mapping](JordanRobot.MotorDefinition.Persistence.Mapping.md 'JordanRobot\.MotorDefinition\.Persistence\.Mapping') | |
+| [JordanRobot\.MotorDefinition\.Persistence\.Probing](JordanRobot.MotorDefinition.Persistence.Probing.md 'JordanRobot\.MotorDefinition\.Persistence\.Probing') | |
+| [JordanRobot\.MotorDefinition\.Persistence\.Validation](JordanRobot.MotorDefinition.Persistence.Validation.md 'JordanRobot\.MotorDefinition\.Persistence\.Validation') | |

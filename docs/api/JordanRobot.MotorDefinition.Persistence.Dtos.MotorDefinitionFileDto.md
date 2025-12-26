@@ -1,5 +1,5 @@
 #### [MotorDefinition](index.md 'index')
-### [JordanRobot\.MotorDefinitions\.Persistence\.Dtos](JordanRobot.MotorDefinitions.Persistence.Dtos.md 'JordanRobot\.MotorDefinitions\.Persistence\.Dtos')
+### [JordanRobot\.MotorDefinition\.Persistence\.Dtos](JordanRobot.MotorDefinition.Persistence.Dtos.md 'JordanRobot\.MotorDefinition\.Persistence\.Dtos')
 
 ## MotorDefinitionFileDto Class
 

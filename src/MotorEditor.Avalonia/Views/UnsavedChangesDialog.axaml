@@ -22,9 +22,12 @@
                     HorizontalAlignment="Right"
                     Spacing="8"
                     Margin="0,16,0,0">
-            <Button x:Name="CancelButton" Content="Cancel" Width="80" Click="OnCancelClick"/>
-            <Button x:Name="IgnoreButton" Content="Ignore" Width="80" Click="OnIgnoreClick"/>
-            <Button x:Name="SaveButton" Content="Save" Width="80" Classes="accent" Click="OnSaveClick"/>
+            <Button x:Name="CancelButton" Content="Cancel" Width="80" Click="OnCancelClick"
+                HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
+            <Button x:Name="IgnoreButton" Content="Don't Save" Width="80" Click="OnIgnoreClick"
+                HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
+            <Button x:Name="SaveButton" Content="Save" Width="80" Classes="accent" Click="OnSaveClick"
+                HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
         </StackPanel>
     </Grid>
 </Window>

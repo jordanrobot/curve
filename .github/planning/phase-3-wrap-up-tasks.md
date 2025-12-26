@@ -52,10 +52,10 @@
 
 ### Acceptance Criteria (Phase 3 Wrap-up)
 
-- [ ] AC 3W.1 — Unsaved changes prompt UI
-  - [ ] The prompt offers exactly: Save / Don’t Save / Cancel.
-  - [ ] Button text is centered within each button.
-  - [ ] “Don’t Save” maps to `UnsavedChangesChoice.Ignore`.
+- [x] AC 3W.1 — Unsaved changes prompt UI
+  - [x] The prompt offers exactly: Save / Don’t Save / Cancel.
+  - [x] Button text is centered within each button.
+  - [x] “Don’t Save” maps to `UnsavedChangesChoice.Ignore`.
 - [ ] AC 3W.2 — Open file prompts
   - [ ] When dirty, opening another file via directory browser prompts; Cancel aborts.
   - [ ] When dirty, opening another file via the file picker prompts; Cancel aborts.
@@ -125,7 +125,7 @@ Required hygiene:
 
 ---
 
-## [ ] PR 1: Standardize Unsaved Changes Dialog UI
+## [x] PR 1: Standardize Unsaved Changes Dialog UI
 
 ### Goal
 
@@ -133,13 +133,13 @@ Match the required button labels and alignment for the existing prompt dialog.
 
 ### Tasks
 
-- [ ] Update the Unsaved Changes dialog buttons:
-  - [ ] Change button label from "Ignore" to "Don’t Save".
-  - [ ] Ensure button text is centered within each button.
-- [ ] Confirm the dialog still returns:
-  - [ ] Save → `UnsavedChangesChoice.Save`
-  - [ ] Don’t Save → `UnsavedChangesChoice.Ignore`
-  - [ ] Cancel → `UnsavedChangesChoice.Cancel`
+- [x] Update the Unsaved Changes dialog buttons:
+  - [x] Change button label from "Ignore" to "Don’t Save".
+  - [x] Ensure button text is centered within each button.
+- [x] Confirm the dialog still returns:
+  - [x] Save → `UnsavedChangesChoice.Save`
+  - [x] Don’t Save → `UnsavedChangesChoice.Ignore`
+  - [x] Cancel → `UnsavedChangesChoice.Cancel`
 
 Required hygiene:
 
