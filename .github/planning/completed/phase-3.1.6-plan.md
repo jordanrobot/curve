@@ -75,7 +75,7 @@ Completed
 
 - Library-owned schema model types:
   - Rehome the current “file schema aligned” model classes from `src/CurveEditor/Models/` into the library project.
-  - These include (at minimum): `MotorDefinition`, `MotorMetadata`, `DriveConfiguration`, `VoltageConfiguration`, `CurveSeries`, `DataPoint`, `UnitSettings`.
+  - These include (at minimum): `ServoMotor`, `MotorMetadata`, `Drive`, `Voltage`, `Curve`, `DataPoint`, `UnitSettings`.
 - Rationale:
   - The existing mapper (`MotorFileMapper`) currently depends on `CurveEditor.Models` types.
   - If those model types remain in the Avalonia app assembly, the new library would be forced to reference the app, violating the “no UI dependency” constraint.
@@ -84,8 +84,8 @@ Completed
 
 - Add a single entrypoint for file IO in the new library project, for example:
   - `public static class MotorFile` (or `MotorFileSerializer`)
-    - `MotorDefinition Load(string path)`
-    - `void Save(MotorDefinition motor, string path)`
+    - `ServoMotor Load(string path)`
+    - `void Save(ServoMotor motor, string path)`
     - Optional: overloads for `Stream`.
 - Internals:
   - Keep DTOs + mapper + validators internal to the library by default.
@@ -141,7 +141,7 @@ Completed
 
 - [x] Move `src/CurveEditor/MotorDefinitions/**` into the library.
 - [x] Remove app-specific dependencies inside persistence code:
-  - Replace any references like `CurveEditor.Models.MotorDefinition.CurrentSchemaVersion` with a library-owned constant source (or keep `MotorDefinition.CurrentSchemaVersion` if `MotorDefinition` moved to the library).
+  - Replace any references to app-owned schema version constants with a library-owned constant source (e.g., `ServoMotor.CurrentSchemaVersion`).
   - Ensure probe/validator/mapper do not use Serilog or app services.
 - [x] Decide visibility:
   - Preferred: keep DTOs/mapper internal and test through `MotorFile` APIs.
@@ -269,15 +269,15 @@ No existing external consumers means we can accept source-breaking namespace cha
 
 Library (MotorDefinition):
 
-- Runtime model (public): `JordanRobot.MotorDefinitions.Model`
-  - `MotorDefinition`, `DriveConfiguration`, `VoltageConfiguration`, `CurveSeries`, `DataPoint`, `UnitSettings`, `MotorMetadata`
-- IO entry point (public): `JordanRobot.MotorDefinitions.MotorFile`
+- Runtime model (public): `JordanRobot.MotorDefinition.Model`
+  - `ServoMotor`, `Drive`, `Voltage`, `Curve`, `DataPoint`, `UnitSettings`, `MotorMetadata`
+- IO entry point (public): `JordanRobot.MotorDefinition.MotorFile`
   - Keep the entrypoint shallow (do not bury under Persistence).
 - Persistence plumbing (internal):
-  - DTOs: `JordanRobot.MotorDefinitions.Persistence.Dtos`
-  - Mapping: `JordanRobot.MotorDefinitions.Persistence.Mapping`
-  - Validation: `JordanRobot.MotorDefinitions.Persistence.Validation`
-  - Probing: `JordanRobot.MotorDefinitions.Persistence.Probing`
+  - DTOs: `JordanRobot.MotorDefinition.Persistence.Dtos`
+  - Mapping: `JordanRobot.MotorDefinition.Persistence.Mapping`
+  - Validation: `JordanRobot.MotorDefinition.Persistence.Validation`
+  - Probing: `JordanRobot.MotorDefinition.Persistence.Probing`
 
 App (MotorEditor.Avalonia):
 

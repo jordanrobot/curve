@@ -293,13 +293,13 @@ Note: In this example, you'll notice that `motor profile 1.json` and `motor prof
   - [x] Deserialize the new motor properties.
   - [x] Serialize the series table/map representation.
   - [x] Serialize the new motor properties.
-  - [x] Normalize internally to a single representation suitable for the rest of the application (recommended: keep existing `CurveSeries` + `DataPoint` as the runtime model and convert on load/save).
+  - [x] Normalize internally to a single representation suitable for the rest of the application (recommended: keep `Curve` + `DataPoint` as the runtime curve model and convert on load/save).
 - [x] Implement conversion logic:
-  - [x] Series table/map  runtime `CurveSeries`/`DataPoint` (lossless conversion).
+  - [x] Series table/map  runtime `Curve`/`DataPoint` (lossless conversion).
 
 ### Implementation Guidance (Phase 3.1.5)
 
-- Keep persistence-facing DTOs/mapping/validation code isolated so it can be moved into the Phase 3.1.6 client library with minimal refactoring (recommended: `jordanrobot.MotorDefinitions.*` namespaces).
+- Keep persistence-facing DTOs/mapping/validation code isolated so it can be moved into the Phase 3.1.6 client library with minimal refactoring (recommended: `JordanRobot.MotorDefinition.Persistence.*` namespaces).
 
 ### Acceptance Criteria (Phase 3.1.5)
 

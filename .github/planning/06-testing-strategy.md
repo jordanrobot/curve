@@ -29,11 +29,11 @@ Unit tests verify individual components in isolation.
 | | Invalid percent values (negative) throws | High |
 | | DisplayRpm rounds correctly | Medium |
 | | Equality comparison | Low |
-| **CurveSeries** | InitializeData creates 101 points (0%-100%) | High |
+| **Curve** | InitializeData creates 101 points (0%-100%) | High |
 | | Default points are at exact 1% increments | High |
 | | RPM values calculated correctly from percent × maxRpm | High |
 | | Name validation (non-empty) | Medium |
-| **MotorDefinition** | All properties serialize to JSON correctly | High |
+| **ServoMotor** | All properties serialize to JSON correctly | High |
 | | JSON deserialization preserves all values | High |
 | | Default values are sensible | Medium |
 | | Units object defaults correctly | Medium |
@@ -254,7 +254,7 @@ public class FileRoundTripTests
     public async Task SaveAndLoad_PreservesAllMotorProperties()
     {
         var fileService = new FileService();
-        var original = CreateTestMotorDefinition();
+        var original = CreateTestServoMotor();
         var filePath = Path.Combine(_tempDir, "test-motor.json");
 
         // Save
@@ -283,41 +283,39 @@ public class FileRoundTripTests
         await fileService.SaveAsync(original, filePath);
         var loaded = await fileService.LoadAsync(filePath);
 
-        Assert.Equal(original.Series.Count, loaded.Series.Count);
-        
-        for (int s = 0; s < original.Series.Count; s++)
+        Assert.Equal(original.Drives.Count, loaded.Drives.Count);
+        Assert.Equal(original.Drives[0].Voltages.Count, loaded.Drives[0].Voltages.Count);
+        Assert.Equal(original.Drives[0].Voltages[0].Curves.Count, loaded.Drives[0].Voltages[0].Curves.Count);
+
+        var originalCurve = original.Drives[0].Voltages[0].Curves[0];
+        var loadedCurve = loaded.Drives[0].Voltages[0].Curves[0];
+        Assert.Equal(originalCurve.Name, loadedCurve.Name);
+        Assert.Equal(101, loadedCurve.Data.Count);
+
+        for (int p = 0; p < 101; p++)
         {
-            var origSeries = original.Series[s];
-            var loadSeries = loaded.Series[s];
-            
-            Assert.Equal(origSeries.Name, loadSeries.Name);
-            Assert.Equal(101, loadSeries.Data.Count);
-            
-            for (int p = 0; p < 101; p++)
-            {
-                Assert.Equal(origSeries.Data[p].Percent, loadSeries.Data[p].Percent);
-                Assert.Equal(origSeries.Data[p].Rpm, loadSeries.Data[p].Rpm);
-                Assert.Equal(origSeries.Data[p].Torque, loadSeries.Data[p].Torque);
-            }
+            Assert.Equal(originalCurve.Data[p].Percent, loadedCurve.Data[p].Percent);
+            Assert.Equal(originalCurve.Data[p].Rpm, loadedCurve.Data[p].Rpm);
+            Assert.Equal(originalCurve.Data[p].Torque, loadedCurve.Data[p].Torque);
         }
     }
 
-    private MotorDefinition CreateTestMotorDefinition()
+    private ServoMotor CreateTestServoMotor()
     {
-        var motor = new MotorDefinition
+        var motor = new ServoMotor("Test Motor")
         {
-            MotorName = "Test Motor",
             Manufacturer = "Test Mfg",
             PartNumber = "TM-1234",
-            MaxRpm = 5000,
+            MaxSpeed = 5000,
             RatedPeakTorque = 55.0,
             HasBrake = true
         };
-        
-        var series = new CurveSeries { Name = "Peak" };
-        series.InitializeData(5000, 55.0);
-        motor.Series.Add(series);
-        
+
+        var drive = motor.AddDrive("Test Drive");
+        var voltage = drive.AddVoltage(400);
+        voltage.MaxSpeed = motor.MaxSpeed;
+        voltage.AddSeries("Peak", initializeTorque: motor.RatedPeakTorque);
+
         return motor;
     }
 
@@ -423,29 +421,29 @@ public void PowerCalculation_AvoidsPrecisionLoss()
 
 ```csharp
 [Fact]
-public void CurveSeries_ExactlyPercentValues()
+public void Curve_ExactlyPercentValues()
 {
-    var series = new CurveSeries();
-    series.InitializeData(5000, 50);
+    var curve = new Curve("Peak");
+    curve.InitializeData(5000, 50);
     
     // Verify first and last
-    Assert.Equal(0, series.Data.First().Percent);
-    Assert.Equal(100, series.Data.Last().Percent);
+    Assert.Equal(0, curve.Data.First().Percent);
+    Assert.Equal(100, curve.Data.Last().Percent);
     
     // Verify no gaps
-    for (int i = 0; i < series.Data.Count; i++)
+    for (int i = 0; i < curve.Data.Count; i++)
     {
-        Assert.Equal(i, series.Data[i].Percent);
+        Assert.Equal(i, curve.Data[i].Percent);
     }
 }
 
 [Fact]
-public void CurveSeries_RpmAt100Percent_EqualsMaxRpm()
+public void Curve_RpmAt100Percent_EqualsMaxRpm()
 {
-    var series = new CurveSeries();
-    series.InitializeData(maxRpm: 5000, defaultTorque: 50);
+    var curve = new Curve("Peak");
+    curve.InitializeData(maxRpm: 5000, defaultTorque: 50);
     
-    Assert.Equal(5000, series.Data[100].Rpm);
+    Assert.Equal(5000, curve.Data[100].Rpm);
 }
 ```
 
@@ -491,7 +489,7 @@ public async Task Save_WhileLoading_DoesNotCorruptFile()
 {
     var fileService = new FileService();
     var filePath = Path.Combine(_tempDir, "concurrent-test.json");
-    var motor = CreateTestMotorDefinition();
+    var motor = CreateTestServoMotor();
     
     // Initial save
     await fileService.SaveAsync(motor, filePath);
@@ -541,7 +539,7 @@ public void EditAnyProperty_SetsDirty()
     Assert.False(vm.IsDirty);
     
     // Each edit should set dirty
-    vm.MotorDefinition.MotorName = "Changed";
+    vm.CurrentMotor!.MotorName = "Changed";
     Assert.True(vm.IsDirty);
 }
 
@@ -620,7 +618,7 @@ public class FileServiceBenchmarks
     }
 
     [Benchmark]
-    public async Task<MotorDefinition> LoadLargeFile()
+    public async Task<ServoMotor> LoadLargeFile()
     {
         return await _service.LoadAsync(_testFile);
     }
@@ -648,8 +646,8 @@ tests/
 ├── CurveEditor.Tests.Unit/
 │   ├── Models/
 │   │   ├── DataPointTests.cs
-│   │   ├── CurveSeriesTests.cs
-│   │   └── MotorDefinitionTests.cs
+│   │   ├── CurveTests.cs
+│   │   └── ServoMotorTests.cs
 │   ├── Services/
 │   │   ├── FileServiceTests.cs
 │   │   ├── CurveGeneratorServiceTests.cs

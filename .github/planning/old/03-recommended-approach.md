@@ -69,7 +69,7 @@ If cross-platform is not important and you want the most stable, proven solution
 ┌─────────────────────────────────────────────────────────────────┐
 │                         Model Layer                              │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
-│  │  MotorDefinition│  │  CurveSeries    │  │  DataPoint      │  │
+│  │  ServoMotor     │  │  Curve          │  │  DataPoint      │  │
 │  │  - MotorName    │  │  - Name         │  │  - Percent      │  │
 │  │  - Manufacturer │  │  - Data[]       │  │  - RPM          │  │
 │  │  - PartNumber   │  │  - Color        │  │  - Torque       │  │
@@ -117,8 +117,8 @@ CurveEditor/
 │       ├── App.axaml.cs
 │       ├── Program.cs
 │       ├── Models/
-│       │   ├── MotorDefinition.cs
-│       │   ├── CurveSeries.cs
+│       │   ├── ServoMotor.cs
+│       │   ├── Curve.cs
 │       │   ├── DataPoint.cs
 │       │   ├── UnitSettings.cs
 │       │   └── MotorMetadata.cs
@@ -377,9 +377,9 @@ Load and display multiple curve series with individual visibility control:
 public partial class ChartViewModel : ViewModelBase
 {
     [ObservableProperty]
-    private ObservableCollection<SeriesViewModel> _curveSeries = new();
+    private ObservableCollection<SeriesViewModel> _curves = new();
     
-    public ISeries[] ChartSeries => CurveSeries
+    public ISeries[] ChartSeries => Curves
         .Where(s => s.IsVisible)
         .Select(s => new LineSeries<DataPoint>
         {
@@ -396,15 +396,15 @@ public partial class ChartViewModel : ViewModelBase
     
     public void CreateDefaultSeries()
     {
-        CurveSeries.Add(new SeriesViewModel("Peak", SKColors.Blue));
-        CurveSeries.Add(new SeriesViewModel("Continuous", SKColors.Green));
+        Curves.Add(new SeriesViewModel("Peak", SKColors.Blue));
+        Curves.Add(new SeriesViewModel("Continuous", SKColors.Green));
     }
     
     public void AddSeries(string name)
     {
         var color = _preferencesService.GetColorForSeries(name) 
             ?? GenerateNextColor();
-        CurveSeries.Add(new SeriesViewModel(name, color));
+        Curves.Add(new SeriesViewModel(name, color));
     }
 }
 
@@ -434,7 +434,7 @@ public partial class SeriesViewModel : ViewModelBase
 
 XAML for series list panel:
 ```xml
-<ItemsControl ItemsSource="{Binding CurveSeries}">
+<ItemsControl ItemsSource="{Binding Curves}">
     <ItemsControl.ItemTemplate>
         <DataTemplate>
             <StackPanel Orientation="Horizontal" Margin="5">
@@ -477,7 +477,7 @@ public class DataPoint
     public int DisplayRpm => (int)Math.Round(Rpm);
 }
 
-public class CurveSeries
+public class Curve
 {
     public string Name { get; set; } = "Peak";
     public List<DataPoint> Data { get; set; } = new();
@@ -872,7 +872,7 @@ Generate initial curves from motor parameters:
 ```csharp
 public interface ICurveGeneratorService
 {
-    CurveSeries GenerateCurve(string name, double maxRpm, double maxTorque, double maxPower);
+    Curve GenerateCurve(string name, double maxRpm, double maxTorque, double maxPower);
     List<DataPoint> InterpolateCurve(double maxRpm, double maxTorque, double maxPower);
     double CalculatePower(double torqueNm, double rpm);
 }
@@ -880,10 +880,10 @@ public interface ICurveGeneratorService
 public class CurveGeneratorService : ICurveGeneratorService
 {
     /// <summary>Generate a new curve from max parameters</summary>
-    public CurveSeries GenerateCurve(string name, double maxRpm, double maxTorque, double maxPower)
+    public Curve GenerateCurve(string name, double maxRpm, double maxTorque, double maxPower)
     {
         var data = InterpolateCurve(maxRpm, maxTorque, maxPower);
-        return new CurveSeries
+        return new Curve
         {
             Name = name,
             Data = data
@@ -944,7 +944,7 @@ public class CurveGeneratorService : ICurveGeneratorService
 Complete motor definition model with all properties:
 
 ```csharp
-public class MotorDefinition
+public class ServoMotor
 {
     // Motor Identification
     public string MotorName { get; set; } = string.Empty;
@@ -982,7 +982,7 @@ public class MotorDefinition
     public UnitSettings Units { get; set; } = new();
     
     // Curves
-    public List<CurveSeries> Series { get; set; } = new();
+    public List<Curve> Curves { get; set; } = new();
     
     // Metadata
     public MotorMetadata Metadata { get; set; } = new();
@@ -1013,9 +1013,9 @@ public partial class ChartViewModel : ViewModelBase
     private readonly ICurveGeneratorService _curveGenerator;
     
     /// <summary>Generate power series from torque series</summary>
-    public ISeries GeneratePowerSeries(CurveSeries torqueSeries)
+    public ISeries GeneratePowerSeries(Curve torqueCurve)
     {
-        var powerPoints = torqueSeries.Data.Select(point => new ObservablePoint(
+        var powerPoints = torqueCurve.Data.Select(point => new ObservablePoint(
             point.Rpm,
             ConvertPower(_curveGenerator.CalculatePower(point.Torque, point.Rpm))
         )).ToList();
@@ -1023,7 +1023,7 @@ public partial class ChartViewModel : ViewModelBase
         return new LineSeries<ObservablePoint>
         {
             Values = powerPoints,
-            Name = $"{torqueSeries.Name} Power",
+            Name = $"{torqueCurve.Name} Power",
             Stroke = new SolidColorPaint(SKColors.Orange, 2),
             GeometrySize = 0,
             ScalesYAt = 1 // Use second Y axis

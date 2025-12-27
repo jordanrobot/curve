@@ -75,9 +75,9 @@ As a result:
 - **IMP-001**: Editor validation must not treat point count != 101 as an error.
   - Updated in `src/MotorEditor.Avalonia/Services/ValidationService.cs`.
 - **IMP-002**: File probe must accept variable axis lengths.
-  - Updated in `src/jordanrobot.MotorDefinition/MotorDefinitions/Probing/MotorFileProbe.cs`.
+  - Updated in `src/MotorDefinition/MotorDefinitions/Probing/MotorFileProbe.cs`.
 - **IMP-003**: Keep shape validation strict where it protects integrity (axis alignment, ordering, max point count).
-  - Guarded by `src/jordanrobot.MotorDefinition/MotorDefinitions/Validation/MotorFileShapeValidator.cs`.
+  - Guarded by `src/MotorDefinition/MotorDefinitions/Validation/MotorFileShapeValidator.cs`.
 - **IMP-004**: Add regression coverage with a representative real file.
   - Added `tests/CurveEditor.Tests/Services/MotorFileVariablePointsLoadTests.cs`.
 - **IMP-005**: Maintain an example file that includes a non-101 curve for manual QA.

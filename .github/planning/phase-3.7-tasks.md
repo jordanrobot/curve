@@ -15,15 +15,16 @@
 - Do not add “nice-to-haves” that are not listed in this file or the phase requirements.
 
 ### Scope Reminder (Phase 3.7)
-- Rename the core domain types throughout the repo:
-  - `MotorDefinition` -> `ServoMotor`
-  - `CurveSeries` -> `Curve`
-  - `DriveConfiguration` -> `Drive`
-  - `VoltageConfiguration` -> `Voltage`
-- Rename key collection properties accordingly:
-  - `MotorDefinition.DriveConfigurations` -> `ServoMotor.Drives`
-  - `DriveConfiguration.VoltageConfigurations` -> `Drive.Voltages`
-  - `VoltageConfiguration.CurveSeries` -> `Voltage.Curves`
+- Ensure the core domain types throughout the repo use the canonical names:
+  - `ServoMotor`
+  - `Drive`
+  - `Voltage`
+  - `Curve`
+- Ensure key collection properties use the canonical names:
+  - `ServoMotor.Drives`
+  - `Drive.Voltages`
+  - `Voltage.Curves`
+- Ensure the voltage scalar is exposed as `Voltage.Value`.
 - Update all related docs and unit tests.
 
 Do not implement out-of-scope Phase 3.7 items.
@@ -31,10 +32,10 @@ Do not implement out-of-scope Phase 3.7 items.
 ### Key Files (Expected touch points)
 
 Domain model (library):
-- `src/MotorDefinition/Models/MotorDefinition.cs`
-- `src/MotorDefinition/Models/CurveSeries.cs`
-- `src/MotorDefinition/Models/DriveConfiguration.cs`
-- `src/MotorDefinition/Models/VoltageConfiguration.cs`
+- `src/MotorDefinition/Models/ServoMotor.cs`
+- `src/MotorDefinition/Models/Curve.cs`
+- `src/MotorDefinition/Models/Drive.cs`
+- `src/MotorDefinition/Models/Voltage.cs`
 
 Persistence/mapping/validation (library + editor):
 - `src/MotorDefinition/MotorDefinitions/Mapping/MotorFileMapper.cs`
@@ -59,7 +60,7 @@ Docs:
 
 ### Acceptance Criteria (Phase 3.7)
 
-- AC 3.7.1: No remaining references to the old domain type names (`MotorDefinition`, `CurveSeries`, `DriveConfiguration`, `VoltageConfiguration`) except any explicitly chosen compatibility shims.
+- AC 3.7.1: No remaining references to deprecated domain type names except any explicitly chosen compatibility shims.
 - AC 3.7.2: `src/MotorDefinition` builds and continues to load/save motor JSON files without schema changes.
 - AC 3.7.3: `src/MotorEditor.Avalonia` builds and the app can open an existing file and show curves.
 - AC 3.7.4: All unit tests pass.
@@ -87,10 +88,7 @@ Defaults (first run / no persisted state):
 
 - Compile-first strategy: rename in the model library first, then propagate into mapping/services/editor/tests/docs.
 - The editor uses undoable commands that reference properties via `nameof(...)` and may use reflection-based property setters; these are the highest-risk breakpoints during renaming.
-- The existing model already exposes bridge properties:
-  - `MotorDefinition.DriveConfigurations => Drives`
-  - `DriveConfiguration.VoltageConfigurations => Voltages`
-  Decide whether to remove, rename, or temporarily keep equivalents in a single, deliberate step.
+- Bridge properties (if any) should be deliberate: either removed, or clearly marked as compatibility shims.
 
 ### Implementation Notes (to avoid known pitfalls)
 
@@ -107,9 +105,9 @@ Establish guardrails and an inventory so the rename can proceed with minimal sur
 
 ### Tasks
 - [ ] Create a rename inventory checklist (quick searches):
-  - [ ] Find all references to: `MotorDefinition`, `CurveSeries`, `DriveConfiguration`, `VoltageConfiguration`.
+  - [ ] Find all references to legacy domain type names (and any legacy file names).
   - [ ] Find reflection/property-name usage that could break:
-    - [ ] `nameof(MotorDefinition.*)` / `nameof(DriveConfiguration.*)` / etc.
+    - [ ] `nameof(...)` usages referencing renamed members.
     - [ ] `GetProperty(` / `PropertyInfo` usage in edit commands.
 - [ ] Decide compatibility posture (record in PR description and/or this file):
   - [ ] No shims (default), OR
@@ -140,18 +138,18 @@ Required hygiene:
 Rename the core domain types and their primary collections so the domain graph reads clearly.
 
 ### Tasks
-- [ ] Rename files + types:
-  - [ ] `MotorDefinition` -> `ServoMotor` (and `MotorDefinition.cs` -> `ServoMotor.cs`)
-  - [ ] `CurveSeries` -> `Curve` (and `CurveSeries.cs` -> `Curve.cs`)
-  - [ ] `DriveConfiguration` -> `Drive` (and `DriveConfiguration.cs` -> `Drive.cs`)
-  - [ ] `VoltageConfiguration` -> `Voltage` (and `VoltageConfiguration.cs` -> `Voltage.cs`)
+- [ ] Rename the core domain types/files to match the canonical model:
+  - [ ] `ServoMotor` (root model)
+  - [ ] `Drive`
+  - [ ] `Voltage` (with scalar `Voltage.Value`)
+  - [ ] `Curve`
 - [ ] Rename core collections:
   - [ ] `ServoMotor.Drives`
   - [ ] `Drive.Voltages`
   - [ ] `Voltage.Curves`
 - [ ] Decide and implement bridge strategy (single choice; don’t leave ambiguous duplication):
   - [ ] Remove bridge properties, OR
-  - [ ] Rename bridges to match new types (e.g., `ServoMotor.DriveConfigurations` as `[Obsolete]` forwarding to `Drives`) if compatibility is explicitly desired.
+  - [ ] Add explicit `[Obsolete]` forwarding members if compatibility is explicitly desired.
 - [ ] Update XML docs / `<see cref="..."/>` references in these model files.
 - [ ] Ensure XML documentation comments (type/member summaries, param names, `<see cref>` targets) use the new identifiers.
 
@@ -224,7 +222,7 @@ Update the UI/editor layer to the renamed types while preserving undo/redo and s
   - [ ] `EditingCoordinator` (selection record types)
 - [ ] Update view code-behind and data contexts:
   - [ ] `CurveDataPanel.axaml.cs`
-  - [ ] Any other views binding to `CurveSeries`/`VoltageConfiguration` etc.
+  - [ ] Any other views binding to renamed domain types/members.
 - [ ] Harden reflection-based edit commands:
   - [ ] Update any `nameof(OldType.Property)` usages.
   - [ ] Verify reflection setters still find the property names they expect after renaming.
@@ -262,10 +260,7 @@ Restore all tests to green with the new naming.
 
 ### Tasks
 - [ ] Update test code to use new types and member names:
-  - [ ] Replace `MotorDefinition` with `ServoMotor`
-  - [ ] Replace `CurveSeries` with `Curve`
-  - [ ] Replace `DriveConfiguration` with `Drive`
-  - [ ] Replace `VoltageConfiguration` with `Voltage`
+  - [ ] Update tests to use `ServoMotor`, `Drive`, `Voltage`, `Curve`.
   - [ ] Update any builders/fixtures that create model graphs.
 - [ ] Rename test files/classes where it improves clarity and avoids confusion.
 - [ ] Add a targeted regression test ONLY if needed:
@@ -314,11 +309,7 @@ Align documentation with the new terminology.
 Close out Phase 3.7 with an AC-driven validation pass and clean-up searches.
 
 ### Tasks
-- [ ] Run repository-wide searches to confirm no old type names remain (except explicit shims if chosen):
-  - [ ] `MotorDefinition`
-  - [ ] `CurveSeries`
-  - [ ] `DriveConfiguration`
-  - [ ] `VoltageConfiguration`
+- [ ] Run repository-wide searches to confirm no legacy domain type names remain (except explicit shims if chosen).
 - [ ] Verify there were no accidental JSON contract changes:
   - [ ] Load + save an existing file and inspect (spot-check) that the structure and property names are unchanged.
 - [ ] Ensure build/tests are green:

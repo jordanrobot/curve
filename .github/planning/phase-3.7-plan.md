@@ -16,15 +16,15 @@ Rename key domain types and related documentation to improve clarity and consist
 ### Scope
 
 - In scope:
-  - [ ] Rename domain model types across the repo:
-    - [ ] `MotorDefinition` -> `ServoMotor`
-    - [ ] `CurveSeries` -> `Curve`
-    - [ ] `DriveConfiguration` -> `Drive`
-    - [ ] `VoltageConfiguration` -> `Voltage`
-  - [ ] Rename collection accessors/properties accordingly:
-    - [ ] `MotorDefinition.DriveConfigurations` -> `ServoMotor.Drives`
-    - [ ] `DriveConfiguration.VoltageConfigurations` -> `Drive.Voltages`
-    - [ ] `VoltageConfiguration.CurveSeries` -> `Voltage.Curves`
+  - [ ] Rename legacy domain model types across the repo to the canonical set:
+    - [ ] `ServoMotor`
+    - [ ] `Drive`
+    - [ ] `Voltage` (with canonical scalar `Voltage.Value`)
+    - [ ] `Curve`
+  - [ ] Ensure collection accessors read naturally at call sites:
+    - [ ] `ServoMotor.Drives`
+    - [ ] `Drive.Voltages`
+    - [ ] `Voltage.Curves`
   - [ ] Update all usages in the Avalonia app project and library project.
   - [ ] Update unit tests to match renamed types/members.
   - [ ] Update documentation to match terminology changes:
@@ -48,21 +48,13 @@ Rename key domain types and related documentation to improve clarity and consist
 ### Current Baseline (What exists today)
 
 - Core domain types live in:
-  - `src/MotorDefinition/Models/MotorDefinition.cs`
-  - `src/MotorDefinition/Models/CurveSeries.cs`
-  - `src/MotorDefinition/Models/DriveConfiguration.cs`
-  - `src/MotorDefinition/Models/VoltageConfiguration.cs`
-- The domain model already has some bridge property names:
-  - `MotorDefinition.DriveConfigurations => Drives`
-  - `DriveConfiguration.VoltageConfigurations => Voltages`
-  (These will need to be revisited during renaming.)
+  - `src/MotorDefinition/Models/`
+- The domain model may include legacy-named bridge members; these should be removed or explicitly marked as compatibility shims.
 - The Avalonia editor project uses these types broadly:
   - View models: `src/MotorEditor.Avalonia/ViewModels/*.cs`
   - Views/code-behind: `src/MotorEditor.Avalonia/Views/*.axaml.cs`
   - Services/commands: `src/MotorEditor.Avalonia/Services/*.cs`
-- API docs appear to be checked in under `docs/api/` with type-named files such as:
-  - `docs/api/JordanRobot.MotorDefinition.Model.MotorDefinition.md`
-  - `docs/api/JordanRobot.MotorDefinition.Model.CurveSeries.md`
+- API docs appear to be checked in under `docs/api/`.
   (For Phase 3.7, treat `docs/api/*` as generated output; do not hand-edit. Keep XML docs correct so regenerated API docs stay consistent.)
 
 ### Proposed Design
@@ -74,7 +66,7 @@ Rename key domain types and related documentation to improve clarity and consist
   - Curves should read naturally at call sites: `Voltage.Curves`, `Curve.Data`, etc.
 - Rename both:
   - C# type names (classes, records, enums if any)
-  - File names (`MotorDefinition.cs`  `ServoMotor.cs`, etc.)
+  - File names to match the renamed types (e.g., `ServoMotor.cs`)
   - Member names (properties, methods, parameters)
   - XML docs / `<see cref="..."/>` references
 - Namespaces:
@@ -84,10 +76,7 @@ Rename key domain types and related documentation to improve clarity and consist
 #### 2) Backward Compatibility Decision (Internal vs Public API)
 
 - Default for this phase: no backwards compatibility shims.
-- If we discover that external code consumes `JordanRobot.MotorDefinition` as a library, consider adding temporary compatibility types:
-  - `MotorDefinition` as `[Obsolete]` wrapper/alias forwarding to `ServoMotor`
-  - Same for `CurveSeries`, `DriveConfiguration`, `VoltageConfiguration`
-  This would reduce downstream breakage, but increases maintenance and ambiguity.
+- This is a source-breaking rename phase; do not add wrapper/alias types.
 
 #### 3) Serialization and Schema Safety
 
@@ -102,12 +91,11 @@ Rename key domain types and related documentation to improve clarity and consist
 #### Step 1: Preparation (inventory + guardrails)
 
 - [ ] Inventory all rename targets and high-risk references:
-  - [ ] `nameof(MotorDefinition.*)` / `nameof(DriveConfiguration.*)` patterns (used by undo commands)
+  - [ ] `nameof(...)` patterns used by undo commands
   - [ ] Reflection-based property access (e.g., edit commands that take a `propertyName` string)
   - [ ] Serialization attributes and DTO mapping points
   - [ ] Documentation generation pipeline (if any) for `docs/api/`
 - [ ] Naming locked:
-  - `MotorDefinition` -> `ServoMotor`
   - `ServoMotor.Drives` is the canonical drive collection
 
 **Done when**
@@ -118,16 +106,13 @@ Rename key domain types and related documentation to improve clarity and consist
 #### Step 2: Rename in the domain library (compile-first approach)
 
 - [ ] Rename types in `src/MotorDefinition/Models/`:
-  - [ ] `MotorDefinition` -> `ServoMotor`
-  - [ ] `CurveSeries` -> `Curve`
-  - [ ] `DriveConfiguration` -> `Drive`
-  - [ ] `VoltageConfiguration` -> `Voltage`
+  - [ ] Ensure the domain graph types are: `ServoMotor`, `Drive`, `Voltage`, `Curve`
 - [ ] Rename the corresponding file names to match.
 - [ ] Update member names and collections:
   - [ ] `ServoMotor.Drives`
   - [ ] `Drive.Voltages`
   - [ ] `Voltage.Curves`
-- [ ] Remove or rename `bridge` properties (`DriveConfigurations`, `VoltageConfigurations`) based on the compatibility decision.
+- [ ] Remove or explicitly mark any legacy-named bridge members based on the compatibility decision.
 
 **Done when**
 
@@ -181,7 +166,7 @@ Rename key domain types and related documentation to improve clarity and consist
 
 ### Acceptance Criteria
 
-- [ ] AC 3.7.1: The codebase contains no remaining references to the old domain type names (`MotorDefinition`, `CurveSeries`, `DriveConfiguration`, `VoltageConfiguration`) except any explicitly chosen compatibility shims.
+- [ ] AC 3.7.1: The codebase contains no remaining references to legacy domain type names except any explicitly chosen compatibility shims.
 - [ ] AC 3.7.2: `src/MotorDefinition` builds successfully and continues to load/save motor JSON files without schema changes.
 - [ ] AC 3.7.3: `src/MotorEditor.Avalonia` builds successfully and the app can open an existing file and show curves.
 - [ ] AC 3.7.4: All unit tests pass.

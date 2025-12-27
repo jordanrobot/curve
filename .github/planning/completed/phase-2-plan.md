@@ -37,19 +37,19 @@ Completed
 #### 2.3 Command Types for Common Operations
 - [x] Implement concrete `IUndoableCommand` types for the main editing actions:
   - `EditPointCommand`: change torque (and/or RPM) for a single data point at a given index/series.
-  - `EditSeriesCommand`: rename, visibility change, color change, or lock state for a `CurveSeries`.
-  - `EditMotorPropertyCommand`: change a scalar property on `MotorDefinition` or its nested metadata (e.g., max RPM, max torque).
+  - `EditSeriesCommand`: rename, visibility change, color change, or lock state for a `Curve`.
+  - `EditMotorPropertyCommand`: change a scalar property on `ServoMotor` or its nested metadata (e.g., max speed, peak torque).
 - [x] Ensure each command captures enough prior state to undo reliably (old/new value, series id, index, etc.).
 - [x] Centralize domain mutations so that:
   - Direct property edits from the UI go through helper methods that create and push commands rather than mutating models directly.
 
 See ADR-0003 (`.github/adr/adr-0003-motor-property-undo-design.md`) for the specific command-driven pattern adopted for motor-level text properties.
 
-See ADR-000X (`.github/adr/adr-000X-voltage-property-undo-design.md`) for the extension of this pattern to drive and selected-voltage properties, including scalar values and series-related fields on `VoltageConfiguration`.
+See ADR-000X (`.github/adr/adr-000X-voltage-property-undo-design.md`) for the extension of this pattern to drive and selected-voltage properties, including scalar values and curve-related fields on `Voltage`.
 
 **Motor text properties implementation and lessons learned:**
 
-Early attempts to bolt motor text property undo onto existing two-way `TextBox` bindings via attached behaviors proved fragile: bindings were mutating `MotorDefinition` before commands could reliably capture the old value, and Ctrl+Z handling oscillated between per-textbox and global behavior. We have now implemented the ADR-0003 pattern in production: motor text boxes bind to simple editor properties on the view model, `TextBox`-local undo is disabled, and explicit edit methods (e.g., `EditMotorName`) construct `EditMotorPropertyCommand` instances with old/new values that are pushed to the shared `UndoStack`. This yields predictable, whole-field undo/redo steps that align with chart and grid edits.
+Early attempts to bolt motor text property undo onto existing two-way `TextBox` bindings via attached behaviors proved fragile: bindings were mutating `ServoMotor` before commands could reliably capture the old value, and Ctrl+Z handling oscillated between per-textbox and global behavior. We have now implemented the ADR-0003 pattern in production: motor text boxes bind to simple editor properties on the view model, `TextBox`-local undo is disabled, and explicit edit methods (e.g., `EditMotorName`) construct `EditMotorPropertyCommand` instances with old/new values that are pushed to the shared `UndoStack`. This yields predictable, whole-field undo/redo steps that align with chart and grid edits.
 
 #### 2.4 Wiring Undo/Redo to UI and Dirty State
 #### 2.4 Wiring Undo/Redo to UI and Dirty State
@@ -89,7 +89,7 @@ Early attempts to bolt motor text property undo onto existing two-way `TextBox` 
 - [x] Refactor bindings for key motor text fields
   - [x] In `MainWindow.axaml`, replace direct bindings like `Text="{Binding CurrentMotor.MotorName}"` with bindings to simple VM properties (e.g., `MotorNameEditor`) and, on focus loss, use code-behind to call `EditMotorName(MotorNameEditor)`.
   - [x] Set `TextBox.IsUndoEnabled` to `False` for these fields so that Ctrl+Z / Ctrl+Y always route to the window-level undo/redo commands.
-  - [x] Ensure the underlying `MotorDefinition` is mutated only via the command path, not by the bindings themselves.
+  - [x] Ensure the underlying `ServoMotor` is mutated only via the command path, not by the bindings themselves.
 
 - [x] Update or extend the motor property command type
   - [x] Refactor `EditMotorPropertyCommand` to accept both `oldValue` and `newValue` in its constructor.
@@ -103,7 +103,7 @@ Early attempts to bolt motor text property undo onto existing two-way `TextBox` 
 
 - [x] Add focused tests
   - [x] Add tests that:
-    - [x] Create a view model with a `MotorDefinition`.
+    - [x] Create a view model with a `ServoMotor`.
     - [x] Invoke `EditMotorName("New Name")` and assert the model changes.
     - [x] Call `Undo()` and verify the original name is restored.
     - [x] Call `Redo()` and verify the new name is applied again.

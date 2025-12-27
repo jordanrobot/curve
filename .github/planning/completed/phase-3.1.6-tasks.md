@@ -72,9 +72,10 @@ Out of scope reminders:
   - [src/CurveEditor/Services/FileService.cs](src/CurveEditor/Services/FileService.cs)
   - [src/CurveEditor/ViewModels/DirectoryBrowserViewModel.cs](src/CurveEditor/ViewModels/DirectoryBrowserViewModel.cs)
 - Runtime models (to move into the library):
-  - [src/CurveEditor/Models/MotorDefinition.cs](src/CurveEditor/Models/MotorDefinition.cs)
-  - [src/CurveEditor/Models/DriveConfiguration.cs](src/CurveEditor/Models/DriveConfiguration.cs)
-  - [src/CurveEditor/Models/VoltageConfiguration.cs](src/CurveEditor/Models/VoltageConfiguration.cs)
+  - `ServoMotor`
+  - `Drive`
+  - `Voltage`
+  - `Curve`
   - `src/CurveEditor/Models/*.cs` (other schema-aligned model files)
 - Schema:
   - [schema/motor-schema-v1.0.0.json](schema/motor-schema-v1.0.0.json)
@@ -111,8 +112,8 @@ Out of scope reminders:
   - Continue running under `tests/CurveEditor.Tests` and validate load/save behavior through the library entrypoint (preferred).
 
 ### Agent Notes (Migration Guidance)
-- The existing persistence layer is already isolated under `src/CurveEditor/MotorDefinitions/*` and uses library-like namespaces (`jordanrobot.MotorDefinitions.*`). Phase 3.1.6 should preserve this structure and move it with minimal refactoring.
-- `MotorDefinitionFileDto` previously referenced `CurveEditor.Models.MotorDefinition.CurrentSchemaVersion`; after namespace cleanup it references `MotorDefinition.CurrentSchemaVersion` from `JordanRobot.MotorDefinitions.Model`.
+- The existing persistence layer is already isolated under the app project and uses library-like namespaces. Phase 3.1.6 should preserve this structure and move it with minimal refactoring.
+- `MotorDefinitionFileDto` should reference the library-owned schema version constant (e.g., `ServoMotor.CurrentSchemaVersion` from `JordanRobot.MotorDefinition.Model`).
 - The test project currently accesses internal persistence code via `[assembly: InternalsVisibleTo("CurveEditor.Tests")]` in [src/CurveEditor/AssemblyInfo.cs](src/CurveEditor/AssemblyInfo.cs). After moving internals to the library, this attribute must move (or tests must switch to only using public library APIs).
 
 ### Implementation Notes (to avoid known pitfalls)
@@ -238,7 +239,7 @@ Move runtime model types into the library so the library can own file IO end-to-
 
 ### Tasks
 - [x] Move schema-aligned model files from `src/CurveEditor/Models/` into `src/jordanrobot.MotorDefinition/Models/`.
-  - [x] Include `MotorDefinition`, `DriveConfiguration`, `VoltageConfiguration`, `CurveSeries`, `DataPoint`, `UnitSettings`, `MotorMetadata` and any supporting model files required by compilation.
+  - [x] Include `ServoMotor`, `Drive`, `Voltage`, `Curve`, `DataPoint`, `UnitSettings`, `MotorMetadata` and any supporting model files required by compilation.
 - [x] Ensure moved models compile without Avalonia dependencies.
 - [x] Update the app project to reference the library project:
   - [x] Add a `ProjectReference` from `src/CurveEditor/CurveEditor.csproj` to `src/jordanrobot.MotorDefinition/jordanrobot.MotorDefinition.csproj`.
@@ -272,13 +273,13 @@ Make the library own the DTO/mapper/probe/validation code and provide a function
 
 ### Tasks
 - [x] Move persistence layer into the library (minimal churn):
-  - [x] Move `src/CurveEditor/MotorDefinitions/**` → `src/jordanrobot.MotorDefinition/MotorDefinitions/**`.
+  - [x] Move persistence code from the app project into the library project.
 - [x] Update persistence code so it does not reference app-only concerns:
   - [x] Ensure schema version checks reference the model constant now located in the library.
   - [x] Ensure no Serilog usage appears in the library.
 - [x] Implement the library IO entrypoint (`MotorFile` / chosen name):
-  - [x] `Load(string path)` returns `MotorDefinition`.
-  - [x] `Save(MotorDefinition motor, string path)` writes JSON.
+  - [x] `Load(string path)` returns `ServoMotor`.
+  - [x] `Save(ServoMotor motor, string path)` writes JSON.
   - [x] Use System.Text.Json options consistent with current `FileService` where appropriate.
 - [x] Handle internals/test access:
   - [x] Preferred: update tests to use `MotorFile` entrypoint.

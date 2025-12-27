@@ -41,8 +41,8 @@ Complete
 
 ### Assumptions and Constraints
 
-- The runtime model remains `CurveSeries` + `DataPoint` (as recommended in the requirements), and conversion happens at load/save boundaries.
-- `schemaVersion` remains `1.0.0` even though the on-disk shape changes; treat this as acceptable because the repo currently treats `1.0.0` as the canonical version (`MotorDefinition.CurrentSchemaVersion`).
+- The runtime model uses `ServoMotor` → `Drive` → `Voltage` → `Curve` → `DataPoint`, and conversion happens at load/save boundaries.
+- `schemaVersion` remains `1.0.0` even though the on-disk shape changes; treat this as acceptable because the repo currently treats `1.0.0` as the canonical version (`ServoMotor.CurrentSchemaVersion`).
 - System.Text.Json is the persistence mechanism.
 - Logging must follow ADR-0009: log parse/validation failures with context, and recover with safe defaults where possible.
 - Backward compatibility is explicitly out of scope for Phase 3.1.5 (project not released publicly yet). The app does not need to load the legacy per-point `series[]/data[]` JSON representation once the new format is implemented.
@@ -60,7 +60,7 @@ Units
   - `FileService` loads/saves by serializing/deserializing the runtime model directly with System.Text.Json (`src/CurveEditor/Services/FileService.cs`).
   - The persisted curve format is object-per-point: `voltages[].series[]` with `data[]` entries containing `{ percent, rpm, torque }`.
 - Runtime model:
-  - `MotorDefinition`, `DriveConfiguration`, `VoltageConfiguration`, `CurveSeries`, `DataPoint`, `UnitSettings` (`src/CurveEditor/Models/*`).
+  - `ServoMotor`, `Drive`, `Voltage`, `Curve`, `DataPoint`, `UnitSettings` (`src/CurveEditor/Models/*`).
 - Validation:
   - `ValidationService` validates series count, supported point counts (0–101), percent order, and per-series ascending RPM.
   - The Directory Browser uses a lightweight JSON parse + `HasValidConfiguration()` (`src/CurveEditor/ViewModels/DirectoryBrowserViewModel.cs`).
@@ -85,7 +85,7 @@ Units
 #### 1) Data / State Model
 
 - Keep the existing runtime domain types as-is for editing:
-  - `MotorDefinition`, `DriveConfiguration`, `VoltageConfiguration`, `CurveSeries`, `DataPoint`.
+  - `ServoMotor`, `Drive`, `Voltage`, `Curve`, `DataPoint`.
 
 - Introduce **persistence DTOs** (internal to CurveEditor) that match the new on-disk format:
   - `MotorDefinitionFileDto`
@@ -112,14 +112,14 @@ Units
   - Serialize by mapping runtime models to `MotorDefinitionFileDto` and writing the new series table/map format.
 
 - Drive rename (`seriesName` -> `name`):
-  - Prefer DTO-based persistence so the runtime property can remain `DriveConfiguration.Name`, while the JSON uses `name`.
+  - Prefer DTO-based persistence so the runtime property can remain `Drive.Name`, while the JSON uses `name`.
   - Emit JSON in stable order using `JsonPropertyOrder` on DTOs.
 
   - Backward compatibility:
     - Explicitly not required for Phase 3.1.5.
 
 - Directory Browser motor-file validation:
-  - The Directory Browser "is this a motor file" check must remain lightweight and must not deserialize the runtime `MotorDefinition`.
+  - The Directory Browser "is this a motor file" check must remain lightweight and must not deserialize the runtime `ServoMotor`.
   - Short-term approach: a `JsonDocument` shape probe for `schemaVersion`, `motorName`, and `drives[].voltages[]` with `percent`/`rpm` arrays and `series` object.
 
 #### 3) Validation

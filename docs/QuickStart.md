@@ -17,7 +17,7 @@ dotnet add package JordanRobot.MotorDefinition
 `MotorFile` is the main entry point for persistence.
 
 ```csharp
-using JordanRobot.MotorDefinitions;
+using JordanRobot.MotorDefinition;
 
 var motor = MotorFile.Load("example-motor.json");
 
@@ -28,16 +28,16 @@ Console.WriteLine($"Drives: {motor.Drives.Count}");
 ### Modify and save
 
 ```csharp
-using JordanRobot.MotorDefinitions;
+using JordanRobot.MotorDefinition;
 
 var motor = MotorFile.Load("example-motor.json");
 
 motor.Manufacturer = "Acme Motors";
 
-// Example: tweak the first series' first point torque
+// Example: tweak the first curve's first point torque
 var firstVoltage = motor.Drives[0].Voltages[0];
-var firstSeries = firstVoltage.Series[0];
-firstSeries.Data[0].Torque = 0;
+var firstCurve = firstVoltage.Curves[0];
+firstCurve.Data[0].Torque = 0;
 
 MotorFile.Save(motor, "example-motor.updated.json");
 ```
@@ -46,13 +46,13 @@ MotorFile.Save(motor, "example-motor.updated.json");
 
 The object model is:
 
-- Motor → Drive(s) → Voltage(s) → Curve series → Data points
+- Motor → Drive(s) → Voltage(s) → Curve(s) → Data point(s)
 
 ```csharp
-using JordanRobot.MotorDefinitions.Model;
-using JordanRobot.MotorDefinitions;
+using JordanRobot.MotorDefinition;
+using JordanRobot.MotorDefinition.Model;
 
-var motor = new MotorDefinition("My Motor")
+var motor = new ServoMotor("My Motor")
 {
     Manufacturer = "Contoso",
     PartNumber = "M-0001",
@@ -62,7 +62,7 @@ var motor = new MotorDefinition("My Motor")
 };
 
 var drive = motor.AddDrive("My Drive");
-var voltage = drive.AddVoltageConfiguration(230);
+var voltage = drive.AddVoltage(230);
 voltage.MaxSpeed = motor.MaxSpeed;
 
 // Creates the default 101-point curve (0%..100% in 1% increments) and fills RPM axis from MaxSpeed.
@@ -82,6 +82,6 @@ MotorFile.Save(motor, "my-motor.json");
     - The standard curve is 101 points at 1% increments (0%..100%).
     - Overspeed percent values (>100%) are allowed in the file format but are JSON-authored for now in the editor.
 - **Shared axes per voltage**: All series under a given voltage are expected to share the same percent and RPM axes.
-- **Schema version**: `MotorDefinition.SchemaVersion` defaults to the current schema version (`1.0.0`).
+- **Schema version**: `ServoMotor.SchemaVersion` defaults to `ServoMotor.CurrentSchemaVersion` (`1.0.0`).
 
 Next steps: see the [User Guide](UserGuide.md) for deeper guidance, and the generated [API documentation](api/index.md).

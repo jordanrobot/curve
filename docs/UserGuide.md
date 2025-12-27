@@ -6,8 +6,8 @@ This guide explains the concepts and common workflows for the `JordanRobot.Motor
 
 ### What this library provides
 
-- A runtime object model for motor definition data (`JordanRobot.MotorDefinitions.Model`).
-- Simple load/save entry points via `JordanRobot.MotorDefinitions.MotorFile`.
+- A runtime object model for motor definition data (`JordanRobot.MotorDefinition.Model`).
+- Simple load/save entry points via `JordanRobot.MotorDefinition.MotorFile`.
 - A JSON format designed for motor/drive/voltage torque curves, supporting a variable number of data points per performance curve.
 
 The generated API reference lives under [docs/api](api/index.md).
@@ -18,41 +18,41 @@ The generated API reference lives under [docs/api](api/index.md).
 
 Motor definition files follow this structure:
 
-- **Motor** (`MotorDefinition`)
-- **Drive configurations** (`DriveConfiguration`)
-- **Voltage configurations** (`VoltageConfiguration`)
-- **Series** (`CurveSeries`)
+- **Motor** (`ServoMotor`)
+- **Drives** (`Drive`)
+- **Voltages** (`Voltage`)
+- **Curves** (`Curve`)
 - **Points** (`DataPoint`)
 
 This mirrors how a motor can be powered by different drives, and drives may be operated at different voltages. Each of these configurations may result in different motor performance torque curves.
 
-#### Motor Definition
+#### Motor
 
-The base object is `MotorDefinition`. It contains metadata about the motor (name, manufacturer, part number, max speed, rated torques, weight, brake properties) and a collection of `DriveConfiguration` entries. The motor metadata are inherent to the motor itself, and are not changed by the drive or voltage used. These are accessed via properties on the `MotorDefinition` object itself.
+The base object is `ServoMotor`. It contains metadata about the motor (name, manufacturer, part number, max speed, rated torques, weight, brake properties) and a collection of `Drive` entries. The motor metadata are inherent to the motor itself, and are not changed by the drive or voltage used. These are accessed via properties on the `ServoMotor` object itself.
 
-#### Drive Configuration
+#### Drive
 
-Each `DriveConfiguration` represents a specific motor drive that can power the motor. It contains metadata about the drive (name, manufacturer, part number) and a collection of `VoltageConfiguration` entries. Drives may have different capabilities and characteristics that affect motor performance, using a 3.0 kW drive vs an 11kW drive may drastically different torque curves for the same motor.
+Each `Drive` represents a specific motor drive that can power the motor. It contains metadata about the drive (name, manufacturer, part number) and a collection of `Voltage` entries. Drives may have different capabilities and characteristics that affect motor performance.
 
-These `DriveConfiguration` entries are accessed via the `MotorDefinition.DriveConfigurations` collection.
+These drives are accessed via the `ServoMotor.Drives` collection.
 
-#### Voltage Configuration
+#### Voltage
 
-Each `VoltageConfiguration` represents a specific voltage level at which the motor can be driven by the associated drive. It contains metadata about the voltage (nominal voltage, max speed at that voltage) and a collection of `CurveSeries` entries. Different voltages can significantly affect motor performance, with higher voltages typically allowing for higher speeds and torques.
+Each `Voltage` represents a specific voltage level at which the motor can be driven by the associated drive. It contains metadata about the voltage (nominal voltage, max speed at that voltage) and a collection of `Curve` entries. Different voltages can significantly affect motor performance, with higher voltages typically allowing for higher speeds and torques.
 
 For example, running a 240V drive with 110V typically results in a lower output speed for the motor.
 
-The `VoltageConfiguration` entries are accessed via the `DriveConfiguration.VoltageConfigurations` collection.
+The voltages are accessed via the `Drive.Voltages` collection.
 
 #### Performance Curves
 
-Each `CurveSeries` represents a specific performance curve for the motor at that voltage, such as "Continuous" or "Peak" torque curves. These curves define how the motor performs across its speed range at that voltage. They are specific to each voltage configuration.
+Each `Curve` represents a specific performance curve for the motor at that voltage, such as "Continuous" or "Peak" torque curves. These curves define how the motor performs across its speed range at that voltage.
 
-The `CurveSeries` entries are accessed via the `VoltageConfiguration.CurveSeries` collection. 
+The curves are accessed via the `Voltage.Curves` collection.
 
 #### Performance Data Points
 
-Each `CurveSeries` contains `DataPoint` entries. These points define the motor's performance characteristics at a specific speed. Each `DataPoint` if defined by three main attributes:
+Each `Curve` contains `DataPoint` entries. These points define the motor's performance characteristics at a specific speed. Each `DataPoint` if defined by three main attributes:
 - `Percent`: The percentage of the motor's maximum speed.
 - `Rpm`: The revolutions per minute corresponding to that percentage.
 - `Torque`: The torque value at that speed.
@@ -66,7 +66,7 @@ It is important to note that:
 - Percent values above 100% are allowed in the file format, and represent motor performance at overspeed. Currently the Motor Editor Application does not provide a UI to author overspeed data, though it will show them in the performance graph if present.
 - A performance curve may contain 0 data points. In this case clients may fall back to rated continuous/peak torque values for visualization purposes.
 
-**Critical note**: Within a single `VoltageConfiguration`, all performance curves are expected to share the same percent and RPM axes.
+**Critical note**: Within a single `Voltage`, all curves are expected to share the same percent and RPM axes.
 
 
 ### Common workflows
@@ -74,7 +74,7 @@ It is important to note that:
 #### Load a file
 
 ```csharp
-using JordanRobot.MotorDefinitions;
+using JordanRobot.MotorDefinition;
 
 var motor = MotorFile.Load("motor.json");
 
@@ -92,7 +92,7 @@ var driveNames = motor.DriveNames;
 
 var drive = motor.GetDriveByName("Drive A");
 // Or
-IEnumerable<string> voltage = drive.VoltageNames;
+IEnumerable<string> voltages = drive.VoltageNames;
 ```
 
 #### LINQ query access (drives and voltages)
@@ -101,13 +101,13 @@ For LINQ queries, use the LINQ-friendly enumerables:
 
 ```csharp
 // All drives
-var servoDrives = motor.DriveConfigurations
+var servoDrives = motor.Drives
     .Where(d => d.Manufacturer.Contains("Servo", StringComparison.OrdinalIgnoreCase));
 
-// Find a specific curve series
-var curve = this.Drives.Where(d => d.Name.Equals("Drive X", StringComparison.OrdinalIgnoreCase))
-                       .Where(d => d.VoltageNames.Equals("400 V"))
-                       .Where(v => v.CurveSeries.Equals("Continuous"));
+// Find a specific curve
+var drive = motor.Drives.FirstOrDefault(d => d.Name.Equals("Drive X", StringComparison.OrdinalIgnoreCase));
+var voltage = drive?.GetVoltage(400);
+var curve = voltage?.Curves.FirstOrDefault(c => c.Name.Equals("Continuous", StringComparison.OrdinalIgnoreCase));
 
 ```
 
@@ -115,7 +115,7 @@ If you’re dealing with “unknown JSON” and want to quickly detect whether i
 
 ```csharp
 using System.Text.Json;
-using JordanRobot.MotorDefinitions;
+using JordanRobot.MotorDefinition;
 
 using var doc = JsonDocument.Parse(File.ReadAllText("input.json"));
 var looksLikeMotorFile = MotorFile.IsLikelyMotorDefinition(doc);
@@ -124,7 +124,7 @@ var looksLikeMotorFile = MotorFile.IsLikelyMotorDefinition(doc);
 #### Save a file
 
 ```csharp
-using JordanRobot.MotorDefinitions;
+using JordanRobot.MotorDefinition;
 
 MotorFile.Save(motor, "motor.updated.json");
 ```
@@ -132,7 +132,7 @@ MotorFile.Save(motor, "motor.updated.json");
 Async variants are available:
 
 ```csharp
-using JordanRobot.MotorDefinitions;
+using JordanRobot.MotorDefinition;
 
 var motor = await MotorFile.LoadAsync("motor.json", cancellationToken);
 await MotorFile.SaveAsync(motor, "motor.updated.json", cancellationToken);
@@ -141,16 +141,16 @@ await MotorFile.SaveAsync(motor, "motor.updated.json", cancellationToken);
 #### Create drives, voltages, and series
 
 ```csharp
-using JordanRobot.MotorDefinitions.Model;
+using JordanRobot.MotorDefinition.Model;
 
-var motor = new MotorDefinition("Example")
+var motor = new ServoMotor("Example")
 {
     MaxSpeed = 6000,
     RatedPeakTorque = 20,
 };
 
 var drive = motor.AddDrive("Drive A");
-var voltage = drive.AddVoltageConfiguration(208);
+var voltage = drive.AddVoltage(208);
 
 voltage.MaxSpeed = motor.MaxSpeed;
 
@@ -163,7 +163,7 @@ var peak = voltage.AddSeries("Peak", initializeTorque: motor.RatedPeakTorque);
 When you modify curve data, keep the shape consistent:
 
 - Prefer editing the existing points in place.
-- If you add/remove points, ensure the percent axis remains strictly increasing and that all series under a `VoltageConfiguration` share the same axis.
+- If you add/remove points, ensure the percent axis remains strictly increasing and that all curves under a `Voltage` share the same axis.
 - A point count of 0 is allowed; clients may fall back to rated continuous/peak torque for visualization.
 
 Example: apply a simple torque scale to the entire series:
@@ -186,7 +186,7 @@ if (!peak.ValidateDataIntegrity())
 
 #### Fast curve lookups and exporting rows
 
-If you want quick lookups by percent (0..100), use percent-based accessors on `CurveSeries`:
+If you want quick lookups by percent (0..100), use percent-based accessors on `Curve`:
 
 ```csharp
 // Get RPM + torque for a specific percent
@@ -226,7 +226,7 @@ If you are integrating with other tools or generating files externally, use the 
 ### Troubleshooting
 
 - **Deserialization fails**: `MotorFile.Load` throws an `InvalidOperationException` when it cannot deserialize a motor definition.
-- **Empty or incomplete models**: `MotorDefinition.HasValidConfiguration()` returns `false` when there is no drive/voltage/series data.
-- **Invalid curve shape**: `CurveSeries.ValidateDataIntegrity()` returns `false` when the series has more than 101 points, has negative percent values, or has a non-increasing percent axis.
+- **Empty or incomplete models**: `ServoMotor.HasValidConfiguration()` returns `false` when there is no drive/voltage/curve data.
+- **Invalid curve shape**: `Curve.ValidateDataIntegrity()` returns `false` when the curve has more than 101 points, has negative percent values, or has a non-increasing percent axis.
 
 For detailed type/member information, see the generated [API documentation](api/index.md).

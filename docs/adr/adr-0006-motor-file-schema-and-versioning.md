@@ -14,17 +14,17 @@ Accepted
 
 ## Context
 
-Motor definitions are persisted as JSON files that reflect the `MotorDefinition` object graph:
+Motor definitions are persisted as JSON files that reflect the `ServoMotor` object graph:
 
 - Motor-level identity and base nameplate data.
 - Units metadata (`UnitSettings`).
-- One or more `DriveConfiguration` entries.
-- Per-drive `VoltageConfiguration` entries.
-- Per-voltage `CurveSeries` collections with `DataPoint` arrays.
+- One or more `Drive` entries.
+- Per-drive `Voltage` entries.
+- Per-voltage `Curve` collections with `DataPoint` arrays.
 
 ADR-0001 documented the initial v1 JSON format and introduced a JSON Schema (`motor-schema-v1.0.0.json`) plus a schema index (`schema/index.json`). Since then:
 
-- The runtime model evolved (e.g., explicit `MotorDefinition.CurrentSchemaVersion = "2.0"`).
+- The runtime model evolved (e.g., explicit `ServoMotor.CurrentSchemaVersion`).
 - The README and roadmap now treat `schemaVersion: "2.0"` as the canonical version.
 
 We need a clear, long-term strategy for schema versioning so that:
@@ -39,7 +39,7 @@ We adopt a **semver-style, schema-indexed versioning strategy** for motor JSON f
 
 1. **Explicit `schemaVersion` field with semantic versioning**
 - Every motor file includes a top-level `schemaVersion` string.
-- The current canonical version is `"2.0"` (matching `MotorDefinition.CurrentSchemaVersion`).
+- The current canonical version is `"2.0"` (matching `ServoMotor.CurrentSchemaVersion`).
 - Future incompatible changes (e.g., structural rearrangements, field renames) require bumping the major version (e.g., `3.0`).
 
 2. **Schema index as the discovery mechanism**
@@ -50,7 +50,7 @@ We adopt a **semver-style, schema-indexed versioning strategy** for motor JSON f
 - `currentVersion` in the index points to the major version the application writes by default (currently `2`).
 
 3. **Runtime ties schema version to model constant**
-- `MotorDefinition.CurrentSchemaVersion` defines the schema version string the app writes when saving files.
+- `ServoMotor.CurrentSchemaVersion` defines the schema version string the app writes when saving files.
 - Deserialization reads `schemaVersion` and can:
   - Accept known compatible versions (e.g., `"2.0"`, `"2.0.1"`).
   - Reject or migrate older versions (e.g., v1) explicitly.
@@ -98,13 +98,13 @@ We adopt a **semver-style, schema-indexed versioning strategy** for motor JSON f
 
 ## Implementation Notes
 
-- **IMP-001**: When changing `MotorDefinition` in ways that affect the JSON shape, update `MotorDefinition.CurrentSchemaVersion` and add or update a JSON Schema file under `schema/`.
+- **IMP-001**: When changing `ServoMotor` in ways that affect the JSON shape, update `ServoMotor.CurrentSchemaVersion` and add or update a JSON Schema file under `schema/`.
 - **IMP-002**: Keep `schema/index.json` in sync with available schema files and update `currentVersion` when the app begins writing a new major version by default.
 - **IMP-003**: When introducing breaking changes, define clear migration steps (in code or tools) and document them alongside the new schema entry.
 
 ## References
 
 - **REF-001**: ADR-0001 – Motor JSON File Format (v1).
-- **REF-002**: `src/MotorEditor.Avalonia/Models/MotorDefinition.cs` – `CurrentSchemaVersion` constant and JSON attributes.
+- **REF-002**: `src/MotorDefinition/Models/ServoMotor.cs` – `CurrentSchemaVersion` constant and JSON attributes.
 - **REF-003**: `schema/index.json` – schema index.
 - **REF-004**: JSON Schema files under `schema/` (e.g., `motor-schema-v2.0.0.json`).

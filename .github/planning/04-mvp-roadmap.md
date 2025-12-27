@@ -75,8 +75,8 @@ Phase 8: Power Curve Overlay (Future)
 - [X] Add asterisk (*) to title when file is dirty
 
 ### 1.3 Data Models
-- [X] Create MotorDefinition model class (all motor properties)
-- [X] Create CurveSeries model class (named curve)
+- [X] Create ServoMotor model class (all motor properties)
+- [X] Create Curve model class (named curve)
 - [X] Create DataPoint model class (percent, rpm, torque)
 - [X] Create UnitSettings model class (torque, speed, power, weight units)
 - [X] Create MotorMetadata model class
@@ -87,7 +87,7 @@ Phase 8: Power Curve Overlay (Future)
 
 Notes:
 
-- Variable-point support work touched: `src/MotorEditor.Avalonia/Services/ValidationService.cs`, `src/jordanrobot.MotorDefinition/MotorDefinitions/Probing/MotorFileProbe.cs`, `tests/CurveEditor.Tests/Services/MotorFileVariablePointsLoadTests.cs`.
+- Variable-point support work touched: `src/MotorEditor.Avalonia/Services/ValidationService.cs`, `src/MotorDefinition/MotorDefinitions/Probing/MotorFileProbe.cs`, `tests/CurveEditor.Tests/Services/MotorFileVariablePointsLoadTests.cs`.
 - `schema/example-motor.json` includes a 21-point voltage curve series.
 
 ### 1.4 File Service
@@ -209,7 +209,7 @@ These refinements should be evaluated against the current codebase when planning
   - Power, weight, rotor inertia
   - Brake properties (hasBrake, torque, amperage)
 - [X] Unit selector for each property type
-- [X] Bind properties to MotorDefinition model
+- [X] Bind properties to ServoMotor model
 - [X] Enable editing of all fields
 
 Note: Motor text property edits (e.g., name, manufacturer, part number) are routed through explicit view-model edit methods and undoable commands as described in ADR-0003 (`../../docs/adr/adr-0003-motor-property-undo-design.md`).
@@ -314,26 +314,26 @@ See ADR-0006 (`../../docs/adr/adr-0006-motor-file-schema-and-versioning.md`) for
 ---
 
 ## Phase 3.7: Rename objects for clarity
-- [X] Rename `MotorDefinition` to `ServoMotor` throughout codebase
-- [X] Rename `CurveSeries` to `Curve` throughout codebase
-- [X] Rename `DriveConfiguration` to `Drive` throughout codebase
-- [X] Rename `VoltageConfiguration.Voltage` to `VoltageConfiguration.Value` throughout codebase
-- [X] Rename `VoltageConfiguration` to `Voltage` throughout codebase
+- [X] Rename domain root type to `ServoMotor` throughout codebase
+- [X] Rename curve type to `Curve` throughout codebase
+- [X] Rename drive type to `Drive` throughout codebase
+- [X] Rename voltage scalar property to `Voltage.Value` throughout codebase
+- [X] Rename voltage type to `Voltage` throughout codebase
 - [X] Rename collection object accessors/properties accordingly:
-  - `ServoMotor.DriveConfigurations` -> `Motor.Drives`
-  - `DriveConfiguration.VoltageConfigurations` -> `Drive.Voltages`
-  - `VoltageConfiguration.CurveSeries` -> `Voltage.Curves`
+  - `ServoMotor.Drives`
+  - `Drive.Voltages`
+  - `Voltage.Curves`
 - [X] Remove IEnumerable wrappers where not needed in `ServoMotor`, `Drive`, and `Voltage` classes 
-- [ ] Update all /docs/ to reflect these new names and removed IEnumerable wrapper methods
-  - [ ] (ignore files in /docs/api/*)
-  - [ ] Index.md
-  - [ ] QuickStart.md
-  - [ ] UserGuide.md
-- [ ] Update Readme.md in /src/MotorDefinition/ as well
-- [ ] Update Readme.md in / as well
-- [ ] Update `00-terms-and-definitions.md` in /docs/planning/ to reflect these new names
-- [ ] Update planning files (`.github/planning/`) not listed here that reference these old names
-- [ ] Update adrs (`/docs/adr/`) not listed here that reference these old names
+- [X] Update all /docs/ to reflect these new names and removed IEnumerable wrapper methods
+  - [X] (ignore files in /docs/api/*)
+  - [X] index.md
+  - [X] QuickStart.md
+  - [X] UserGuide.md
+- [X] Update README.md in src/MotorDefinition/
+- [X] Update README.md in /
+- [X] Update 00-terms-and-definitions.md in .github/planning/
+- [X] Update planning files (.github/planning/) not listed here that reference these old names
+- [X] Update adrs (docs/adr/) not listed here that reference these old names
 
 ## Phase 4: Advanced Editing
 

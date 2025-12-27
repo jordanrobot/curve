@@ -9,7 +9,7 @@ namespace JordanRobot.MotorDefinition.Model;
 
 /// <summary>
 /// Represents voltage-specific configuration and performance data for a motor/drive combination.
-/// Contains the curve series for this specific voltage setting.
+/// Contains the curves for this specific voltage setting.
 /// </summary>
 public class Voltage : INotifyPropertyChanged
 {
@@ -26,7 +26,7 @@ public class Voltage : INotifyPropertyChanged
         {
             if (value <= 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(value), value, "Value must be positive.");
+                throw new ArgumentOutOfRangeException(nameof(value), value, "Voltage must be positive.");
             }
             if (Math.Abs(_voltage - value) < double.Epsilon)
             {
@@ -88,7 +88,7 @@ public class Voltage : INotifyPropertyChanged
     public double PeakAmperage { get; set; }
 
     /// <summary>
-    /// The collection of curve series for this voltage configuration (e.g., "Peak", "Continuous").
+    /// The collection of curves for this voltage (e.g., "Peak", "Continuous").
     /// </summary>
     [JsonPropertyName("series")]
     public List<Curve> Curves { get; set; } = [];
@@ -110,21 +110,21 @@ public class Voltage : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Gets a curve series by name.
+    /// Gets a curve by name.
     /// </summary>
-    /// <param name="name">The name of the series to find.</param>
-    /// <returns>The matching series, or null if not found.</returns>
+    /// <param name="name">The name of the curve to find.</param>
+    /// <returns>The matching curve, or null if not found.</returns>
     public Curve? GetSeriesByName(string name)
     {
         return Curves.Find(s => s.Name.Equals(name, StringComparison.Ordinal));
     }
 
     /// <summary>
-    /// Adds a new series with the specified name.
+    /// Adds a new curve with the specified name.
     /// </summary>
-    /// <param name="name">The name for the new series.</param>
+    /// <param name="name">The name for the new curve.</param>
     /// <param name="initializeTorque">The default torque value for all points.</param>
-    /// <returns>The newly created series.</returns>
+    /// <returns>The newly created curve.</returns>
     /// <exception cref="InvalidOperationException">Thrown if a series with the same name already exists.</exception>
     public Curve AddSeries(string name, double initializeTorque = 0)
     {

@@ -1,18 +1,18 @@
 [Quick Start](docs/QuickStart.md) | [User Guide](docs/UserGuide.md) | [API documentation](docs/api/index.md)
 
-# MotorDefinition Library
+# JordanRobot.MotorDefinition Library
 
 ## Getting Started
 
-Use these pages to learn the `MotorDefinition` library:
+Use these pages to learn the `JordanRobot.MotorDefinition` library:
 
 - [Quick Start](docs/QuickStart.md)
 - [User Guide](docs/UserGuide.md)
 - [API documentation](docs/api/index.md "MotorDefinition API")
 Related resources:
 
-- [Example motor definition JSON](../schema/example-motor.json)
-- [JSON schema](../schema/motor-schema-v1.0.0.json)
+- [Example motor definition JSON](schema/example-motor.json)
+- [JSON schema](schema/motor-schema-v1.0.0.json)
 
 
 # Motor Torque Curve Editor
@@ -24,8 +24,8 @@ A desktop application for creating and editing motor torque curves stored in JSO
 ### Phase 1 (Foundation) - Complete
 - ✅ Create new motor definition files
 - ✅ Load and save motor curve data in JSON format
-- ✅ Hierarchical data structure: Motor → Drive(s) → Voltage(s) → Curve Series
-- ✅ Data models for motor definitions, drive configurations, voltage configurations, curve series, and data points
+- ✅ Hierarchical data structure: Motor → Drive(s) → Voltage(s) → Curve(s)
+- ✅ Data models for motor, drives, voltages, curves, and data points
 - ✅ Curve generation from motor parameters (max speed, torque, power)
 - ✅ Curve data storage supports 0–101 points per curve (default: 101 points at 1% increments)
 - ✅ Basic UI shell with menu bar
@@ -107,26 +107,26 @@ The resulting EXE is self-contained and should run on a Windows 10/11 x64 machin
 ## Project Structure
 
 ```
-CurveEditor/
+MotorDefinition/
 ├── src/
-│   ├── MotorEditor.Avalonia/   # Avalonia application
-│   └── jordanrobot.MotorDefinition/ # Shared library owning models + IO
+│   ├── MotorEditor.Avalonia/   # UI app for editing motor files
+│   └── MotorDefinition/        # Shared library owning models + IO
 ├── tests/
 │   └── CurveEditor.Tests/      # Unit tests
-└── samples/
-    └── example-motor.json      # Sample motor definition file
+└── schema/
+  └── example-motor.json      # Sample motor definition file
 ```
 
 ## Data Format
 
 Motor definitions are stored as JSON files with a hierarchical structure:
 
-**Motor → Drive(s) → Voltage(s) → Curve Series**
+**Motor → Drive(s) → Voltage(s) → Curve(s)**
 
 This structure reflects the real-world relationship where:
 - A motor can be paired with multiple drives
 - Each drive can operate at multiple voltages
-- Each voltage configuration has its own performance characteristics and curve series
+- Each voltage has its own performance characteristics and curves
 - Motor base properties (theoretical maximums from cut sheet) are stored at the motor level to avoid data duplication
 
 ```json
@@ -201,7 +201,7 @@ This structure reflects the real-world relationship where:
 }
 ```
 
-Each curve series can contain 0 to 101 data points.
+Each curve can contain 0 to 101 data points.
 
 - 101 points corresponds to the standard 1% increment curve (0% through 100%).
 - Fewer points are allowed for coarse datasets.

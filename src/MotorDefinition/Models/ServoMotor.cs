@@ -7,7 +7,7 @@ namespace JordanRobot.MotorDefinition.Model;
 
 /// <summary>
 /// Represents a complete motor definition including all properties, drive configurations, and metadata.
-/// Structure: Motor → Drive(s) → Value(s) → Curve
+/// Structure: Motor → Drive(s) → Voltage(s) → Curve
 /// </summary>
 public class ServoMotor
 {
@@ -151,7 +151,7 @@ public class ServoMotor
     // Drive Configurations
     /// <summary>
     /// The collection of drive configurations for this motor.
-    /// Each drive can have multiple voltage configurations with their own curve series.
+    /// Each drive can have multiple voltages with their own curves.
     /// </summary>
     [JsonPropertyName("drives")]
     public List<Drive> Drives { get; set; } = [];

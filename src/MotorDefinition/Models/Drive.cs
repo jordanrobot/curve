@@ -9,7 +9,7 @@ namespace JordanRobot.MotorDefinition.Model;
 
 /// <summary>
 /// Represents a servo drive configuration for a motor.
-/// Contains voltage-specific configurations and their associated curve series.
+/// Contains voltage-specific configurations and their associated curves.
 /// </summary>
 public class Drive : INotifyPropertyChanged
 {
@@ -91,7 +91,7 @@ public class Drive : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Default tolerance for voltage matching in volts.
+    /// Default tolerance for matching voltage values (in volts).
     /// </summary>
     public const double DefaultVoltageTolerance = 0.1;
 

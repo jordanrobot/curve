@@ -24,7 +24,7 @@ public class Curve : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     /// <summary>
-    /// The name of this curve series (e.g., "Peak", "Continuous").
+    /// The name of this curve (e.g., "Peak", "Continuous").
     /// </summary>
     [JsonPropertyName("name")]
     public string Name
@@ -45,13 +45,13 @@ public class Curve : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Notes or comments about this curve series.
+    /// Notes or comments about this curve.
     /// </summary>
     [JsonPropertyName("notes")]
     public string Notes { get; set; } = string.Empty;
 
     /// <summary>
-    /// Indicates whether this curve series is locked for editing.
+    /// Indicates whether this curve is locked for editing.
     /// When true, the curve data should not be modified.
     /// </summary>
     [JsonPropertyName("locked")]
@@ -69,7 +69,7 @@ public class Curve : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Indicates whether this curve series is visible in the chart.
+    /// Indicates whether this curve is visible in the chart.
     /// This is a runtime-only property that is not persisted to JSON.
     /// </summary>
     [JsonIgnore]
@@ -123,7 +123,7 @@ public class Curve : INotifyPropertyChanged
     /// <summary>
     /// Creates a new Curve with the specified name.
     /// </summary>
-    /// <param name="name">The name of the curve series.</param>
+    /// <param name="name">The name of the curve.</param>
     public Curve(string name)
     {
         Name = name;

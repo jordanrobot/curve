@@ -43,10 +43,10 @@ Out of scope reminders:
 - Persistence:
   - [src/CurveEditor/Services/FileService.cs](src/CurveEditor/Services/FileService.cs)
 - Runtime models (remain runtime-facing):
-  - [src/CurveEditor/Models/MotorDefinition.cs](src/CurveEditor/Models/MotorDefinition.cs)
-  - [src/CurveEditor/Models/DriveConfiguration.cs](src/CurveEditor/Models/DriveConfiguration.cs)
-  - [src/CurveEditor/Models/VoltageConfiguration.cs](src/CurveEditor/Models/VoltageConfiguration.cs)
-  - [src/CurveEditor/Models/CurveSeries.cs](src/CurveEditor/Models/CurveSeries.cs)
+  - `ServoMotor`
+  - `Drive`
+  - `Voltage`
+  - `Curve`
   - [src/CurveEditor/Models/DataPoint.cs](src/CurveEditor/Models/DataPoint.cs)
   - [src/CurveEditor/Models/UnitSettings.cs](src/CurveEditor/Models/UnitSettings.cs)
 - Validation:
@@ -65,7 +65,7 @@ Out of scope reminders:
 - AC 3.1.5d: The new motor properties are correctly loaded and saved, and their default values are applied when loading files that omit them.
 
 ### Assumptions and Constraints
-- Runtime model stays `CurveSeries` + `DataPoint`. The series table/map is a persistence-only representation.
+- Runtime model uses `ServoMotor` → `Drive` → `Voltage` → `Curve` → `DataPoint`. The series table/map is a persistence-only representation.
 - The new on-disk representation is the only representation written by the app.
 - Directory Browser "is this a motor file" check must not call `IFileService.LoadAsync()` (it mutates global file state).
 - Backward compatibility is explicitly out of scope for Phase 3.1.5 (project not released publicly yet). Do not implement loading of the legacy per-point `series[]/data[]` representation.
@@ -93,10 +93,10 @@ Extraction-friendly layout (recommended)
   - `series`: object/map keyed by series name
     - entry has: `locked` (bool), `notes` (optional string), `torque` (array length matches `percent`)
 - Runtime shape (unchanged):
-  - `VoltageConfiguration.Series[]` of `CurveSeries`, each with `DataPoint{ Percent, Rpm, Torque }[0..101]`.
+  - `Voltage.Curves[]` of `Curve`, each with `DataPoint{ Percent, Rpm, Torque }[0..101]`.
 - Drive JSON rename:
   - On disk: drive uses `name`, `manufacturer`, `partNumber`, then `voltages`.
-  - In runtime: keep `DriveConfiguration.Name` as the internal name.
+  - In runtime: keep `Drive.Name` as the internal name.
 
 ### Agent Notes (Migration Guidance)
 - Prefer a DTO + mapper boundary around `FileService` so UI/runtime code doesn’t need to know about the new persisted shape.
@@ -160,7 +160,7 @@ Change persistence so saving and loading both use the new format, so the PR is m
   - [x] Keep `schemaVersion` emitted as `1.0.0`.
 - [x] Implement drive JSON rename end-to-end:
   - [x] On disk uses `name` (and does not use `seriesName`).
-  - [x] On read, map `name` -> runtime `DriveConfiguration.Name`.
+  - [x] On read, map `name` -> runtime `Drive.Name`.
   - [x] Ensure property ordering on write: `name`, `manufacturer`, `partNumber`, then `voltages` (DTO `JsonPropertyOrder`).
 - [x] Add new motor scalar properties end-to-end:
   - [x] `brakeReleaseTime`
@@ -175,14 +175,14 @@ Change persistence so saving and loading both use the new format, so the PR is m
   - [x] Ensure `inertia` default is `kg-m^2`.
   - [x] Ensure `torqueConstant` default is `Nm/A`.
 - [x] Update Directory Browser lightweight validator to recognize the new format without deserializing runtime models:
-  - [x] Replace `JsonSerializer.Deserialize<MotorDefinition>` approach with a `JsonDocument` shape probe.
-  - [x] Prefer calling the shared `jordanrobot.MotorDefinitions.Probing` helper so `DirectoryBrowserViewModel` does not embed schema details.
+  - [x] Replace `JsonSerializer.Deserialize<ServoMotor>` approach with a `JsonDocument` shape probe.
+  - [x] Prefer calling the shared `JordanRobot.MotorDefinition.Persistence.Probing` helper so `DirectoryBrowserViewModel` does not embed schema details.
   - [x] Check for `schemaVersion == "1.0.0"`, `motorName`, and plausible `drives[].voltages[]` structure.
   - [x] Check that voltage entries contain `percent`/`rpm` arrays and a `series` object.
   - [x] Keep it lightweight (no full schema validation in Phase 3.1.5; migrate to library validator in Phase 3.1.6+).
 - [x] Case-sensitive series key behavior:
   - [x] Ensure the mapper uses case-sensitive dictionary keys for `series` (no casing normalization).
-  - [x] Update runtime series lookup helpers to be case-sensitive where applicable (e.g., `VoltageConfiguration.GetSeriesByName`).
+  - [x] Update runtime curve lookup helpers to be case-sensitive where applicable (e.g., `Voltage.GetSeriesByName`).
 
 Tests (must make this PR merge-safe)
 - [x] Update/add unit tests to validate the new end-to-end behavior:
@@ -204,7 +204,7 @@ Required hygiene:
 - Update: [src/CurveEditor/Services/FileService.cs](src/CurveEditor/Services/FileService.cs)
 - Update: [src/CurveEditor/ViewModels/DirectoryBrowserViewModel.cs](src/CurveEditor/ViewModels/DirectoryBrowserViewModel.cs)
 - Update: [src/CurveEditor/Models/UnitSettings.cs](src/CurveEditor/Models/UnitSettings.cs)
-- Update (if needed): [src/CurveEditor/Models/VoltageConfiguration.cs](src/CurveEditor/Models/VoltageConfiguration.cs)
+- Update (if needed): `src/CurveEditor/Models/Voltage.cs`
 - Update/add: [tests/CurveEditor.Tests/Services/FileServiceTests.cs](tests/CurveEditor.Tests/Services/FileServiceTests.cs)
 
 ### Quick manual test
