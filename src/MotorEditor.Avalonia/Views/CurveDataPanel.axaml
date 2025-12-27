@@ -63,7 +63,7 @@
                 BorderThickness="0,0,0,1"
                 IsVisible="{Binding SelectedVoltage, Converter={x:Static ObjectConverters.IsNotNull}}">
             <ScrollViewer x:Name="HeaderScrollViewer" 
-                          HorizontalScrollBarVisibility="Hidden"
+                          HorizontalScrollBarVisibility="Disabled"
                           VerticalScrollBarVisibility="Disabled">
                 <StackPanel Orientation="Horizontal">
                     <!-- Fixed columns: % and RPM -->
@@ -157,6 +157,7 @@
                   GridLinesVisibility="Horizontal"
                   HeadersVisibility="None"
                   SelectionMode="Single"
+                  HorizontalScrollBarVisibility="Disabled"
                   IsVisible="{Binding SelectedVoltage, Converter={x:Static ObjectConverters.IsNotNull}}"
                   CellEditEnded="DataGrid_CellEditEnded">
             <DataGrid.Columns>
