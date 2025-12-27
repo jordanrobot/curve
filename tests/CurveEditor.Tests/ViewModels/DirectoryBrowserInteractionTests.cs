@@ -1,12 +1,13 @@
+using CurveEditor.Services;
+using CurveEditor.ViewModels;
+using JordanRobot.MotorDefinition.Model;
+using JordanRobot.MotorDefinition.Persistence.Dtos;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using CurveEditor.Services;
-using CurveEditor.ViewModels;
-using jordanrobot.MotorDefinitions.Dtos;
 using Xunit;
 
 namespace CurveEditor.Tests.ViewModels;
@@ -20,7 +21,7 @@ public sealed class DirectoryBrowserInteractionTests
 
         var dto = new MotorDefinitionFileDto
         {
-            SchemaVersion = CurveEditor.Models.MotorDefinition.CurrentSchemaVersion,
+            SchemaVersion = ServoMotor.CurrentSchemaVersion,
             MotorName = motorName,
             Drives =
             [
@@ -238,8 +239,8 @@ public sealed class DirectoryBrowserInteractionTests
             var dir4Node = Assert.Single(rootNode.Children, n => n.IsDirectory && n.DisplayName == "directory 4");
 
             // Directory children are loaded lazily; until expanded they should not show their contents.
-            Assert.Empty(motorProfilesNode.Children);
-            Assert.Empty(dir4Node.Children);
+            Assert.Empty(motorProfilesNode.Children.Where(c => !c.IsPlaceholder));
+            Assert.Empty(dir4Node.Children.Where(c => !c.IsPlaceholder));
         }
         finally
         {

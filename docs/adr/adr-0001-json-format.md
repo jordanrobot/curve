@@ -21,13 +21,13 @@ The Curve Editor application persists motor configuration data to disk as JSON f
 - For each voltage configuration, one or more torque/speed curve series consisting of ordered data points.
 - File-level metadata such as creation/modification timestamps and notes.
 
-By Phase 2, several different parts of the application depended on an implicit JSON shape derived from the `MotorDefinition` object graph. We also introduced a JSON Schema file (`schema/motor-schema-v1.0.0.json`) and a schema index (`schema/index.json`) to support tooling (editor validation, CI checks, documentation), but the overall format and versioning rules were not captured in a single place.
+By Phase 2, several different parts of the application depended on an implicit JSON shape derived from the `ServoMotor` object graph. We also introduced a JSON Schema file (`schema/motor-schema-v1.0.0.json`) and a schema index (`schema/index.json`) to support tooling (editor validation, CI checks, documentation), but the overall format and versioning rules were not captured in a single place.
 
 We need an authoritative description of:
 
 - The JSON structure used to save motor files.
 - The versioning scheme for that format.
-- How the JSON Schema and index relate to the runtime model (`MotorDefinition`).
+- How the JSON Schema and index relate to the runtime model (`ServoMotor`).
 
 This ADR documents the current format and establishes it as the baseline for future evolution.
 
@@ -82,7 +82,7 @@ We standardize on a **versioned JSON format** for motor definition files with th
      - `series` (array, required): torque/speed curve series for this voltage.
 
 4. **Curve series and data points**
-   - `series` is an array of objects; each object maps to a `CurveSeries` in the runtime model. Each series object has:
+  - `series` is an array of objects; each object maps to a `Curve` in the runtime model. Each series object has:
      - `name` (string, required): series name (e.g., `"Peak"`, `"Continuous"`).
      - `notes` (string, optional): free-form notes.
      - `locked` (boolean, required): whether the series is locked for editing in the UI.
@@ -100,21 +100,21 @@ We standardize on a **versioned JSON format** for motor definition files with th
      - `notes` (string): free-form notes for the file.
 
 6. **Versioning rules**
-   - The application exposes a constant `MotorDefinition.CurrentSchemaVersion`, currently set to `"1.0.0"`, and persists this value as the `schemaVersion` field in every saved motor file.
+  - The application exposes a constant `ServoMotor.CurrentSchemaVersion`, currently set to `"1.0.0"`, and persists this value as the `schemaVersion` field in every saved motor file.
    - The JSON Schema for this version (`schema/motor-schema-v1.0.0.json`) enforces that `schemaVersion` matches the regex `^1\.0\.0$`.
    - The schema index (`schema/index.json`):
      - Contains `currentVersion` (integer) indicating the active format generation (currently `1`).
      - Has a `schemas` object with a property `"1"` describing the v1 schema, including a `file` property that points to a schema file name matching `^motor-schema-v[0-9]+\.[0-9]+\.[0-9]+\.json$`.
    - Future changes to the on-disk shape that are not backward-compatible will:
-     - Bump `MotorDefinition.CurrentSchemaVersion` (e.g., to `"2.0.0"`).
+     - Bump `ServoMotor.CurrentSchemaVersion` (e.g., to `"2.0.0"`).
      - Introduce a new JSON Schema file and corresponding entry in `schema/index.json`.
 
 7. **Source of truth**
-   - The runtime object graph for a motor is represented by `MotorDefinition` and its related model types (`DriveConfiguration`, `VoltageConfiguration`, `CurveSeries`, `DataPoint`, `UnitSettings`, `MotorMetadata`).
+  - The runtime object graph for a motor is represented by `ServoMotor` and its related model types (`Drive`, `Voltage`, `Curve`, `DataPoint`, `UnitSettings`, `MotorMetadata`).
    - JSON serialization uses `System.Text.Json` with:
      - `JsonPropertyName` attributes to bind JSON fields to CLR properties.
      - A case-insensitive option for property names, allowing minor JSON variations while still preferring the canonical names defined in this ADR.
-   - The combination of this ADR, `MotorDefinition` and related models, and `schema/motor-schema-v1.0.0.json` is the normative definition of the motor file format.
+  - The combination of this ADR, `ServoMotor` and related models, and `schema/motor-schema-v1.0.0.json` is the normative definition of the motor file format.
 
 ## Consequences
 
@@ -123,7 +123,7 @@ We standardize on a **versioned JSON format** for motor definition files with th
 - **POS-001**: Establishes a single, authoritative description of the motor JSON file format, reducing ambiguity for contributors and tooling.
 - **POS-002**: The strict JSON Schema (`motor-schema-v1.0.0.json`) and schema index (`index.json`) enable editor integration, CI validation, and automated documentation.
 - **POS-003**: Explicit `schemaVersion` and semver-style versioning create a clear path for evolving the format while maintaining backward compatibility strategies.
-- **POS-004**: Aligning the JSON format with the `MotorDefinition` object graph keeps serialization/deserialization straightforward and minimizes mapping logic.
+- **POS-004**: Aligning the JSON format with the `ServoMotor` object graph keeps serialization/deserialization straightforward and minimizes mapping logic.
 
 ### Negative
 
@@ -135,7 +135,7 @@ We standardize on a **versioned JSON format** for motor definition files with th
 
 ### Alternative A: Unversioned, schema-less JSON
 
-- **ALT-001**: **Description**: Persist the `MotorDefinition` graph as JSON without a `schemaVersion` field and without a maintained JSON Schema.
+- **ALT-001**: **Description**: Persist the `ServoMotor` graph as JSON without a `schemaVersion` field and without a maintained JSON Schema.
 - **ALT-002**: **Rejection Reason**: Makes it difficult to evolve the format safely, hampers tooling support (validation, editor hints), and forces all compatibility logic into application code.
 
 ### Alternative B: Implicit versioning via model shape only
@@ -150,13 +150,13 @@ We standardize on a **versioned JSON format** for motor definition files with th
 
 ## Implementation Notes
 
-- **IMP-001**: The canonical JSON Schema for the current format is stored at `schema/motor-schema-v1.0.0.json` and should be kept in sync with `MotorDefinition` and this ADR when fields are added or removed.
+- **IMP-001**: The canonical JSON Schema for the current format is stored at `schema/motor-schema-v1.0.0.json` and should be kept in sync with `ServoMotor` and this ADR when fields are added or removed.
 - **IMP-002**: The schema index at `schema/index.json` is the entry point for tools that need to discover schema versions and associated files; when introducing a new format version, add a new entry and consider updating `currentVersion`.
 - **IMP-003**: When loading files, future versions of the application should examine `schemaVersion` and, if necessary, apply migration steps or report incompatibilities explicitly.
 
 ## References
 
-- **REF-001**: Runtime model: `src/CurveEditor/Models/MotorDefinition.cs` and related model types.
+- **REF-001**: Runtime model: `src/MotorDefinition/Models/ServoMotor.cs` and related model types.
 - **REF-002**: JSON Schema: `schema/motor-schema-v1.0.0.json`.
 - **REF-003**: Schema index: `schema/index.json`.
 - **REF-004**: Example motor file: `schema/example-motor.json`.

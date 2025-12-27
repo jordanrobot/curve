@@ -75,14 +75,20 @@ Phase 8: Power Curve Overlay (Future)
 - [X] Add asterisk (*) to title when file is dirty
 
 ### 1.3 Data Models
-- [X] Create MotorDefinition model class (all motor properties)
-- [X] Create CurveSeries model class (named curve)
+- [X] Create ServoMotor model class (all motor properties)
+- [X] Create Curve model class (named curve)
 - [X] Create DataPoint model class (percent, rpm, torque)
 - [X] Create UnitSettings model class (torque, speed, power, weight units)
 - [X] Create MotorMetadata model class
-- [X] Implement 1% increment data structure (101 points per series)
+- [X] Implement standard 1% increment data structure (101 points per series; file format supports 0–101)
+- [X] Support opening/viewing variable point curves (0..101 points, not hard-required to be 101)
 - [X] Add JSON serialization attributes
 - [X] Write model unit tests
+
+Notes:
+
+- Variable-point support work touched: `src/MotorEditor.Avalonia/Services/ValidationService.cs`, `src/MotorDefinition/MotorDefinitions/Probing/MotorFileProbe.cs`, `tests/CurveEditor.Tests/Services/MotorFileVariablePointsLoadTests.cs`.
+- `schema/example-motor.json` includes a 21-point voltage curve series.
 
 ### 1.4 File Service
 - [X] Implement JSON loading
@@ -203,7 +209,7 @@ These refinements should be evaluated against the current codebase when planning
   - Power, weight, rotor inertia
   - Brake properties (hasBrake, torque, amperage)
 - [X] Unit selector for each property type
-- [X] Bind properties to MotorDefinition model
+- [X] Bind properties to ServoMotor model
 - [X] Enable editing of all fields
 
 Note: Motor text property edits (e.g., name, manufacturer, part number) are routed through explicit view-model edit methods and undoable commands as described in ADR-0003 (`../../docs/adr/adr-0003-motor-property-undo-design.md`).
@@ -288,13 +294,14 @@ See ADR-0006 (`../../docs/adr/adr-0006-motor-file-schema-and-versioning.md`) for
 - [X] Mark file dirty when any edit is made
 - [X] Clear dirty state when file is saved
 - [X] Show asterisk (*) in window title when dirty
-- [ ] Visual indicator in directory list for dirty files
+- [X] Visual indicator in directory list for dirty files
 
 ### 3.3 Save Prompts
-- [ ] Prompt to save when closing app with dirty file
-- [ ] Prompt to save when opening new file with dirty file active
-- [ ] Dialog with Save / Don't Save / Cancel options
-- [ ] Handle Cancel to abort the close/open operation
+- [X] Prompt to save when closing app with dirty file
+- [X] Prompt to save when opening new file with dirty file active
+- [X] Dialog with Save / Don't Save / Cancel options
+- [X] Handle Cancel to abort the open operation
+- [X] Handle Cancel to abort the close operation
 
 ### 3.4 Save Commands
 - [X] Save command overwrites current file
@@ -305,6 +312,28 @@ See ADR-0006 (`../../docs/adr/adr-0006-motor-file-schema-and-versioning.md`) for
 **Deliverable:** Full file management with directory browser and save prompts.
 
 ---
+
+## Phase 3.7: Rename objects for clarity
+- [X] Rename domain root type to `ServoMotor` throughout codebase
+- [X] Rename curve type to `Curve` throughout codebase
+- [X] Rename drive type to `Drive` throughout codebase
+- [X] Rename voltage scalar property to `Voltage.Value` throughout codebase
+- [X] Rename voltage type to `Voltage` throughout codebase
+- [X] Rename collection object accessors/properties accordingly:
+  - `ServoMotor.Drives`
+  - `Drive.Voltages`
+  - `Voltage.Curves`
+- [X] Remove IEnumerable wrappers where not needed in `ServoMotor`, `Drive`, and `Voltage` classes 
+- [X] Update all /docs/ to reflect these new names and removed IEnumerable wrapper methods
+  - [X] (ignore files in /docs/api/*)
+  - [X] index.md
+  - [X] QuickStart.md
+  - [X] UserGuide.md
+- [X] Update README.md in src/MotorDefinition/
+- [X] Update README.md in /
+- [X] Move terms and definitions into docs/TermsAndDefinitions.md
+- [X] Update planning files (.github/planning/) not listed here that reference these old names
+- [X] Update adrs (docs/adr/) not listed here that reference these old names
 
 ## Phase 4: Advanced Editing
 
@@ -569,7 +598,7 @@ Create `samples/example-motor.json` for testing:
 }
 ```
 
-**Note:** Full files will have 101 data points per series (0% to 100% in 1% increments).
+**Note:** Full files typically use the standard 101-point curve (0% to 100% in 1% increments), but the file format supports 0–101 points per series.
 The sample above shows 10% increments for brevity.
 
 ---
@@ -595,7 +624,7 @@ The sample above shows 10% increments for brevity.
 - [ ] Series visibility toggleable via checkboxes
 - [ ] Series distinguished by unique colors
 - [ ] User can edit series colors (persisted per series name)
-- [ ] Data saved at 1% increments (0-100%)
+- [ ] Standard curves saved at 1% increments (0-100%); file format supports 0–101 points per series
 - [ ] RPM displayed rounded to nearest whole number
 - [ ] RPM on X axis, Torque on Y axis (default)
 - [ ] Grid lines at rounded value increments

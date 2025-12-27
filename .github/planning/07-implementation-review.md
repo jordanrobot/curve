@@ -83,8 +83,8 @@ public class DataPoint
 | motorName | Yes | - |
 | manufacturer | No | "" |
 | partNumber | No | "" |
-| maxRpm | Yes | - |
-| series | Yes | At least one |
+| maxSpeed | Yes | - |
+| drives | Yes | At least one |
 
 ---
 
@@ -105,7 +105,7 @@ public class DataPoint
 - Consider read-only mode when file is locked
 
 ```csharp
-public async Task<MotorDefinition?> LoadAsync(string filePath)
+public async Task<ServoMotor?> LoadAsync(string filePath)
 {
     using var stream = new FileStream(
         filePath, 
@@ -144,7 +144,7 @@ public class AutoSaveService
         return Path.ChangeExtension(originalPath, ".autosave.json");
     }
     
-    public async Task AutoSaveAsync(MotorDefinition data, string originalPath)
+    public async Task AutoSaveAsync(ServoMotor data, string originalPath)
     {
         var autoSavePath = GetAutoSavePath(originalPath);
         await File.WriteAllTextAsync(autoSavePath, JsonSerializer.Serialize(data));
@@ -175,7 +175,7 @@ public class AutoSaveService
 
 Migration strategy:
 ```csharp
-public async Task<MotorDefinition> LoadWithMigrationAsync(string filePath)
+public async Task<ServoMotor> LoadWithMigrationAsync(string filePath)
 {
     var json = await File.ReadAllTextAsync(filePath);
     var document = JsonDocument.Parse(json);
@@ -186,7 +186,7 @@ public async Task<MotorDefinition> LoadWithMigrationAsync(string filePath)
     
     return version switch
     {
-        "1.0" => JsonSerializer.Deserialize<MotorDefinition>(json),
+        "1.0" => JsonSerializer.Deserialize<ServoMotor>(json),
         "0.0" => MigrateFromLegacy(document),
         _ => throw new NotSupportedException($"Unknown schema version: {version}")
     };
@@ -463,15 +463,15 @@ public class FileService : IFileService
 {
     private readonly ILogger<FileService> _logger;
     
-    public async Task<MotorDefinition?> LoadAsync(string filePath)
+    public async Task<ServoMotor?> LoadAsync(string filePath)
     {
         _logger.LogInformation("Loading file: {FilePath}", filePath);
         
         try
         {
             var data = // load...
-            _logger.LogDebug("Loaded motor: {MotorName} with {SeriesCount} series", 
-                data.MotorName, data.Series.Count);
+            _logger.LogDebug("Loaded motor: {MotorName} with {DriveCount} drives",
+                data.MotorName, data.Drives.Count);
             return data;
         }
         catch (Exception ex)
@@ -511,7 +511,7 @@ Alternative models exist:
 - b) Store only provided points?
 - c) Reject the input?
 
-**Recommendation**: Always store 101 points, interpolating as needed:
+**Recommendation**: Store the points as provided (0–101), and only interpolate to 101 points when needed for standard curve generation or specific UI workflows:
 ```csharp
 public List<DataPoint> InterpolateToStandard(List<DataPoint> sparsePoints)
 {

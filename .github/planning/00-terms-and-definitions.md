@@ -6,26 +6,28 @@ This document establishes consistent terminology for the motor torque curve edit
 
 ## Core Concepts
 
-### Motor Definition
-The root domain object for this application. Represents the entirety of information contained in a motor definition file: a single motor with all base properties, unit settings, drive configurations, voltage configurations, curve series, and metadata.
+### Motor
+The root domain object for this application (`ServoMotor`). Represents the entirety of information contained in a motor definition file: a single motor with all base properties, unit settings, drives, voltages, curves, and metadata.
 
 ### Motor Definition File
-The JSON file on disk that serializes a `MotorDefinition`. It contains motor properties, unit settings, one or more drive configurations, each with one or more voltage configurations, each of which contains multiple curve series and data points.
+The JSON file on disk that serializes a `ServoMotor`. It contains motor properties, unit settings, one or more drives, each with one or more voltages, each of which contains multiple curves and data points.
 
-### Curve (or Curve Series)
-A `CurveSeries` describes a single named series of motor torque/speed data points for a specific drive and voltage configuration. Each curve represents a specific operating condition (e.g., "Peak" or "Continuous") and is stored as data points at 1% increments of motor max speed.
+### Curve
+A `Curve` describes a single named series of motor torque/speed data points for a specific drive and voltage. Each curve represents a specific operating condition (e.g., "Peak" or "Continuous") and is stored as collection of data points.
+
+The standard curve is 101 points at 1% increments (0%..100%), but files may contain fewer points. Percent values above 100 may be used to represent over-speed (manual JSON editing; the editor may treat these as view-only).
 
 ### Data Point
 A single point on a curve, consisting of:
-- **Percent**: 0-100%, representing position along the speed range
+- **Percent**: non-negative integer representing position along the speed range (may exceed 100% for over-speed)
 - **RPM**: Rotational speed at that percentage point
 - **Torque**: Torque value at that speed
 
-### Drive Configuration
-A `DriveConfiguration` groups curve data by servo drive. Each drive has a name, optional drive-specific properties, and a collection of voltage configurations.
+### Drive
+A `Drive` groups curve data by servo drive. Each drive has a name, optional drive-specific properties, and a collection of voltages.
 
-### Voltage Configuration
-A `VoltageConfiguration` represents all curve series for a specific operating voltage of a given drive. It includes the numeric voltage value and a collection of `CurveSeries` objects.
+### Voltage
+A `Voltage` represents all curves for a specific operating voltage of a given drive. It includes the numeric voltage value (`Voltage.Value`) and a collection of `Curve` objects.
 
 ### Motor Metadata
 `MotorMetadata` tracks file-related and descriptive metadata for a motor definition (for example, author, creation and modification timestamps, and notes). It is updated automatically when structure-changing operations occur.
@@ -134,6 +136,9 @@ The graphical display showing curves as line graphs with axes, grid lines, and l
 
 ### Directory Browser
 The side pane showing the file system for navigating and selecting motor definition files.
+
+### Root Folder
+The directory selected as the top-level (root) for the Directory Browser. Only motor definition files under the Root Folder are shown and can be highlighted or selected from the explorer tree.
 
 ### Editing Coordinator
 An internal coordination object shared between the chart and data table views. It tracks the currently selected curve points and ensures that selections and highlights stay in sync between visual and tabular editing surfaces.
@@ -258,11 +263,11 @@ A derived curve showing power vs. speed, calculated from the torque curve.
 
 ## Data Format
 
-### 1% Increment Storage
-Curves are stored with data points at every 1% of max speed (101 points total: 0% through 100%).
+### Standard 1% Increment Storage
+Standard curves use data points at every 1% of max speed (101 points total: 0% through 100%), but the file format supports 0–101 points per series.
 
 ### Percentage
-A value from 0 to 100 representing position along the motor's speed range:
+A non-negative integer representing position along the motor's speed range (may exceed 100% for overspeed):
 - 0% = 0 RPM
 - 100% = Max RPM
 

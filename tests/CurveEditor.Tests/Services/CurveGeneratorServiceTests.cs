@@ -1,8 +1,8 @@
+using CurveEditor.Services;
+using JordanRobot.MotorDefinition.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using CurveEditor.Models;
-using CurveEditor.Services;
 using Xunit;
 
 namespace CurveEditor.Tests.Services;

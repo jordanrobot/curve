@@ -1,24 +1,16 @@
+using CurveEditor.Services;
+using JordanRobot.MotorDefinition;
+using JordanRobot.MotorDefinition.Model;
 using System;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using CurveEditor.Models;
-using CurveEditor.Services;
-using jordanrobot.MotorDefinitions.Mapping;
 using Xunit;
 
 namespace CurveEditor.Tests.Services;
 
 public class FileServiceTests : IDisposable
 {
-    private static readonly JsonSerializerOptions TestJsonOptions = new()
-    {
-        WriteIndented = true,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-    };
-
     private readonly string _tempDir;
     private readonly FileService _service;
 
@@ -42,9 +34,9 @@ public class FileServiceTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private static MotorDefinition CreateTestMotorDefinition()
+    private static ServoMotor CreateTestServoMotor()
     {
-        var motor = new MotorDefinition("Test Motor")
+        var motor = new ServoMotor("Test Motor")
         {
             Manufacturer = "Test Mfg",
             PartNumber = "TM-1234",
@@ -64,32 +56,33 @@ public class FileServiceTests : IDisposable
         motor.Units.Temperature = "C";
 
         var drive = motor.AddDrive("Test Drive");
-        var voltage = drive.AddVoltageConfiguration(220);
+        var voltage = drive.AddVoltage(220);
         voltage.MaxSpeed = 5000;
         voltage.Power = 1500;
         voltage.RatedPeakTorque = 55.0;
         voltage.RatedContinuousTorque = 45.0;
 
-        var series = new CurveSeries("Peak");
+        var series = new Curve("Peak");
         series.InitializeData(5000, 55.0);
-        voltage.Series.Add(series);
+        voltage.Curves.Add(series);
 
         return motor;
     }
 
-    private static async Task WriteMotorFileAsync(MotorDefinition motor, string filePath)
+    private static Curve[] GetAllSeries(ServoMotor motor)
     {
-        var dto = MotorFileMapper.ToFileDto(motor);
-        var json = JsonSerializer.Serialize(dto, TestJsonOptions);
-        await File.WriteAllTextAsync(filePath, json);
+        return motor.Drives
+            .SelectMany(d => d.Voltages)
+            .SelectMany(v => v.Curves)
+            .ToArray();
     }
 
     [Fact]
     public async Task LoadAsync_ValidFile_ReturnsMotorDefinition()
     {
-        var motor = CreateTestMotorDefinition();
+        var motor = CreateTestServoMotor();
         var filePath = Path.Combine(_tempDir, "test-motor.json");
-        await WriteMotorFileAsync(motor, filePath);
+        await MotorFile.SaveAsync(motor, filePath);
 
         var loaded = await new FileService().LoadAsync(filePath);
 
@@ -117,9 +110,9 @@ public class FileServiceTests : IDisposable
     [Fact]
     public async Task LoadAsync_SetsCurrentFilePath()
     {
-        var motor = CreateTestMotorDefinition();
+        var motor = CreateTestServoMotor();
         var filePath = Path.Combine(_tempDir, "test-motor.json");
-        await WriteMotorFileAsync(motor, filePath);
+        await MotorFile.SaveAsync(motor, filePath);
 
         var loader = new FileService();
         await loader.LoadAsync(filePath);
@@ -130,9 +123,9 @@ public class FileServiceTests : IDisposable
     [Fact]
     public async Task LoadAsync_ClearsDirtyFlag()
     {
-        var motor = CreateTestMotorDefinition();
+        var motor = CreateTestServoMotor();
         var filePath = Path.Combine(_tempDir, "test-motor.json");
-        await WriteMotorFileAsync(motor, filePath);
+        await MotorFile.SaveAsync(motor, filePath);
 
         var loader = new FileService();
         loader.MarkDirty();
@@ -144,7 +137,7 @@ public class FileServiceTests : IDisposable
     [Fact]
     public async Task SaveAsAsync_CreatesFile()
     {
-        var motor = CreateTestMotorDefinition();
+        var motor = CreateTestServoMotor();
         var filePath = Path.Combine(_tempDir, "new-motor.json");
 
         await _service.SaveAsAsync(motor, filePath);
@@ -155,7 +148,7 @@ public class FileServiceTests : IDisposable
     [Fact]
     public async Task SaveAsAsync_UpdatesCurrentFilePath()
     {
-        var motor = CreateTestMotorDefinition();
+        var motor = CreateTestServoMotor();
         var filePath = Path.Combine(_tempDir, "new-motor.json");
 
         await _service.SaveAsAsync(motor, filePath);
@@ -166,7 +159,7 @@ public class FileServiceTests : IDisposable
     [Fact]
     public async Task SaveAsAsync_ClearsDirtyFlag()
     {
-        var motor = CreateTestMotorDefinition();
+        var motor = CreateTestServoMotor();
         var filePath = Path.Combine(_tempDir, "new-motor.json");
         _service.MarkDirty();
 
@@ -178,7 +171,7 @@ public class FileServiceTests : IDisposable
     [Fact]
     public async Task SaveCopyAsAsync_CreatesFile()
     {
-        var motor = CreateTestMotorDefinition();
+        var motor = CreateTestServoMotor();
         var filePath = Path.Combine(_tempDir, "copy-motor.json");
 
         await _service.SaveCopyAsAsync(motor, filePath);
@@ -189,7 +182,7 @@ public class FileServiceTests : IDisposable
     [Fact]
     public async Task SaveCopyAsAsync_DoesNotUpdateCurrentFilePath()
     {
-        var motor = CreateTestMotorDefinition();
+        var motor = CreateTestServoMotor();
         var originalPath = Path.Combine(_tempDir, "original.json");
         var copyPath = Path.Combine(_tempDir, "copy-motor.json");
         await _service.SaveAsAsync(motor, originalPath);
@@ -202,7 +195,7 @@ public class FileServiceTests : IDisposable
     [Fact]
     public async Task SaveCopyAsAsync_DoesNotClearDirtyFlag()
     {
-        var motor = CreateTestMotorDefinition();
+        var motor = CreateTestServoMotor();
         var originalPath = Path.Combine(_tempDir, "original.json");
         var copyPath = Path.Combine(_tempDir, "copy-motor.json");
         await _service.SaveAsAsync(motor, originalPath);
@@ -216,7 +209,7 @@ public class FileServiceTests : IDisposable
     [Fact]
     public async Task SaveAsync_NoCurrentFile_ThrowsInvalidOperationException()
     {
-        var motor = CreateTestMotorDefinition();
+        var motor = CreateTestServoMotor();
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => _service.SaveAsync(motor));
     }
@@ -224,7 +217,7 @@ public class FileServiceTests : IDisposable
     [Fact]
     public async Task SaveAsync_WithCurrentFile_OverwritesFile()
     {
-        var motor = CreateTestMotorDefinition();
+        var motor = CreateTestServoMotor();
         var filePath = Path.Combine(_tempDir, "test-motor.json");
         await _service.SaveAsAsync(motor, filePath);
 
@@ -238,7 +231,7 @@ public class FileServiceTests : IDisposable
     [Fact]
     public async Task SaveAndLoad_RoundTrip_PreservesAllProperties()
     {
-        var original = CreateTestMotorDefinition();
+        var original = CreateTestServoMotor();
         original.Manufacturer = "Test Corp";
         original.Units.Torque = "lbf-in";
         original.Units.ResponseTime = "ms";
@@ -264,7 +257,7 @@ public class FileServiceTests : IDisposable
     [Fact]
     public async Task SaveAndLoad_RoundTrip_PreservesDriveVoltageSeriesHierarchy()
     {
-        var original = CreateTestMotorDefinition();
+        var original = CreateTestServoMotor();
         var filePath = Path.Combine(_tempDir, "hierarchy-roundtrip.json");
 
         await _service.SaveAsAsync(original, filePath);
@@ -279,34 +272,34 @@ public class FileServiceTests : IDisposable
 
         var origVoltage = origDrive.Voltages[0];
         var loadVoltage = loadDrive.Voltages[0];
-        Assert.Equal(origVoltage.Voltage, loadVoltage.Voltage);
+        Assert.Equal(origVoltage.Value, loadVoltage.Value);
         Assert.Equal(origVoltage.Power, loadVoltage.Power);
         Assert.Equal(origVoltage.MaxSpeed, loadVoltage.MaxSpeed);
-        Assert.Equal(origVoltage.Series.Count, loadVoltage.Series.Count);
+        Assert.Equal(origVoltage.Curves.Count, loadVoltage.Curves.Count);
     }
 
     [Fact]
-    public async Task SaveAndLoad_RoundTrip_PreservesSeriesData()
+    public async Task SaveAndLoad_RoundTrip_PreservesCurveData()
     {
-        var original = CreateTestMotorDefinition();
+        var original = CreateTestServoMotor();
         var filePath = Path.Combine(_tempDir, "series-roundtrip.json");
 
         await _service.SaveAsAsync(original, filePath);
         var loaded = await _service.LoadAsync(filePath);
 
-        var originalAllSeries = original.GetAllSeries().ToList();
-        var loadedAllSeries = loaded.GetAllSeries().ToList();
+        var originalAllSeries = GetAllSeries(original);
+        var loadedAllSeries = GetAllSeries(loaded);
 
-        Assert.Equal(originalAllSeries.Count, loadedAllSeries.Count);
-        for (var s = 0; s < originalAllSeries.Count; s++)
+        Assert.Equal(originalAllSeries.Length, loadedAllSeries.Length);
+        for (var s = 0; s < originalAllSeries.Length; s++)
         {
             var origSeries = originalAllSeries[s];
             var loadSeries = loadedAllSeries[s];
 
             Assert.Equal(origSeries.Name, loadSeries.Name);
-            Assert.Equal(101, loadSeries.Data.Count);
+            Assert.Equal(origSeries.Data.Count, loadSeries.Data.Count);
 
-            for (var p = 0; p < 101; p++)
+            for (var p = 0; p < origSeries.Data.Count; p++)
             {
                 Assert.Equal(origSeries.Data[p].Percent, loadSeries.Data[p].Percent);
                 Assert.Equal(origSeries.Data[p].Rpm, loadSeries.Data[p].Rpm);
@@ -333,14 +326,14 @@ public class FileServiceTests : IDisposable
     }
 
     [Fact]
-    public void CreateNew_CreatesMotorWithDefaultDriveAndSeries()
+    public void CreateNew_CreatesMotorWithDefaultDriveAndCurve()
     {
         var motor = _service.CreateNew("New Motor", 5000, 50, 1500);
 
         Assert.Equal("New Motor", motor.MotorName);
         Assert.Single(motor.Drives);
         Assert.Single(motor.Drives[0].Voltages);
-        Assert.Equal(2, motor.Drives[0].Voltages[0].Series.Count);
+        Assert.Equal(2, motor.Drives[0].Voltages[0].Curves.Count);
         Assert.NotNull(motor.Drives[0].Voltages[0].GetSeriesByName("Peak"));
         Assert.NotNull(motor.Drives[0].Voltages[0].GetSeriesByName("Continuous"));
     }
@@ -366,7 +359,7 @@ public class FileServiceTests : IDisposable
     {
         var motor = _service.CreateNew("New Motor", 5000, 50, 1500);
 
-        var allSeries = motor.GetAllSeries();
+        var allSeries = GetAllSeries(motor);
         Assert.All(allSeries, s => Assert.Equal(101, s.Data.Count));
     }
 

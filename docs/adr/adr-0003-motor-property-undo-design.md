@@ -50,7 +50,7 @@ As more undoable scenarios are added (EQ-style editing, additional configuration
 We adopt a **single generalized undo/redo pattern** for all user-visible, undoable operations in the Curve Editor. Any new undoable operation must follow these rules:
 
 1. **All domain mutations go through commands**
-- The only code that mutates domain objects (`MotorDefinition`, `DriveConfiguration`, `VoltageConfiguration`, `CurveSeries`, `DataPoint`, etc.) is inside `IUndoableCommand.Execute()` and `Undo()` implementations.
+- The only code that mutates domain objects (`ServoMotor`, `Drive`, `Voltage`, `Curve`, `DataPoint`, etc.) is inside `IUndoableCommand.Execute()` and `Undo()` implementations.
 - Views and view models never set these properties directly in response to UI events; instead they construct and push commands via the shared `UndoStack`.
 
 2. **Exactly one edit method per logical user operation**
@@ -132,9 +132,9 @@ We adopt a **single generalized undo/redo pattern** for all user-visible, undoab
 - **ALT-003**: **Description**: Listen to model `PropertyChanged` events and retroactively create commands from observed changes.
 - **ALT-004**: **Rejection Reason**: Inverts control and breaks the link between user-intent and command creation; makes it hard to apply guards, coalesce operations, or avoid double mutations.
 
-### ALT-005: Immutable snapshots for entire `MotorDefinition`
+### ALT-005: Immutable snapshots for entire `ServoMotor`
 
-- **ALT-005**: **Description**: Treat each edit as replacing an entire `MotorDefinition` snapshot and push whole-document diffs onto the undo stack.
+- **ALT-005**: **Description**: Treat each edit as replacing an entire `ServoMotor` snapshot and push whole-document diffs onto the undo stack.
 - **ALT-006**: **Rejection Reason**: Overly heavy for the current app, complicates partial updates and selection coordination, and diverges from the existing mutable-model architecture.
 
 ## Implementation Notes
@@ -147,8 +147,8 @@ We adopt a **single generalized undo/redo pattern** for all user-visible, undoab
 
 ## References
 
-- **REF-001**: Undo/redo infrastructure and commands in `src/CurveEditor/Services/UndoStack.cs` and related command classes.
-- **REF-002**: Motor, drive, voltage, and curve models in `src/CurveEditor/Models`.
-- **REF-003**: View-model integration and editor buffers in `src/CurveEditor/ViewModels/MainWindowViewModel.cs` and related view models.
+- **REF-001**: Undo/redo infrastructure and commands in `src/MotorEditor.Avalonia/Services/UndoStack.cs` and related command classes.
+- **REF-002**: Motor, drive, voltage, and curve models in `src/MotorEditor.Avalonia/Models`.
+- **REF-003**: View-model integration and editor buffers in `src/MotorEditor.Avalonia/ViewModels/MainWindowViewModel.cs` and related view models.
 - **REF-004**: Roadmap and phase plan: `.github/planning/04-mvp-roadmap.md` (section 1.8) and `.github/planning/phase-2-plan.md`.
 - **REF-005**: Superseded ADRs `adr-000X-voltage-property-undo-design.md` and `adr-000Y-undo-redo-general-pattern.md` (now consolidated into this document).

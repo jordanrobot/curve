@@ -1,0 +1,237 @@
+using JordanRobot.MotorDefinition.Model;
+using System;
+using System.Collections.Generic;
+
+namespace CurveEditor.Services;
+
+/// <summary>
+/// Default implementation of the validation service.
+/// </summary>
+public class ValidationService : IValidationService
+{
+    private const double AxisTolerance = 1e-9;
+    private const int MaxSupportedPointCount = 101;
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> ValidateDataPoint(DataPoint dataPoint)
+    {
+        var errors = new List<string>();
+
+        if (dataPoint.Rpm < 0)
+        {
+            errors.Add($"RPM cannot be negative (current: {dataPoint.Rpm}).");
+        }
+
+        if (dataPoint.Percent < 0)
+        {
+            errors.Add($"Percent cannot be negative (current: {dataPoint.Percent}).");
+        }
+
+        if (dataPoint.Percent > 100)
+        {
+            // Overspeed/manual percent axes are allowed in the file format.
+            // The editor may not provide UI to author them, but files should still be viewable.
+        }
+
+        return errors;
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> ValidateCurve(Curve series)
+    {
+        var errors = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(series.Name))
+        {
+            errors.Add("Curves name cannot be empty.");
+        }
+
+        if (series.Data.Count > MaxSupportedPointCount)
+        {
+            errors.Add($"Curves must have 0 to {MaxSupportedPointCount} data points (current: {series.Data.Count}).");
+        }
+
+        // Validate data integrity
+        if (!series.ValidateDataIntegrity())
+        {
+            errors.Add("Curves percent axis must be strictly increasing and contain no negative percents.");
+        }
+
+        // Validate ascending RPM
+        for (var i = 1; i < series.Data.Count; i++)
+        {
+            if (series.Data[i].Rpm < series.Data[i - 1].Rpm)
+            {
+                errors.Add($"RPM values must be ascending. Point {i} ({series.Data[i].Rpm} RPM) is less than point {i - 1} ({series.Data[i - 1].Rpm} RPM).");
+                break; // Only report first violation
+            }
+        }
+
+        // Validate each data point
+        foreach (var point in series.Data)
+        {
+            var pointErrors = ValidateDataPoint(point);
+            errors.AddRange(pointErrors);
+        }
+
+        return errors;
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> ValidateVoltage(Voltage voltageConfig)
+    {
+        var errors = new List<string>();
+
+        if (voltageConfig.Value <= 0)
+        {
+            errors.Add($"Value must be positive (current: {voltageConfig.Value}).");
+        }
+
+        if (voltageConfig.MaxSpeed < 0)
+        {
+            errors.Add($"Max speed cannot be negative (current: {voltageConfig.MaxSpeed}).");
+        }
+
+        if (voltageConfig.Power < 0)
+        {
+            errors.Add($"Power cannot be negative (current: {voltageConfig.Power}).");
+        }
+
+        if (voltageConfig.RatedPeakTorque < 0)
+        {
+            errors.Add($"Peak torque cannot be negative (current: {voltageConfig.RatedPeakTorque}).");
+        }
+
+        if (voltageConfig.RatedContinuousTorque < 0)
+        {
+            errors.Add($"Continuous torque cannot be negative (current: {voltageConfig.RatedContinuousTorque}).");
+        }
+
+        if (voltageConfig.RatedContinuousTorque > voltageConfig.RatedPeakTorque)
+        {
+            errors.Add($"Continuous torque ({voltageConfig.RatedContinuousTorque}) cannot exceed peak torque ({voltageConfig.RatedPeakTorque}).");
+        }
+
+        if (voltageConfig.Curves.Count == 0)
+        {
+            errors.Add("Value configuration must have at least one curve series.");
+            return errors;
+        }
+
+        foreach (var series in voltageConfig.Curves)
+        {
+            var seriesErrors = ValidateCurve(series);
+            foreach (var error in seriesErrors)
+            {
+                errors.Add($"Curves '{series.Name}': {error}");
+            }
+        }
+
+        if (voltageConfig.Curves.Count > 1)
+        {
+            var baseline = voltageConfig.Curves[0];
+            for (var s = 1; s < voltageConfig.Curves.Count; s++)
+            {
+                var candidate = voltageConfig.Curves[s];
+                var pointCount = Math.Min(baseline.Data.Count, candidate.Data.Count);
+                for (var i = 0; i < pointCount; i++)
+                {
+                    if (candidate.Data[i].Percent != baseline.Data[i].Percent)
+                    {
+                        errors.Add($"Curves '{candidate.Name}' percent axis differs from '{baseline.Name}' at index {i}.");
+                        break;
+                    }
+
+                    if (Math.Abs(candidate.Data[i].Rpm - baseline.Data[i].Rpm) > AxisTolerance)
+                    {
+                        errors.Add($"Curves '{candidate.Name}' rpm axis differs from '{baseline.Name}' at index {i}.");
+                        break;
+                    }
+                }
+            }
+        }
+
+        return errors;
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> ValidateServoMotor(ServoMotor motor)
+    {
+        var errors = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(motor.MotorName))
+        {
+            errors.Add("Motor name cannot be empty.");
+        }
+
+        if (motor.MaxSpeed < 0)
+        {
+            errors.Add($"Max speed cannot be negative (current: {motor.MaxSpeed}).");
+        }
+
+        if (motor.Power < 0)
+        {
+            errors.Add($"Power cannot be negative (current: {motor.Power}).");
+        }
+
+        if (motor.RatedPeakTorque < 0)
+        {
+            errors.Add($"Peak torque cannot be negative (current: {motor.RatedPeakTorque}).");
+        }
+
+        if (motor.RatedContinuousTorque < 0)
+        {
+            errors.Add($"Continuous torque cannot be negative (current: {motor.RatedContinuousTorque}).");
+        }
+
+        if (motor.BrakeReleaseTime < 0)
+        {
+            errors.Add($"Brake release time cannot be negative (current: {motor.BrakeReleaseTime}).");
+        }
+
+        if (motor.BrakeEngageTimeDiode < 0)
+        {
+            errors.Add($"Brake engage time (diode) cannot be negative (current: {motor.BrakeEngageTimeDiode}).");
+        }
+
+        if (motor.BrakeEngageTimeMov < 0)
+        {
+            errors.Add($"Brake engage time (MOV) cannot be negative (current: {motor.BrakeEngageTimeMov}).");
+        }
+
+        if (motor.BrakeBacklash < 0)
+        {
+            errors.Add($"Brake backlash cannot be negative (current: {motor.BrakeBacklash}).");
+        }
+
+        if (motor.Drives.Count == 0)
+        {
+            errors.Add("Motor must have at least one drive configuration.");
+        }
+
+        // Validate each drive
+        foreach (var drive in motor.Drives)
+        {
+            if (string.IsNullOrWhiteSpace(drive.Name))
+            {
+                errors.Add("Drive name cannot be empty.");
+            }
+
+            if (drive.Voltages.Count == 0)
+            {
+                errors.Add($"Drive '{drive.Name}' must have at least one voltage configuration.");
+            }
+
+            foreach (var voltage in drive.Voltages)
+            {
+                var voltageErrors = ValidateVoltage(voltage);
+                foreach (var error in voltageErrors)
+                {
+                    errors.Add($"Drive '{drive.Name}', {voltage.Value}V: {error}");
+                }
+            }
+        }
+
+        return errors;
+    }
+}

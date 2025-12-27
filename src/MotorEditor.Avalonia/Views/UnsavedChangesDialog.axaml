@@ -1,0 +1,39 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="420" d:DesignHeight="200"
+        x:Class="CurveEditor.Views.UnsavedChangesDialog"
+        Title="Unsaved Changes"
+        Width="420" Height="190"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False">
+
+    <Grid RowDefinitions="*,Auto" Margin="20">
+        <TextBlock Grid.Row="0"
+                   x:Name="MessageText"
+                   TextWrapping="Wrap"
+                   VerticalAlignment="Center"
+                   FontSize="13" />
+
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="8"
+                    Margin="0,16,0,0">
+            <Button x:Name="CancelButton" MinWidth="80" Click="OnCancelClick"
+                HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                <TextBlock Text="Cancel" TextWrapping="NoWrap" />
+            </Button>
+            <Button x:Name="IgnoreButton" MinWidth="80" Click="OnIgnoreClick"
+                HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                <TextBlock Text="Don't Save" TextWrapping="NoWrap" />
+            </Button>
+            <Button x:Name="SaveButton" MinWidth="80" Classes="accent" Click="OnSaveClick"
+                HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                <TextBlock Text="Save" TextWrapping="NoWrap" />
+            </Button>
+        </StackPanel>
+    </Grid>
+</Window>

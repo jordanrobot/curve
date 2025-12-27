@@ -1,3 +1,20 @@
+[Quick Start](docs/QuickStart.md) | [User Guide](docs/UserGuide.md) | [API documentation](docs/api/index.md)
+
+# JordanRobot.MotorDefinition Library
+
+## Getting Started
+
+Use these pages to learn the `JordanRobot.MotorDefinition` library:
+
+- [Quick Start](docs/QuickStart.md)
+- [User Guide](docs/UserGuide.md)
+- [API documentation](docs/api/index.md "MotorDefinition API")
+Related resources:
+
+- [Example motor definition JSON](schema/example-motor.json)
+- [JSON schema](schema/motor-schema-v1.0.0.json)
+
+
 # Motor Torque Curve Editor
 
 A desktop application for creating and editing motor torque curves stored in JSON files.
@@ -7,10 +24,10 @@ A desktop application for creating and editing motor torque curves stored in JSO
 ### Phase 1 (Foundation) - Complete
 - ✅ Create new motor definition files
 - ✅ Load and save motor curve data in JSON format
-- ✅ Hierarchical data structure: Motor → Drive(s) → Voltage(s) → Curve Series
-- ✅ Data models for motor definitions, drive configurations, voltage configurations, curve series, and data points
+- ✅ Hierarchical data structure: Motor → Drive(s) → Voltage(s) → Curve(s)
+- ✅ Data models for motor, drives, voltages, curves, and data points
 - ✅ Curve generation from motor parameters (max speed, torque, power)
-- ✅ 1% increment data storage (101 points per curve)
+- ✅ Curve data storage supports 0–101 points per curve (default: 101 points at 1% increments)
 - ✅ Basic UI shell with menu bar
 - ✅ Structured logging with Serilog
 
@@ -47,7 +64,7 @@ dotnet build
 ### Run
 
 ```bash
-dotnet run --project src/CurveEditor
+dotnet run --project src/MotorEditor.Avalonia
 ```
 
 ### Test
@@ -62,19 +79,19 @@ This project supports creating a self-contained, single-file executable for Wind
 
 - **Target runtime**: `win-x64`
 - **Publish profile**: `WinSingleFile`
-- **Output folder**: `src/CurveEditor/bin/Release/net8.0/win-x64/publish`
-- **Artifact to distribute**: `CurveEditor.exe` in the `publish` folder
+- **Output folder**: `src/MotorEditor.Avalonia/bin/Release/net8.0/win-x64/publish`
+- **Artifact to distribute**: `MotorEditor.exe` in the `publish` folder
 
 #### Option 1: Using the publish profile (recommended)
 
 ```bash
-dotnet publish src/CurveEditor -c Release -p:PublishProfile=WinSingleFile
+dotnet publish src/MotorEditor.Avalonia -c Release -p:PublishProfile=WinSingleFile
 ```
 
 #### Option 2: Explicit single-file command
 
 ```bash
-dotnet publish src/CurveEditor -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+dotnet publish src/MotorEditor.Avalonia -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
 ```
 
 #### Option 3: Convenience PowerShell script (Windows)
@@ -90,30 +107,26 @@ The resulting EXE is self-contained and should run on a Windows 10/11 x64 machin
 ## Project Structure
 
 ```
-CurveEditor/
+MotorDefinition/
 ├── src/
-│   └── CurveEditor/
-│       ├── Models/           # Data models
-│       ├── ViewModels/       # MVVM view models
-│       ├── Views/            # Avalonia UI views
-│       ├── Services/         # File and curve generation services
-│       └── Assets/           # Application resources
+│   ├── MotorEditor.Avalonia/   # UI app for editing motor files
+│   └── MotorDefinition/        # Shared library owning models + IO
 ├── tests/
-│   └── CurveEditor.Tests/    # Unit tests
-└── samples/
-    └── example-motor.json    # Sample motor definition file
+│   └── CurveEditor.Tests/      # Unit tests
+└── schema/
+  └── example-motor.json      # Sample motor definition file
 ```
 
 ## Data Format
 
 Motor definitions are stored as JSON files with a hierarchical structure:
 
-**Motor → Drive(s) → Voltage(s) → Curve Series**
+**Motor → Drive(s) → Voltage(s) → Curve(s)**
 
 This structure reflects the real-world relationship where:
 - A motor can be paired with multiple drives
 - Each drive can operate at multiple voltages
-- Each voltage configuration has its own performance characteristics and curve series
+- Each voltage has its own performance characteristics and curves
 - Motor base properties (theoretical maximums from cut sheet) are stored at the motor level to avoid data duplication
 
 ```json
@@ -188,7 +201,11 @@ This structure reflects the real-world relationship where:
 }
 ```
 
-Each curve series contains 101 data points at 1% increments from 0% to 100% of max speed.
+Each curve can contain 0 to 101 data points.
+
+- 101 points corresponds to the standard 1% increment curve (0% through 100%).
+- Fewer points are allowed for coarse datasets.
+- Percent values above 100% may be present for overspeed ranges (JSON authoring only in the editor for now).
 
 ## Technology Stack
 

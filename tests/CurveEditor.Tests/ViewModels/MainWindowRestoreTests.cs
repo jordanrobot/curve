@@ -1,16 +1,53 @@
-using System;
-using System.IO;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using CurveEditor.Models;
 using CurveEditor.Services;
 using CurveEditor.ViewModels;
+using JordanRobot.MotorDefinition.Model;
+using JordanRobot.MotorDefinition.Persistence.Dtos;
+using MotorEditor.Avalonia.Models;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace CurveEditor.Tests.ViewModels;
 
 public sealed class MainWindowRestoreTests
 {
+    private static string TestMotorJson(string motorName)
+    {
+        var percent = Enumerable.Range(0, 101).ToArray();
+        var rpm = percent.Select(p => (double)p).ToArray();
+
+        var dto = new MotorDefinitionFileDto
+        {
+            SchemaVersion = ServoMotor.CurrentSchemaVersion,
+            MotorName = motorName,
+            Drives =
+            [
+                new DriveFileDto
+                {
+                    Name = "Default Drive",
+                    Voltages =
+                    [
+                        new VoltageFileDto
+                        {
+                            Voltage = 220,
+                            Percent = percent,
+                            Rpm = rpm,
+                            Series = new SortedDictionary<string, SeriesEntryDto>
+                            {
+                                ["Peak"] = new SeriesEntryDto { Locked = false, Torque = rpm.ToArray() }
+                            }
+                        }
+                    ]
+                }
+            ]
+        };
+
+        return System.Text.Json.JsonSerializer.Serialize(dto);
+    }
+
     private sealed class InMemorySettingsStore : IUserSettingsStore
     {
         private readonly Dictionary<string, string?> _values = new(StringComparer.Ordinal);
@@ -101,5 +138,48 @@ public sealed class MainWindowRestoreTests
         await vm.RestoreSessionAfterWindowOpenedAsync();
 
         Assert.Equal(PanelRegistry.PanelIds.CurveData, vm.ActiveLeftPanelId);
+    }
+
+    [Fact]
+    public async Task WhenMotorFileRestored_DirectoryBrowserHighlightsThatFile()
+    {
+        var store = new InMemorySettingsStore();
+        var root = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "curve-restore-" + Guid.NewGuid().ToString("N")));
+        var filePath = Path.Combine(root.FullName, "motor.json");
+
+        try
+        {
+            await File.WriteAllTextAsync(filePath, TestMotorJson("restored"));
+
+            store.SaveBool(DirectoryBrowserViewModel.WasExplicitlyClosedKey, false);
+            store.SaveString(DirectoryBrowserViewModel.LastOpenedDirectoryKey, root.FullName);
+            store.SaveString(DirectoryBrowserViewModel.LastOpenedMotorFileKey, filePath);
+
+            var curveGenerator = new CurveGeneratorService();
+            var fileService = new FileService(curveGenerator);
+            var validationService = new ValidationService();
+            var driveVoltageSeriesService = new DriveVoltageSeriesService();
+            var workflow = new MotorConfigurationWorkflow(driveVoltageSeriesService);
+
+            var vm = new MainWindowViewModel(
+                fileService,
+                curveGenerator,
+                validationService,
+                driveVoltageSeriesService,
+                workflow,
+                new ChartViewModel(),
+                new CurveDataTableViewModel(),
+                settingsStore: store);
+
+            vm.DirectoryBrowser = new TestDirectoryBrowserViewModel(new DirectoryBrowserService(), new StubFolderPicker(), store);
+
+            await vm.RestoreSessionAfterWindowOpenedAsync();
+
+            Assert.Equal(filePath, vm.DirectoryBrowser.SelectedNode?.FullPath);
+        }
+        finally
+        {
+            try { root.Delete(recursive: true); } catch { }
+        }
     }
 }

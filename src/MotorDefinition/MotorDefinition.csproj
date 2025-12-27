@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+		<!-- NuGet package metadata (Phase 3.1.7) -->
+		<PackageId>JordanRobot.MotorDefinition</PackageId>
+		<Version>1.0.0-alpha.1</Version>
+		<Authors>JordanRobot</Authors>
+		<Description>Definitions for electrical motor properties and performance data. Allows mapping of performance (torque/speed curves) per drive and voltage. Includes JSON load/save functionality and object models.</Description>
+		<RepositoryUrl>https://github.com/jordanrobot/MotorDefinition</RepositoryUrl>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Schema/motor-schema-v1.0.0.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+	  <PackageReference Include="DefaultDocumentation" Version="1.2.2" PrivateAssets="all" />
+	  <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="all" />
+  </ItemGroup>
+
+	<ItemGroup>
+		<None Include="README.md" Pack="true" PackagePath="\" />
+	</ItemGroup>
+	
+	<!-- Documentation generation settings -->
+	<PropertyGroup>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<DefaultDocumentationFolder>..\..\docs\api\</DefaultDocumentationFolder>
+		<DefaultDocumentationGeneratedPages>Namespaces,Types</DefaultDocumentationGeneratedPages>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="MotorEditor.Tests" />
+	</ItemGroup>
+</Project>

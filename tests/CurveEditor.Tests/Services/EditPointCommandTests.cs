@@ -1,6 +1,6 @@
-using System.Collections.Generic;
-using CurveEditor.Models;
 using CurveEditor.Services;
+using JordanRobot.MotorDefinition.Model;
+using System.Collections.Generic;
 using Xunit;
 
 namespace CurveEditor.Tests.Services;
@@ -10,7 +10,7 @@ public class EditPointCommandTests
     [Fact]
     public void Execute_ChangesPointValues()
     {
-        var series = new CurveSeries
+        var series = new Curve
         {
             Name = "Test",
             Data = new List<DataPoint>
@@ -31,7 +31,7 @@ public class EditPointCommandTests
     [Fact]
     public void Undo_RestoresPreviousPointValues()
     {
-        var series = new CurveSeries
+        var series = new Curve
         {
             Name = "Test",
             Data = new List<DataPoint>

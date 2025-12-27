@@ -1,11 +1,12 @@
+using CurveEditor.Services;
+using CurveEditor.ViewModels;
+using JordanRobot.MotorDefinition.Model;
+using JordanRobot.MotorDefinition.Persistence.Dtos;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using CurveEditor.Services;
-using CurveEditor.ViewModels;
-using jordanrobot.MotorDefinitions.Dtos;
 using Xunit;
 
 namespace CurveEditor.Tests.ViewModels;
@@ -19,7 +20,7 @@ public sealed class MainWindowDirectoryBrowserSyncTests
 
         var dto = new MotorDefinitionFileDto
         {
-            SchemaVersion = CurveEditor.Models.MotorDefinition.CurrentSchemaVersion,
+            SchemaVersion = ServoMotor.CurrentSchemaVersion,
             MotorName = motorName,
             Drives =
             [
