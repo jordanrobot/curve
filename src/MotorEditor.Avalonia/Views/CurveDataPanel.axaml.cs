@@ -87,27 +87,36 @@ public partial class CurveDataPanel : UserControl
         DataTable.AddHandler(TextInputEvent, DataTable_TextInput, Avalonia.Interactivity.RoutingStrategies.Tunnel);
         
         // Sync horizontal scrolling between header and data grid
-        // We need to find the ScrollViewer inside the DataGrid and subscribe to its scroll changes
-        AttachScrollSyncHandler();
+        // Use LayoutUpdated to ensure visual tree is fully constructed
+        LayoutUpdated += OnLayoutUpdatedForScrollSync;
         
         _eventHandlersRegistered = true;
     }
 
     private ScrollViewer? _dataGridScrollViewer;
+    private bool _scrollSyncAttached = false;
+    private bool _isSyncing = false;
 
-    private void AttachScrollSyncHandler()
+    private void OnLayoutUpdatedForScrollSync(object? sender, EventArgs e)
     {
-        if (DataTable is null || HeaderScrollViewer is null)
+        // Only attach once
+        if (_scrollSyncAttached || DataTable is null || HeaderScrollViewer is null)
         {
             return;
         }
 
-        // Find the ScrollViewer inside the DataGrid's visual tree
+        // Try to find and attach to the ScrollViewer
         _dataGridScrollViewer = FindScrollViewerInVisualTree(DataTable);
         
         if (_dataGridScrollViewer is not null)
         {
+            // Found it! Attach handlers
             _dataGridScrollViewer.ScrollChanged += OnDataGridScrollChanged;
+            HeaderScrollViewer.ScrollChanged += OnHeaderScrollChanged;
+            _scrollSyncAttached = true;
+            
+            // Unsubscribe from LayoutUpdated since we're done
+            LayoutUpdated -= OnLayoutUpdatedForScrollSync;
         }
     }
 
@@ -141,16 +150,41 @@ public partial class CurveDataPanel : UserControl
 
     private void OnDataGridScrollChanged(object? sender, ScrollChangedEventArgs e)
     {
-        // Sync horizontal scroll offset from DataGrid to HeaderScrollViewer
-        if (HeaderScrollViewer is null || _dataGridScrollViewer is null)
+        // Prevent circular updates
+        if (_isSyncing || HeaderScrollViewer is null || _dataGridScrollViewer is null)
         {
             return;
         }
 
-        // Only update if horizontal offset actually changed to prevent circular updates
-        if (Math.Abs(_dataGridScrollViewer.Offset.X - HeaderScrollViewer.Offset.X) > 0.01)
+        _isSyncing = true;
+        try
         {
+            // Sync horizontal offset from DataGrid to Header
             HeaderScrollViewer.Offset = new Vector(_dataGridScrollViewer.Offset.X, HeaderScrollViewer.Offset.Y);
+        }
+        finally
+        {
+            _isSyncing = false;
+        }
+    }
+
+    private void OnHeaderScrollChanged(object? sender, ScrollChangedEventArgs e)
+    {
+        // Prevent circular updates
+        if (_isSyncing || HeaderScrollViewer is null || _dataGridScrollViewer is null)
+        {
+            return;
+        }
+
+        _isSyncing = true;
+        try
+        {
+            // Sync horizontal offset from Header to DataGrid
+            _dataGridScrollViewer.Offset = new Vector(HeaderScrollViewer.Offset.X, _dataGridScrollViewer.Offset.Y);
+        }
+        finally
+        {
+            _isSyncing = false;
         }
     }
 
@@ -175,13 +209,22 @@ public partial class CurveDataPanel : UserControl
             DataTable.RemoveHandler(KeyDownEvent, DataTable_KeyDown);
             DataTable.RemoveHandler(TextInputEvent, DataTable_TextInput);
             
-            // Unsubscribe from scroll viewer
+            // Unsubscribe from scroll viewers
             if (_dataGridScrollViewer is not null)
             {
                 _dataGridScrollViewer.ScrollChanged -= OnDataGridScrollChanged;
-                _dataGridScrollViewer = null;
             }
             
+            if (HeaderScrollViewer is not null)
+            {
+                HeaderScrollViewer.ScrollChanged -= OnHeaderScrollChanged;
+            }
+            
+            // Unsubscribe from LayoutUpdated if still attached
+            LayoutUpdated -= OnLayoutUpdatedForScrollSync;
+            
+            _dataGridScrollViewer = null;
+            _scrollSyncAttached = false;
             _eventHandlersRegistered = false;
         }
     }
