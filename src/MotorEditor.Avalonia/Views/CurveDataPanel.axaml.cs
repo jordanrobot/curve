@@ -205,7 +205,7 @@ public partial class CurveDataPanel : UserControl
         // Handle horizontal scrolling (touchpad horizontal gesture or shift+wheel)
         if (Math.Abs(delta.X) > 0.01)
         {
-            // Calculate new horizontal offset
+            // Calculate new horizontal offset based on current DataGrid offset
             var currentOffset = _dataGridScrollViewer.Offset.X;
             var newOffset = currentOffset - (delta.X * 50); // 50 is scroll multiplier
             
@@ -214,6 +214,7 @@ public partial class CurveDataPanel : UserControl
             newOffset = Math.Max(0, Math.Min(newOffset, maxOffset));
             
             // Apply to both scroll viewers simultaneously
+            // Use _isSyncing to prevent the ScrollChanged handlers from triggering recursively
             _isSyncing = true;
             try
             {
@@ -225,7 +226,8 @@ public partial class CurveDataPanel : UserControl
                 _isSyncing = false;
             }
             
-            // Mark as handled to prevent default scroll behavior
+            // CRITICAL: Mark as handled to prevent the HeaderScrollViewer from
+            // processing the wheel event again and scrolling independently
             e.Handled = true;
         }
         // For vertical scrolling, let it pass through to the DataGrid normally

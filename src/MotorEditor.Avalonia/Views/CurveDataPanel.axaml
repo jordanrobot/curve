@@ -63,8 +63,9 @@
                 BorderThickness="0,0,0,1"
                 IsVisible="{Binding SelectedVoltage, Converter={x:Static ObjectConverters.IsNotNull}}">
             <ScrollViewer x:Name="HeaderScrollViewer" 
-                          HorizontalScrollBarVisibility="Disabled"
-                          VerticalScrollBarVisibility="Disabled">
+                          HorizontalScrollBarVisibility="Hidden"
+                          VerticalScrollBarVisibility="Disabled"
+                          IsScrollChainingEnabled="False">
                 <StackPanel Orientation="Horizontal">
                     <!-- Fixed columns: % and RPM -->
                     <Border Width="50" BorderThickness="0,0,1,0" 
