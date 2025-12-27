@@ -155,6 +155,10 @@ public partial class AddVoltageDialog : Window
             AddPeakTorqueCheckBox.IsEnabled = false;
             ContinuousTorquePanel.IsEnabled = false;
             PeakTorquePanel.IsEnabled = false;
+            
+            // Show and populate the curve name field
+            CalculatedCurveNamePanel.IsVisible = true;
+            SetSmartDefaultCurveName();
         }
         else
         {
@@ -163,7 +167,40 @@ public partial class AddVoltageDialog : Window
             AddPeakTorqueCheckBox.IsEnabled = true;
             UpdateContinuousTorqueFieldsEnabled();
             UpdatePeakTorqueFieldsEnabled();
+            
+            // Hide the curve name field
+            CalculatedCurveNamePanel.IsVisible = false;
         }
+    }
+
+    private void SetSmartDefaultCurveName()
+    {
+        if (DriveComboBox.SelectedItem is not Drive selectedDrive)
+        {
+            CalculatedCurveNameInput.Text = "Curve 1";
+            return;
+        }
+
+        // Get all voltage configurations for this drive to check all existing curve names
+        var existingCurveNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var voltage in selectedDrive.Voltages)
+        {
+            foreach (var curve in voltage.Curves)
+            {
+                existingCurveNames.Add(curve.Name);
+            }
+        }
+
+        // Find the first "Curve X" name that doesn't exist
+        var counter = 1;
+        string curveName;
+        do
+        {
+            curveName = $"Curve {counter}";
+            counter++;
+        } while (existingCurveNames.Contains(curveName));
+
+        CalculatedCurveNameInput.Text = curveName;
     }
 
     private void UpdateContinuousTorqueFieldsEnabled()
@@ -277,7 +314,8 @@ public partial class AddVoltageDialog : Window
             AddPeakTorque = addPeakTorque,
             PeakTorque = peakTorque,
             PeakCurrent = peakCurrent,
-            CalculateCurveFromPowerAndSpeed = calculateCurve
+            CalculateCurveFromPowerAndSpeed = calculateCurve,
+            CalculatedCurveName = calculateCurve ? CalculatedCurveNameInput.Text?.Trim() : null
         };
 
         Close();
@@ -328,4 +366,5 @@ public class AddVoltageDialogResult
     public double PeakTorque { get; set; }
     public double PeakCurrent { get; set; }
     public bool CalculateCurveFromPowerAndSpeed { get; set; }
+    public string? CalculatedCurveName { get; set; }
 }

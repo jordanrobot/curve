@@ -95,7 +95,8 @@ public class MotorConfigurationWorkflow : IMotorConfigurationWorkflow
             result.PeakCurrent,
             result.AddContinuousTorque,
             result.ContinuousTorque,
-            result.ContinuousCurrent);
+            result.ContinuousCurrent,
+            result.CalculatedCurveName);
 
         return (false, voltage);
     }

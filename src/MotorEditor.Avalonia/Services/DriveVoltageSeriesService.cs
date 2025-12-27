@@ -51,7 +51,8 @@ public interface IDriveVoltageSeriesService
         double peakCurrent,
         bool addContinuousTorque,
         double continuousTorque,
-        double continuousCurrent);
+        double continuousCurrent,
+        string? customCurveName = null);
 
     string GenerateUniqueName(IEnumerable<string> existingNames, string baseName);
 }
@@ -154,7 +155,8 @@ public sealed class DriveVoltageSeriesService : IDriveVoltageSeriesService
         double peakCurrent,
         bool addContinuousTorque,
         double continuousTorque,
-        double continuousCurrent)
+        double continuousCurrent,
+        string? customCurveName = null)
     {
         if (drive is null) throw new ArgumentNullException(nameof(drive));
 
@@ -169,14 +171,16 @@ public sealed class DriveVoltageSeriesService : IDriveVoltageSeriesService
         // Conditionally create curves based on checkboxes
         if (addPeakTorque)
         {
-            var peakSeries = new Curve("Peak");
+            var curveName = !string.IsNullOrWhiteSpace(customCurveName) ? customCurveName : "Peak";
+            var peakSeries = new Curve(curveName);
             peakSeries.InitializeData(voltage.MaxSpeed, voltage.RatedPeakTorque);
             voltage.Curves.Add(peakSeries);
         }
 
         if (addContinuousTorque)
         {
-            var continuousSeries = new Curve("Continuous");
+            var curveName = !string.IsNullOrWhiteSpace(customCurveName) ? customCurveName : "Continuous";
+            var continuousSeries = new Curve(curveName);
             continuousSeries.InitializeData(voltage.MaxSpeed, voltage.RatedContinuousTorque);
             voltage.Curves.Add(continuousSeries);
         }

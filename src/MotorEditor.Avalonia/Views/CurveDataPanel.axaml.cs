@@ -72,6 +72,12 @@ public partial class CurveDataPanel : UserControl
         // Use tunnel routing to capture pointer and key events before the DataGrid handles them
         // This is necessary because DataGrid intercepts these events for its own selection handling
         Loaded += OnLoaded;
+        
+        // Sync horizontal scrolling between header and data grid
+        if (DataTable is not null)
+        {
+            DataTable.AddHandler(ScrollViewer.ScrollChangedEvent, OnDataGridScrollChanged, Avalonia.Interactivity.RoutingStrategies.Bubble);
+        }
     }
 
     private void OnLoaded(object? sender, RoutedEventArgs e)
@@ -86,6 +92,23 @@ public partial class CurveDataPanel : UserControl
         DataTable.AddHandler(KeyDownEvent, DataTable_KeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
         DataTable.AddHandler(TextInputEvent, DataTable_TextInput, Avalonia.Interactivity.RoutingStrategies.Tunnel);
         _eventHandlersRegistered = true;
+    }
+
+    private void OnDataGridScrollChanged(object? sender, ScrollChangedEventArgs e)
+    {
+        // Sync horizontal scroll offset from DataGrid to HeaderScrollViewer
+        if (HeaderScrollViewer is not null)
+        {
+            // Only sync if horizontal offset changed
+            if (e.ExtentDelta.X != 0 || e.OffsetDelta.X != 0 || e.ViewportDelta.X != 0)
+            {
+                var scrollViewer = e.Source as ScrollViewer;
+                if (scrollViewer is not null)
+                {
+                    HeaderScrollViewer.Offset = new Vector(scrollViewer.Offset.X, HeaderScrollViewer.Offset.Y);
+                }
+            }
+        }
     }
 
     private void OnUnloaded(object? sender, RoutedEventArgs e)
