@@ -230,12 +230,13 @@ public partial class AddVoltageDialog : Window
                 var speedRadPerSec = maxSpeed * 2.0 * Math.PI / 60.0;
                 var calculatedTorque = power / speedRadPerSec;
                 
-                // For calculated curves, we create both peak and continuous with the same torque
-                // In a real motor, peak is typically higher, but without more data we use the calculated value
+                // Round to 2 decimal places
+                calculatedTorque = Math.Round(calculatedTorque, 2);
+                
+                // For calculated curves, we create only a single continuous curve
                 continuousTorque = calculatedTorque;
-                peakTorque = calculatedTorque;
                 addContinuousTorque = true;
-                addPeakTorque = true;
+                addPeakTorque = false;
                 
                 // Amperage values are left at 0 since we don't have enough info to calculate them
                 continuousCurrent = 0;
