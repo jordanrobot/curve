@@ -143,7 +143,7 @@ Match the required button labels and alignment for the existing prompt dialog.
 
 Required hygiene:
 
-- [ ] Ensure no changes to enum values or public API surface; UI label change only.
+- [x] Ensure no changes to enum values or public API surface; UI label change only.
 
 ### Done when
 
@@ -189,7 +189,7 @@ All “lose changes” entry points use the same Save / Don’t Save / Cancel pr
 
 Required hygiene:
 
-- [ ] Keep status messages coherent (e.g., "Open cancelled.", "New file cancelled.") and consistent with existing patterns.
+- [x] Keep status messages coherent (e.g., "Open cancelled.", "New file cancelled.") and consistent with existing patterns.
 
 ### Done when
 
@@ -302,44 +302,6 @@ Required hygiene:
 2. Open a file from the tree.
 3. Make an edit; verify `*` appears next to that file’s name in the tree.
 4. Save; verify `*` disappears.
-
----
-
-## [ ] PR 5: Reduce Directory Browser Indentation
-
-### Goal
-
-Reduce TreeView nesting indentation to approximately 2–3 monospace characters per level while keeping chevrons readable.
-
-### Tasks
-
-- [ ] Identify the current source(s) of indentation:
-  - [ ] TreeViewItem built-in indentation
-  - [ ] node template spacing (chevron column + column spacing)
-- [ ] Implement the smallest style change that reduces indentation:
-  - [ ] Prefer a supported indentation property if available on the current Avalonia controls.
-  - [ ] Otherwise, adjust TreeViewItem presenter padding/margins minimally.
-- [ ] Tune node template spacing modestly if needed:
-  - [ ] `ColumnSpacing` and/or chevron `Width` adjustments (keep readable, don’t collapse).
-
-Required hygiene:
-
-- [ ] Ensure the built-in expander toggle remains hidden and the custom chevrons still work.
-
-### Done when
-
-- AC 3W.6 passes in manual validation.
-- No regressions in tree selection/expand/collapse behavior.
-
-### Files
-
-- [src/MotorEditor.Avalonia/Views/DirectoryBrowserPanel.axaml](src/MotorEditor.Avalonia/Views/DirectoryBrowserPanel.axaml)
-
-### Quick manual test
-
-1. Open a folder with nested directories.
-2. Expand multiple levels.
-3. Confirm indentation is reduced and chevrons align.
 
 ---
 

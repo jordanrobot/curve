@@ -3,6 +3,13 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace CurveEditor.ViewModels;
 
+public enum MotorFileValidationState
+{
+    Unknown = 0,
+    Valid = 1,
+    Invalid = 2
+}
+
 /// <summary>
 /// A node in the VS Code-style directory browser explorer tree.
 /// </summary>
@@ -38,7 +45,33 @@ public partial class ExplorerNodeViewModel : ObservableObject
     [ObservableProperty]
     private bool _isPlaceholder;
 
+    [ObservableProperty]
+    private MotorFileValidationState _validationState = MotorFileValidationState.Unknown;
+
     public bool ShowChevron => IsDirectory && !IsRoot;
+
+    public bool ShowValidationMarker => !IsDirectory && !IsPlaceholder;
+
+    public string ValidationMarker => ValidationState switch
+    {
+        // Emoji glyphs render with built-in green/red coloring on supported platforms.
+        MotorFileValidationState.Valid => "✅",
+        MotorFileValidationState.Invalid => "❌",
+        _ => "-"
+    };
+
+    public string ValidationToolTip => ValidationState switch
+    {
+        MotorFileValidationState.Valid => "Valid motor file",
+        MotorFileValidationState.Invalid => "Invalid motor file",
+        _ => "Motor file validation pending"
+    };
+
+    partial void OnValidationStateChanged(MotorFileValidationState value)
+    {
+        OnPropertyChanged(nameof(ValidationMarker));
+        OnPropertyChanged(nameof(ValidationToolTip));
+    }
 
     public ObservableCollection<ExplorerNodeViewModel> Children { get; } = [];
 }

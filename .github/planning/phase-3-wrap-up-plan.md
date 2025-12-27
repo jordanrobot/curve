@@ -20,7 +20,6 @@ Finish the remaining Phase 3 UX items:
 - [x] PR 2 — Add Dirty Prompt to File Picker Open + New File
 - [ ] PR 3 — Prompt on App/Window Close
 - [ ] PR 4 — Dirty Indicator in Directory Browser
-- [ ] PR 5 — Reduce Directory Browser Indentation
 
 ### Current Baseline (What’s Already There)
 
@@ -40,13 +39,13 @@ Unsaved changes prompt plumbing
 
 Gaps / inconsistencies
 
-- Opening a file via the file picker does not currently prompt when dirty:
+- Opening a file via the file picker now prompts when dirty:
   - `MainWindowViewModel.OpenFileAsync`
-- Creating a new file uses a different dialog (`MessageDialog`) and does not match the Save/Don’t Save/Cancel wording:
+- Creating a new file now uses the same Save/Don’t Save/Cancel prompt:
   - `MainWindowViewModel.NewMotorAsync`
 - Window/application close currently persists layout state, but does not appear to block closing on unsaved changes:
   - `src/MotorEditor.Avalonia/Views/MainWindow.axaml.cs` registers `Closing += ...` for persistence
-- The Unsaved Changes dialog button label is currently “Ignore”, not “Don’t Save”.
+- The Unsaved Changes dialog button label is “Don’t Save” (enum value remains `Ignore`).
 
 Directory Browser UI
 
@@ -171,25 +170,6 @@ Validation
 
 - Manual: open a file, edit it, confirm the selected file’s name shows `*` in the explorer; save it, confirm `*` disappears.
 - Automated: add a small unit test that sets ActiveFilePath + IsActiveFileDirty and asserts the computed display text for the active node.
-
-#### PR 5 — Reduce Directory Browser Indentation
-
-Goal: visually reduce tree nesting indentation.
-
-Likely touchpoints
-
-- `DirectoryBrowserPanel.axaml`
-  - TreeView/TreeViewItem styles that control indentation.
-  - Node template spacing (`ColumnSpacing="6"`) and chevron width (`Width="16"`) can be reduced modestly.
-
-Implementation notes
-
-- Prefer using a supported indentation property (if available for Avalonia `TreeView`/`TreeViewItem`) so we don’t have to re-template the entire control.
-- If no supported property exists, apply the smallest style/template override necessary to reduce left padding/margins on the header presenter.
-
-Validation
-
-- Manual: verify nested items align closer to parent (2–3 chars feel), with chevrons still readable.
 
 ### Roll-up Testing
 

@@ -298,9 +298,10 @@ See ADR-0006 (`../../docs/adr/adr-0006-motor-file-schema-and-versioning.md`) for
 
 ### 3.3 Save Prompts
 - [ ] Prompt to save when closing app with dirty file
-- [ ] Prompt to save when opening new file with dirty file active
-- [ ] Dialog with Save / Don't Save / Cancel options
-- [ ] Handle Cancel to abort the close/open operation
+- [X] Prompt to save when opening new file with dirty file active
+- [X] Dialog with Save / Don't Save / Cancel options
+- [X] Handle Cancel to abort the open operation
+- [ ] Handle Cancel to abort the close operation
 
 ### 3.4 Save Commands
 - [X] Save command overwrites current file
@@ -313,12 +314,12 @@ See ADR-0006 (`../../docs/adr/adr-0006-motor-file-schema-and-versioning.md`) for
 ---
 
 ## Phase 3.7: Rename objects for clarity
-- [ ] Rename `MotorDefinition` to `Motor` throughout codebase
+- [ ] Rename `MotorDefinition` to `ServoMotor` throughout codebase
 - [ ] Rename `CurveSeries` to `Curve` throughout codebase
 - [ ] Rename `DriveConfiguration` to `Drive` throughout codebase
 - [ ] Rename `VoltageConfiguration` to `Voltage` throughout codebase
 - [ ] Rename collection object accessors/properties accordingly:
-  - `MotorDefinition.DriveConfigurations` -> `Motor.Drives`
+  - `ServoMotor.DriveConfigurations` -> `Motor.Drives`
   - `DriveConfiguration.VoltageConfigurations` -> `Drive.Voltages`
   - `VoltageConfiguration.CurveSeries` -> `Voltage.Curves`
 - [ ] Update all related files, namespaces, and references accordingly

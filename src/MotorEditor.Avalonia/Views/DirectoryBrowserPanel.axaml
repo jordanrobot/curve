@@ -76,7 +76,7 @@
             </TreeView.Styles>
             <TreeView.DataTemplates>
                 <TreeDataTemplate DataType="vm:ExplorerNodeViewModel" ItemsSource="{Binding Children}">
-                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+                    <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="6">
                         <!-- VS Code-style chevron: shown for directories (except root), toggles IsExpanded. -->
                         <ToggleButton Grid.Column="0"
                                       Classes="ExplorerChevron"
@@ -102,7 +102,16 @@
                             </Grid>
                         </ToggleButton>
 
+                        <!-- Validity marker for JSON files (Unknown/Valid/Invalid). -->
                         <TextBlock Grid.Column="1"
+                                   Text="{Binding ValidationMarker}"
+                                   ToolTip.Tip="{Binding ValidationToolTip}"
+                                   IsVisible="{Binding ShowValidationMarker}"
+                                   VerticalAlignment="Center"
+                                   TextAlignment="Center"
+                                   Width="16"/>
+
+                        <TextBlock Grid.Column="2"
                                    Text="{Binding DisplayName}"
                                    TextWrapping="NoWrap"
                                    TextTrimming="CharacterEllipsis"/>

@@ -261,7 +261,7 @@ public partial class DirectoryBrowserViewModel : ObservableObject
                 RootItems.Add(rootNode);
             }).ConfigureAwait(false);
 
-            StartFilteringInvalidMotorFiles(rootNode, ct);
+            StartValidatingMotorFiles(rootNode, ct);
         }
         catch (OperationCanceledException)
         {
@@ -334,6 +334,8 @@ public partial class DirectoryBrowserViewModel : ObservableObject
         var relativePath = Path.GetRelativePath(relativeBase, entry.FullPath);
         var normalizedRelativePath = NormalizeRelativePath(relativePath);
 
+        var shouldStartExpanded = entry.IsDirectory && _expandedDirectoryPaths.Contains(normalizedRelativePath);
+
         var node = new ExplorerNodeViewModel
         {
             DisplayName = entry.Name,
@@ -341,7 +343,9 @@ public partial class DirectoryBrowserViewModel : ObservableObject
             RelativePath = normalizedRelativePath,
             IsDirectory = entry.IsDirectory,
             IsRoot = false,
-            IsExpanded = entry.IsDirectory && _expandedDirectoryPaths.Contains(normalizedRelativePath),
+            // Important: IsExpanded may be restored from persisted state. Set it after subscribing to
+            // PropertyChanged so the expand handler runs and loads children.
+            IsExpanded = false,
             HasLoadedChildren = false,
             IsLoadingChildren = false
         };
@@ -353,6 +357,11 @@ public partial class DirectoryBrowserViewModel : ObservableObject
         }
 
         node.PropertyChanged += OnNodePropertyChanged;
+
+        if (shouldStartExpanded)
+        {
+            node.IsExpanded = true;
+        }
 
         return node;
     }
@@ -450,7 +459,7 @@ public partial class DirectoryBrowserViewModel : ObservableObject
                 node.HasLoadedChildren = true;
             }).ConfigureAwait(false);
 
-            StartFilteringInvalidMotorFiles(node, cancellationToken);
+            StartValidatingMotorFiles(node, cancellationToken);
         }
         catch (OperationCanceledException)
         {
@@ -466,7 +475,7 @@ public partial class DirectoryBrowserViewModel : ObservableObject
         }
     }
 
-    private void StartFilteringInvalidMotorFiles(ExplorerNodeViewModel parentNode, CancellationToken cancellationToken)
+    private void StartValidatingMotorFiles(ExplorerNodeViewModel parentNode, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(parentNode);
 
@@ -476,9 +485,9 @@ public partial class DirectoryBrowserViewModel : ObservableObject
             return;
         }
 
-        // Requirement: show folders + *.json candidates first, then validate in the background and
-        // filter out invalid curve definition files.
-        var fileNodes = children.Where(n => !n.IsDirectory).ToArray();
+        // Requirement: show folders + *.json candidates first, then validate in the background.
+        // Do not remove invalid files; mark them invalid so the user can still open and see errors.
+        var fileNodes = children.Where(n => !n.IsDirectory && !n.IsPlaceholder).ToArray();
         if (fileNodes.Length == 0)
         {
             return;
@@ -491,28 +500,14 @@ public partial class DirectoryBrowserViewModel : ObservableObject
                 cancellationToken.ThrowIfCancellationRequested();
 
                 var isValid = await IsValidMotorDefinitionFileAsync(fileNode.FullPath, cancellationToken).ConfigureAwait(false);
-                if (isValid)
-                {
-                    continue;
-                }
-
                 await InvokeOnUiAsync(() =>
                 {
-                    // Item may already be gone due to refresh/expand changes.
+                    // Node may already be gone due to refresh/expand changes.
                     if (children.Contains(fileNode))
                     {
-                        if (ReferenceEquals(SelectedNode, fileNode))
-                        {
-                            SelectedNode = null;
-                        }
-
-                        children.Remove(fileNode);
-
-                        if (parentNode.IsDirectory && children.Count == 0)
-                        {
-                            // Keep indentation stable if all JSON nodes are filtered out.
-                            children.Add(CreatePlaceholderChild());
-                        }
+                        fileNode.ValidationState = isValid
+                            ? MotorFileValidationState.Valid
+                            : MotorFileValidationState.Invalid;
                     }
                 }).ConfigureAwait(false);
             }

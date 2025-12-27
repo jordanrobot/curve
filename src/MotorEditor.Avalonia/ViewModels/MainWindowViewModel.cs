@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CurveEditor.ViewModels;
@@ -513,7 +514,65 @@ public partial class MainWindowViewModel : ViewModelBase
         DirectoryBrowser.FileOpenRequested -= HandleDirectoryBrowserFileOpenRequestedAsync;
         DirectoryBrowser.FileOpenRequested += HandleDirectoryBrowserFileOpenRequestedAsync;
 
+        DirectoryBrowser.PropertyChanged -= OnDirectoryBrowserPropertyChanged;
+        DirectoryBrowser.PropertyChanged += OnDirectoryBrowserPropertyChanged;
+
         CurrentFilePath = _fileService.CurrentFilePath;
+    }
+
+    private void OnDirectoryBrowserPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(DirectoryBrowserViewModel.RootDirectoryPath))
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(CurrentFilePath))
+        {
+            return;
+        }
+
+        _ = SyncDirectoryBrowserSelectionToCurrentFileAfterRootReadyAsync();
+    }
+
+    private async Task SyncDirectoryBrowserSelectionToCurrentFileAfterRootReadyAsync()
+    {
+        var filePath = CurrentFilePath;
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            return;
+        }
+
+        var expectedRoot = DirectoryBrowser.RootDirectoryPath;
+        if (string.IsNullOrWhiteSpace(expectedRoot))
+        {
+            return;
+        }
+
+        // RootDirectoryPath is set before the DirectoryBrowser has finished refreshing its tree.
+        // Also, RootItems may still contain the *previous* root at this point.
+        // Wait until the displayed root node matches the expected root.
+        try
+        {
+            var start = DateTimeOffset.UtcNow;
+            while (DateTimeOffset.UtcNow - start < TimeSpan.FromSeconds(2))
+            {
+                var currentRootNode = DirectoryBrowser.RootItems.FirstOrDefault();
+                if (currentRootNode is not null &&
+                    string.Equals(currentRootNode.FullPath, expectedRoot, StringComparison.OrdinalIgnoreCase))
+                {
+                    break;
+                }
+
+                await Task.Delay(25).ConfigureAwait(true);
+            }
+
+            await DirectoryBrowser.SyncSelectionToFilePathAsync(filePath).ConfigureAwait(true);
+        }
+        catch
+        {
+            // Best-effort. We don't want root-change highlighting to destabilize the app.
+        }
     }
 
     partial void OnDirectoryBrowserChanged(DirectoryBrowserViewModel value)
@@ -1965,6 +2024,35 @@ public partial class MainWindowViewModel : ViewModelBase
         if (string.IsNullOrWhiteSpace(lastFile) || !File.Exists(lastFile))
         {
             return;
+        }
+
+        // Ensure the directory browser has a root that can contain the file so it can be highlighted.
+        // This matters when a motor file is restored but the browser has no session (or a different root).
+        var containingDirectory = Path.GetDirectoryName(lastFile);
+        if (!string.IsNullOrWhiteSpace(containingDirectory))
+        {
+            var root = DirectoryBrowser.RootDirectoryPath;
+            var isUnderRoot = false;
+            if (!string.IsNullOrWhiteSpace(root))
+            {
+                try
+                {
+                    var fullFile = Path.GetFullPath(lastFile);
+                    var fullRoot = Path.GetFullPath(root)
+                        .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                        + Path.DirectorySeparatorChar;
+                    isUnderRoot = fullFile.StartsWith(fullRoot, StringComparison.OrdinalIgnoreCase);
+                }
+                catch
+                {
+                    isUnderRoot = false;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(root) || !isUnderRoot)
+            {
+                await DirectoryBrowser.SetRootDirectoryAsync(containingDirectory).ConfigureAwait(true);
+            }
         }
 
         await OpenMotorFileInternalAsync(lastFile, updateExplorerSelection: true).ConfigureAwait(true);

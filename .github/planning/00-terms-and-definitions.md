@@ -137,6 +137,9 @@ The graphical display showing curves as line graphs with axes, grid lines, and l
 ### Directory Browser
 The side pane showing the file system for navigating and selecting motor definition files.
 
+### Root Folder
+The directory selected as the top-level (root) for the Directory Browser. Only motor definition files under the Root Folder are shown and can be highlighted or selected from the explorer tree.
+
 ### Editing Coordinator
 An internal coordination object shared between the chart and data table views. It tracks the currently selected curve points and ensures that selections and highlights stay in sync between visual and tabular editing surfaces.
 
