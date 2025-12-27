@@ -213,7 +213,7 @@ Required hygiene:
 
 ---
 
-## [ ] PR 3: Prompt on App/Window Close
+## [x] PR 3: Prompt on App/Window Close
 
 ### Goal
 
@@ -221,21 +221,21 @@ Closing the window/app prompts to Save / Don’t Save / Cancel and Cancel blocks
 
 ### Tasks
 
-- [ ] Implement a cancelable close flow that uses the same ViewModel helper as PR 2.
-- [ ] Choose the simplest lifecycle hook that supports cancellation reliably:
-  - [ ] Option A: handle `MainWindow.Closing` in code-behind and cancel the close when needed
+- [x] Implement a cancelable close flow that uses the same ViewModel helper as PR 2.
+- [x] Choose the simplest lifecycle hook that supports cancellation reliably:
+  - [x] Option A: handle `MainWindow.Closing` in code-behind and cancel the close when needed
   - [ ] Option B: handle `IClassicDesktopStyleApplicationLifetime.ShutdownRequested` and cancel shutdown
-- [ ] Ensure the close prompt behavior:
-  - [ ] If no motor is loaded, do not prompt.
-  - [ ] If dirty:
-    - [ ] Cancel aborts close
-    - [ ] Save attempts save; if still dirty, abort close
-    - [ ] Don’t Save proceeds with close
-- [ ] Add a guard to avoid re-entrancy loops when programmatically triggering close after user confirms.
+- [x] Ensure the close prompt behavior:
+  - [x] If no motor is loaded, do not prompt.
+  - [x] If dirty:
+    - [x] Cancel aborts close
+    - [x] Save attempts save; if still dirty, abort close
+    - [x] Don’t Save proceeds with close
+- [x] Add a guard to avoid re-entrancy loops when programmatically triggering close after user confirms.
 
 Required hygiene:
 
-- [ ] Preserve existing panel layout persistence behavior; confirm it does not regress when close is cancelled.
+- [x] Preserve existing panel layout persistence behavior; confirm it does not regress when close is cancelled.
 
 ### Done when
 

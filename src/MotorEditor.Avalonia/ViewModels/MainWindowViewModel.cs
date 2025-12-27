@@ -666,6 +666,9 @@ public partial class MainWindowViewModel : ViewModelBase
         return true;
     }
 
+    internal Task<bool> ConfirmCloseAppOrCancelAsync()
+        => ConfirmLoseUnsavedChangesOrCancelAsync("close the app", "Close cancelled.");
+
     /// <summary>
     /// Opens a motor definition by path and synchronizes Directory Browser selection when applicable.
     /// </summary>

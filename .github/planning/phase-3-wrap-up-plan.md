@@ -18,7 +18,7 @@ Finish the remaining Phase 3 UX items:
 
 - [x] PR 1 — Standardize the Unsaved Changes Dialog
 - [x] PR 2 — Add Dirty Prompt to File Picker Open + New File
-- [ ] PR 3 — Prompt on App/Window Close
+- [x] PR 3 — Prompt on App/Window Close
 - [ ] PR 4 — Dirty Indicator in Directory Browser
 
 ### Current Baseline (What’s Already There)

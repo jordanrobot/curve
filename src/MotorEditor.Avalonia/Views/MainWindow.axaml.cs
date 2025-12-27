@@ -17,6 +17,10 @@ public partial class MainWindow : Window
     private const string LegacyLeftZoneWidthKey = "MainWindow.LeftPanel";
     private const string LegacyRightZoneWidthKey = "MainWindow.PropertiesPanel";
 
+    private Grid? _mainGrid;
+    private bool _isClosePromptInProgress;
+    private bool _suppressClosePrompt;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -98,15 +102,10 @@ public partial class MainWindow : Window
         ApplyLeftZoneLayout(mainGrid, viewModel);
         ApplyRightZoneLayout(mainGrid, viewModel);
 
-        // Save panel state on window closing
-        Closing += (_, _) =>
-        {
-            PanelLayoutPersistence.SaveString("MainWindow.ActivePanelBarPanelId", viewModel.ActivePanelBarPanelId);
-            PanelLayoutPersistence.SaveString("MainWindow.ActiveLeftPanelId", viewModel.ActiveLeftPanelId);
-            PanelLayoutPersistence.SaveDockSide("MainWindow.PanelBarDockSide", viewModel.PanelBarDockSide);
+        _mainGrid = mainGrid;
 
-            PersistActiveZoneWidths(mainGrid, viewModel);
-        };
+        // Save panel state on window closing, and prompt if unsaved changes would be lost.
+        Closing += OnClosing;
 
         // React to active zone changes.
         viewModel.PropertyChanged += (_, args) =>
@@ -124,6 +123,76 @@ public partial class MainWindow : Window
         };
 
         await viewModel.RestoreSessionAfterWindowOpenedAsync();
+    }
+
+    private void OnClosing(object? sender, WindowClosingEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+
+        // Preserve existing persistence behavior even when close is cancelled.
+        PanelLayoutPersistence.SaveString("MainWindow.ActivePanelBarPanelId", viewModel.ActivePanelBarPanelId);
+        PanelLayoutPersistence.SaveString("MainWindow.ActiveLeftPanelId", viewModel.ActiveLeftPanelId);
+        PanelLayoutPersistence.SaveDockSide("MainWindow.PanelBarDockSide", viewModel.PanelBarDockSide);
+
+        if (_mainGrid is not null)
+        {
+            PersistActiveZoneWidths(_mainGrid, viewModel);
+        }
+
+        if (_suppressClosePrompt)
+        {
+            return;
+        }
+
+        // If no motor is loaded, do not prompt.
+        if (viewModel.CurrentMotor is null)
+        {
+            return;
+        }
+
+        if (!viewModel.IsDirty)
+        {
+            return;
+        }
+
+        // Cancel close first, then re-close after user confirms.
+        e.Cancel = true;
+
+        if (_isClosePromptInProgress)
+        {
+            return;
+        }
+
+        _isClosePromptInProgress = true;
+        _ = PromptForUnsavedChangesAndCloseAsync(viewModel);
+    }
+
+    private async Task PromptForUnsavedChangesAndCloseAsync(MainWindowViewModel viewModel)
+    {
+        try
+        {
+            if (!await viewModel.ConfirmCloseAppOrCancelAsync().ConfigureAwait(true))
+            {
+                return;
+            }
+
+            _suppressClosePrompt = true;
+            try
+            {
+                Close();
+            }
+            finally
+            {
+                _suppressClosePrompt = false;
+            }
+        }
+        finally
+        {
+            _isClosePromptInProgress = false;
+        }
     }
 
     private static IReadOnlyCollection<string> GetPanelBarActivePanelIds(MainWindowViewModel viewModel)
