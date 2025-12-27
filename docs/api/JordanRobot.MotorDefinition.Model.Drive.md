@@ -3,8 +3,7 @@
 
 ## Drive Class
 
-Represents a servo drive configuration for a motor\.
-Contains voltage\-specific configurations and their associated curve series\.
+Represents a drive configuration for a motor\.
 
 ```csharp
 public class Drive : System.ComponentModel.INotifyPropertyChanged
@@ -13,6 +12,10 @@ public class Drive : System.ComponentModel.INotifyPropertyChanged
 Inheritance [System\.Object](https://learn.microsoft.com/en-us/dotnet/api/system.object 'System\.Object') &#129106; Drive
 
 Implements [System\.ComponentModel\.INotifyPropertyChanged](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.inotifypropertychanged 'System\.ComponentModel\.INotifyPropertyChanged')
+
+### Remarks
+A drive contains one or more [Voltage](JordanRobot.MotorDefinition.Model.Voltage.md 'JordanRobot\.MotorDefinition\.Model\.Voltage') configurations, each of which contains one or more
+[Curve](JordanRobot.MotorDefinition.Model.Curve.md 'JordanRobot\.MotorDefinition\.Model\.Curve') definitions\.
 ### Constructors
 
 <a name='JordanRobot.MotorDefinition.Model.Drive.Drive()'></a>
@@ -47,7 +50,7 @@ The name of the drive\.
 
 ## Drive\.DefaultVoltageTolerance Field
 
-Default tolerance for voltage matching in volts\.
+Default tolerance for matching voltage values \(in volts\)\.
 
 ```csharp
 public const double DefaultVoltageTolerance = 0.1;
@@ -61,7 +64,7 @@ public const double DefaultVoltageTolerance = 0.1;
 
 ## Drive\.Manufacturer Property
 
-The manufacturer of the drive\.
+Gets or sets the manufacturer of the drive\.
 
 ```csharp
 public string Manufacturer { get; set; }
@@ -74,7 +77,7 @@ public string Manufacturer { get; set; }
 
 ## Drive\.Name Property
 
-The name or model identifier of the drive\.
+Gets or sets the name or model identifier of the drive\.
 
 ```csharp
 public string Name { get; set; }
@@ -87,7 +90,7 @@ public string Name { get; set; }
 
 ## Drive\.PartNumber Property
 
-The manufacturer's part number for the servo drive\.
+Gets or sets the manufacturer's part number for the servo drive\.
 
 ```csharp
 public string PartNumber { get; set; }
@@ -100,8 +103,7 @@ public string PartNumber { get; set; }
 
 ## Drive\.VoltageNames Property
 
-Gets display\-friendly voltage names \(e\.g\., "208 V"\)\.
-Useful for populating UI lists and combo\-boxes\.
+Gets display\-friendly voltage names \(for example, "208 V"\)\.
 
 ```csharp
 public System.Collections.Generic.IEnumerable<string> VoltageNames { get; }
@@ -110,11 +112,14 @@ public System.Collections.Generic.IEnumerable<string> VoltageNames { get; }
 #### Property Value
 [System\.Collections\.Generic\.IEnumerable&lt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1 'System\.Collections\.Generic\.IEnumerable\`1')[System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')[&gt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1 'System\.Collections\.Generic\.IEnumerable\`1')
 
+### Remarks
+Useful for populating UI lists and combo\-boxes\.
+
 <a name='JordanRobot.MotorDefinition.Model.Drive.Voltages'></a>
 
 ## Drive\.Voltages Property
 
-The collection of voltage configurations for this drive\.
+Gets or sets the collection of voltage configurations for this drive\.
 
 ```csharp
 public System.Collections.Generic.List<JordanRobot.MotorDefinition.Model.Voltage> Voltages { get; set; }
@@ -128,7 +133,6 @@ public System.Collections.Generic.List<JordanRobot.MotorDefinition.Model.Voltage
 ## Drive\.VoltageValues Property
 
 Gets the numeric voltage values\.
-Useful for populating UI lists and combo\-boxes\.
 
 ```csharp
 public System.Collections.Generic.IEnumerable<double> VoltageValues { get; }
@@ -136,6 +140,9 @@ public System.Collections.Generic.IEnumerable<double> VoltageValues { get; }
 
 #### Property Value
 [System\.Collections\.Generic\.IEnumerable&lt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1 'System\.Collections\.Generic\.IEnumerable\`1')[System\.Double](https://learn.microsoft.com/en-us/dotnet/api/system.double 'System\.Double')[&gt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1 'System\.Collections\.Generic\.IEnumerable\`1')
+
+### Remarks
+Useful for populating UI lists and combo\-boxes\.
 ### Methods
 
 <a name='JordanRobot.MotorDefinition.Model.Drive.AddVoltage(double)'></a>

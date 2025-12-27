@@ -6,153 +6,177 @@ using System.Text.Json.Serialization;
 namespace JordanRobot.MotorDefinition.Model;
 
 /// <summary>
-/// Represents a complete motor definition including all properties, drive configurations, and metadata.
-/// Structure: Motor → Drive(s) → Voltage(s) → Curve
+/// Represents a complete motor definition including properties, drive configurations, and metadata.
 /// </summary>
+/// <remarks>
+/// Structure: <see cref="ServoMotor"/> → <see cref="Drive"/> → <see cref="Voltage"/> → <see cref="Curve"/>.
+/// </remarks>
 public class ServoMotor
 {
     /// <summary>
-    /// The current schema version for motor definition files.
+    /// Specifies the current schema version for motor definition files.
     /// </summary>
     public const string CurrentSchemaVersion = "1.0.0";
 
     /// <summary>
-    /// Schema version for JSON compatibility.
+    /// Gets or sets the schema version for JSON compatibility.
     /// </summary>
     [JsonPropertyName("schemaVersion")]
     public string SchemaVersion { get; set; } = CurrentSchemaVersion;
 
     // Motor Identification
     /// <summary>
-    /// The model name or identifier for the motor.
+    /// Gets or sets the model name or identifier for the motor.
     /// </summary>
     [JsonPropertyName("motorName")]
     public string MotorName { get; set; } = string.Empty;
 
     /// <summary>
-    /// The company that manufactures the motor.
+    /// Gets or sets the company that manufactures the motor.
     /// </summary>
     [JsonPropertyName("manufacturer")]
     public string Manufacturer { get; set; } = string.Empty;
 
     /// <summary>
-    /// The manufacturer's part number for the motor.
+    /// Gets or sets the manufacturer's part number for the motor.
     /// </summary>
     [JsonPropertyName("partNumber")]
     public string PartNumber { get; set; } = string.Empty;
 
     // Motor Base Properties (theoretical maximums from motor cut sheet)
     /// <summary>
-    /// The theoretical maximum power output of the motor (in the unit specified by Units.Power).
+    /// Gets or sets the theoretical maximum power output of the motor.
     /// </summary>
+    /// <remarks>
+    /// Expressed in the unit specified by <see cref="Units"/>.<see cref="UnitSettings.Power"/>.
+    /// </remarks>
     [JsonPropertyName("power")]
     public double Power { get; set; }
 
     /// <summary>
-    /// The theoretical maximum rotational speed of the motor (RPM).
+    /// Gets or sets the theoretical maximum rotational speed of the motor (RPM).
     /// </summary>
     [JsonPropertyName("maxSpeed")]
     public double MaxSpeed { get; set; }
 
     /// <summary>
-    /// The rated continuous operating speed of the motor (RPM).
+    /// Gets or sets the rated continuous operating speed of the motor (RPM).
     /// </summary>
     [JsonPropertyName("ratedSpeed")]
     public double RatedSpeed { get; set; }
 
     /// <summary>
-    /// The theoretical maximum torque the motor can produce continuously without overheating.
+    /// Gets or sets the theoretical maximum continuous torque for the motor.
     /// </summary>
     [JsonPropertyName("ratedContinuousTorque")]
     public double RatedContinuousTorque { get; set; }
 
     /// <summary>
-    /// The theoretical maximum torque the motor can produce for short periods.
+    /// Gets or sets the theoretical maximum peak torque for the motor.
     /// </summary>
     [JsonPropertyName("ratedPeakTorque")]
     public double RatedPeakTorque { get; set; }
 
     // Mechanical Properties
     /// <summary>
-    /// The mass of the motor (in the unit specified by Units.Weight).
+    /// Gets or sets the mass of the motor.
     /// </summary>
+    /// <remarks>
+    /// Expressed in the unit specified by <see cref="Units"/>.<see cref="UnitSettings.Weight"/>.
+    /// </remarks>
     [JsonPropertyName("weight")]
     public double Weight { get; set; }
 
     /// <summary>
-    /// The moment of inertia of the motor's rotor, affecting acceleration response.
+    /// Gets or sets the moment of inertia of the motor's rotor.
     /// </summary>
+    /// <remarks>
+    /// This affects acceleration response.
+    /// </remarks>
     [JsonPropertyName("rotorInertia")]
     public double RotorInertia { get; set; }
 
     /// <summary>
-    /// The feedback device pulses per revolution (PPR).
-    /// Used for encoder or resolver feedback resolution.
+    /// Gets or sets the feedback device pulses per revolution (PPR).
     /// </summary>
+    /// <remarks>
+    /// Used for encoder or resolver feedback resolution.
+    /// </remarks>
     [JsonPropertyName("feedbackPpr")]
     public int FeedbackPpr { get; set; }
 
     // Brake Properties
     /// <summary>
-    /// Indicates whether the motor includes an integral holding brake.
+    /// Gets or sets whether the motor includes an integral holding brake.
     /// </summary>
     [JsonPropertyName("hasBrake")]
     public bool HasBrake { get; set; }
 
     /// <summary>
-    /// The holding torque of the integral brake (if present).
+    /// Gets or sets the holding torque of the integral brake.
     /// </summary>
+    /// <remarks>
+    /// Only applicable when <see cref="HasBrake"/> is <see langword="true"/>.
+    /// </remarks>
     [JsonPropertyName("brakeTorque")]
     public double BrakeTorque { get; set; }
 
     /// <summary>
-    /// The current draw of the brake (if present) (A).
+    /// Gets or sets the current draw of the brake (A).
     /// </summary>
+    /// <remarks>
+    /// Only applicable when <see cref="HasBrake"/> is <see langword="true"/>.
+    /// </remarks>
     [JsonPropertyName("brakeAmperage")]
     public double BrakeAmperage { get; set; }
 
     /// <summary>
-    /// The voltage requirement of the brake (if present) (V).
+    /// Gets or sets the voltage requirement of the brake (V).
     /// </summary>
+    /// <remarks>
+    /// Only applicable when <see cref="HasBrake"/> is <see langword="true"/>.
+    /// </remarks>
     [JsonPropertyName("brakeVoltage")]
     public double BrakeVoltage { get; set; }
 
     /// <summary>
-    /// The release time of the brake.
+    /// Gets or sets the release time of the brake.
     /// </summary>
     [JsonPropertyName("brakeReleaseTime")]
     public double BrakeReleaseTime { get; set; }
 
     /// <summary>
-    /// The brake engage time when using a diode.
+    /// Gets or sets the brake engage time when using a diode.
     /// </summary>
     [JsonPropertyName("brakeEngageTimeDiode")]
     public double BrakeEngageTimeDiode { get; set; }
 
     /// <summary>
-    /// The brake engage time when using an MOV.
+    /// Gets or sets the brake engage time when using an MOV.
     /// </summary>
     [JsonPropertyName("brakeEngageTimeMOV")]
     public double BrakeEngageTimeMov { get; set; }
 
     /// <summary>
-    /// The backlash of the brake mechanism.
+    /// Gets or sets the backlash of the brake mechanism.
     /// </summary>
     [JsonPropertyName("brakeBacklash")]
     public double BrakeBacklash { get; set; }
 
     // Units Configuration
     /// <summary>
-    /// The unit settings for this motor definition.
+    /// Gets or sets the unit settings for this motor definition.
     /// </summary>
     [JsonPropertyName("units")]
     public UnitSettings Units { get; set; } = new();
 
     // Drive Configurations
     /// <summary>
-    /// The collection of drive configurations for this motor.
-    /// Each drive can have multiple voltages with their own curves.
+    /// Gets or sets the drive configurations for this motor.
     /// </summary>
+    /// <remarks>
+    /// Each drive can have multiple voltages with their own curves.
+    /// </remarks>
     [JsonPropertyName("drives")]
     public List<Drive> Drives { get; set; } = [];
 
@@ -165,7 +189,7 @@ public class ServoMotor
 
     // Metadata
     /// <summary>
-    /// Metadata about the motor definition file.
+    /// Gets or sets metadata about the motor definition file.
     /// </summary>
     [JsonPropertyName("metadata")]
     public MotorMetadata Metadata { get; set; } = new();

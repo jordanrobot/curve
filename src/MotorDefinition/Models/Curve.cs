@@ -8,9 +8,12 @@ using System.Text.Json.Serialization;
 namespace JordanRobot.MotorDefinition.Model;
 
 /// <summary>
-/// Represents a named series of motor torque/speed data points.
-/// Each series represents a specific operating condition (e.g., "Peak" or "Continuous").
+/// Represents a named motor torque/speed curve.
 /// </summary>
+/// <remarks>
+/// A curve represents a specific operating condition (for example, "Peak" or "Continuous") and contains a set of
+/// torque/speed <see cref="DataPoint"/> values.
+/// </remarks>
 public class Curve : INotifyPropertyChanged
 {
     private const int MaxSupportedPointCount = 101;
@@ -24,7 +27,7 @@ public class Curve : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     /// <summary>
-    /// The name of this curve (e.g., "Peak", "Continuous").
+    /// Gets or sets the name of this curve (for example, "Peak" or "Continuous").
     /// </summary>
     [JsonPropertyName("name")]
     public string Name
@@ -45,15 +48,17 @@ public class Curve : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Notes or comments about this curve.
+    /// Gets or sets notes about this curve.
     /// </summary>
     [JsonPropertyName("notes")]
     public string Notes { get; set; } = string.Empty;
 
     /// <summary>
-    /// Indicates whether this curve is locked for editing.
-    /// When true, the curve data should not be modified.
+    /// Gets or sets whether this curve is locked for editing.
     /// </summary>
+    /// <remarks>
+    /// When <see langword="true"/>, the curve data should not be modified.
+    /// </remarks>
     [JsonPropertyName("locked")]
     public bool Locked
     {
@@ -69,9 +74,11 @@ public class Curve : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Indicates whether this curve is visible in the chart.
-    /// This is a runtime-only property that is not persisted to JSON.
+    /// Gets or sets whether this curve is visible in the chart.
     /// </summary>
+    /// <remarks>
+    /// This is a runtime-only property that is not persisted to JSON.
+    /// </remarks>
     [JsonIgnore]
     public bool IsVisible
     {
@@ -87,27 +94,29 @@ public class Curve : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// The data points for this curve.
+    /// Gets or sets the data points for this curve.
+    /// </summary>
+    /// <remarks>
     /// Typically contains 101 points at 1% increments (0% through 100%), but may contain fewer points.
     /// Values above 100% may be present to represent overspeed ranges.
-    /// </summary>
+    /// </remarks>
     [JsonPropertyName("data")]
     public List<DataPoint> Data { get; set; } = [];
 
     /// <summary>
-    /// Gets the percentage axis (0..100) for this series.
+    /// Gets the percentage axis (0..100) for this curve.
     /// </summary>
     [JsonIgnore]
     public IEnumerable<int> Percents => Data.Select(p => p.Percent);
 
     /// <summary>
-    /// Gets the RPM values for this series.
+    /// Gets the RPM values for this curve.
     /// </summary>
     [JsonIgnore]
     public IEnumerable<double> Rpms => Data.Select(p => p.Rpm);
 
     /// <summary>
-    /// Gets the torque values for this series.
+    /// Gets the torque values for this curve.
     /// </summary>
     [JsonIgnore]
     public IEnumerable<double> Torques => Data.Select(p => p.Torque);
@@ -131,8 +140,10 @@ public class Curve : INotifyPropertyChanged
 
     /// <summary>
     /// Initializes the data with the default 101 points (0% to 100%) at 1% increments.
-    /// The file format can store 0..101 points per series; this helper always generates the standard 1% curve.
     /// </summary>
+    /// <remarks>
+    /// The file format can store 0..101 points per curve; this helper always generates the standard 1% curve.
+    /// </remarks>
     /// <param name="maxRpm">The maximum RPM of the motor.</param>
     /// <param name="defaultTorque">The default torque value for all points.</param>
     public void InitializeData(double maxRpm, double defaultTorque)
@@ -152,16 +163,18 @@ public class Curve : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Gets the number of data points in this series.
+    /// Gets the number of data points in this curve.
     /// </summary>
     [JsonIgnore]
     public int PointCount => Data.Count;
 
     /// <summary>
-    /// Validates that the series has a supported shape.
-    /// A valid series has 0..101 points, non-negative percent values, and a strictly increasing percent axis.
+    /// Validates that this curve has a supported shape.
     /// </summary>
-    /// <returns>True if the series has valid data structure; otherwise false.</returns>
+    /// <remarks>
+    /// A valid curve has 0..101 points, non-negative percent values, and a strictly increasing percent axis.
+    /// </remarks>
+    /// <returns><see langword="true"/> if the curve has a valid data structure; otherwise <see langword="false"/>.</returns>
     public bool ValidateDataIntegrity()
     {
         if (Data.Count > MaxSupportedPointCount)
@@ -191,8 +204,10 @@ public class Curve : INotifyPropertyChanged
 
     /// <summary>
     /// Gets the data point for a given percent.
-    /// Prefer this for quick lookups when exporting or rendering tables.
     /// </summary>
+    /// <remarks>
+    /// Prefer this for quick lookups when exporting or rendering tables.
+    /// </remarks>
     /// <param name="percent">The percent (non-negative).</param>
     /// <returns>The matching data point.</returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="percent"/> is negative.</exception>
@@ -248,7 +263,7 @@ public class Curve : INotifyPropertyChanged
     /// This is useful for caching fast lookups in client applications.
     /// </summary>
     /// <returns>A dictionary mapping percent to data point.</returns>
-    /// <exception cref="ArgumentException">Thrown if the series contains duplicate percent values.</exception>
+    /// <exception cref="ArgumentException">Thrown if the curve contains duplicate percent values.</exception>
     public IReadOnlyDictionary<int, DataPoint> ToPercentLookup()
     {
         return Data.ToDictionary(p => p.Percent);

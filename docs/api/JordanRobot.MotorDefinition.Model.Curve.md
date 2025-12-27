@@ -3,8 +3,7 @@
 
 ## Curve Class
 
-Represents a named series of motor torque/speed data points\.
-Each series represents a specific operating condition \(e\.g\., "Peak" or "Continuous"\)\.
+Represents a named motor torque/speed curve\.
 
 ```csharp
 public class Curve : System.ComponentModel.INotifyPropertyChanged
@@ -13,6 +12,10 @@ public class Curve : System.ComponentModel.INotifyPropertyChanged
 Inheritance [System\.Object](https://learn.microsoft.com/en-us/dotnet/api/system.object 'System\.Object') &#129106; Curve
 
 Implements [System\.ComponentModel\.INotifyPropertyChanged](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.inotifypropertychanged 'System\.ComponentModel\.INotifyPropertyChanged')
+
+### Remarks
+A curve represents a specific operating condition \(for example, "Peak" or "Continuous"\) and contains a set of
+torque/speed [DataPoint](JordanRobot.MotorDefinition.Model.DataPoint.md 'JordanRobot\.MotorDefinition\.Model\.DataPoint') values\.
 ### Constructors
 
 <a name='JordanRobot.MotorDefinition.Model.Curve.Curve()'></a>
@@ -40,16 +43,14 @@ public Curve(string name);
 
 `name` [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
 
-The name of the curve series\.
+The name of the curve\.
 ### Properties
 
 <a name='JordanRobot.MotorDefinition.Model.Curve.Data'></a>
 
 ## Curve\.Data Property
 
-The data points for this curve\.
-Typically contains 101 points at 1% increments \(0% through 100%\), but may contain fewer points\.
-Values above 100% may be present to represent overspeed ranges\.
+Gets or sets the data points for this curve\.
 
 ```csharp
 public System.Collections.Generic.List<JordanRobot.MotorDefinition.Model.DataPoint> Data { get; set; }
@@ -58,12 +59,15 @@ public System.Collections.Generic.List<JordanRobot.MotorDefinition.Model.DataPoi
 #### Property Value
 [System\.Collections\.Generic\.List&lt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1 'System\.Collections\.Generic\.List\`1')[DataPoint](JordanRobot.MotorDefinition.Model.DataPoint.md 'JordanRobot\.MotorDefinition\.Model\.DataPoint')[&gt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1 'System\.Collections\.Generic\.List\`1')
 
+### Remarks
+Typically contains 101 points at 1% increments \(0% through 100%\), but may contain fewer points\.
+Values above 100% may be present to represent overspeed ranges\.
+
 <a name='JordanRobot.MotorDefinition.Model.Curve.IsVisible'></a>
 
 ## Curve\.IsVisible Property
 
-Indicates whether this curve series is visible in the chart\.
-This is a runtime\-only property that is not persisted to JSON\.
+Gets or sets whether this curve is visible in the chart\.
 
 ```csharp
 public bool IsVisible { get; set; }
@@ -72,12 +76,14 @@ public bool IsVisible { get; set; }
 #### Property Value
 [System\.Boolean](https://learn.microsoft.com/en-us/dotnet/api/system.boolean 'System\.Boolean')
 
+### Remarks
+This is a runtime\-only property that is not persisted to JSON\.
+
 <a name='JordanRobot.MotorDefinition.Model.Curve.Locked'></a>
 
 ## Curve\.Locked Property
 
-Indicates whether this curve series is locked for editing\.
-When true, the curve data should not be modified\.
+Gets or sets whether this curve is locked for editing\.
 
 ```csharp
 public bool Locked { get; set; }
@@ -86,11 +92,14 @@ public bool Locked { get; set; }
 #### Property Value
 [System\.Boolean](https://learn.microsoft.com/en-us/dotnet/api/system.boolean 'System\.Boolean')
 
+### Remarks
+When [true](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/bool 'https://docs\.microsoft\.com/en\-us/dotnet/csharp/language\-reference/builtin\-types/bool'), the curve data should not be modified\.
+
 <a name='JordanRobot.MotorDefinition.Model.Curve.Name'></a>
 
 ## Curve\.Name Property
 
-The name of this curve series \(e\.g\., "Peak", "Continuous"\)\.
+Gets or sets the name of this curve \(for example, "Peak" or "Continuous"\)\.
 
 ```csharp
 public string Name { get; set; }
@@ -103,7 +112,7 @@ public string Name { get; set; }
 
 ## Curve\.Notes Property
 
-Notes or comments about this curve series\.
+Gets or sets notes about this curve\.
 
 ```csharp
 public string Notes { get; set; }
@@ -116,7 +125,7 @@ public string Notes { get; set; }
 
 ## Curve\.Percents Property
 
-Gets the percentage axis \(0\.\.100\) for this series\.
+Gets the percentage axis \(0\.\.100\) for this curve\.
 
 ```csharp
 public System.Collections.Generic.IEnumerable<int> Percents { get; }
@@ -129,7 +138,7 @@ public System.Collections.Generic.IEnumerable<int> Percents { get; }
 
 ## Curve\.PointCount Property
 
-Gets the number of data points in this series\.
+Gets the number of data points in this curve\.
 
 ```csharp
 public int PointCount { get; }
@@ -142,7 +151,7 @@ public int PointCount { get; }
 
 ## Curve\.Rpms Property
 
-Gets the RPM values for this series\.
+Gets the RPM values for this curve\.
 
 ```csharp
 public System.Collections.Generic.IEnumerable<double> Rpms { get; }
@@ -155,7 +164,7 @@ public System.Collections.Generic.IEnumerable<double> Rpms { get; }
 
 ## Curve\.Torques Property
 
-Gets the torque values for this series\.
+Gets the torque values for this curve\.
 
 ```csharp
 public System.Collections.Generic.IEnumerable<double> Torques { get; }
@@ -170,7 +179,6 @@ public System.Collections.Generic.IEnumerable<double> Torques { get; }
 ## Curve\.GetPointByPercent\(int\) Method
 
 Gets the data point for a given percent\.
-Prefer this for quick lookups when exporting or rendering tables\.
 
 ```csharp
 public JordanRobot.MotorDefinition.Model.DataPoint GetPointByPercent(int percent);
@@ -195,12 +203,14 @@ Thrown when [percent](JordanRobot.MotorDefinition.Model.Curve.md#JordanRobot.Mot
 [System\.Collections\.Generic\.KeyNotFoundException](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.keynotfoundexception 'System\.Collections\.Generic\.KeyNotFoundException')  
 Thrown when no point exists for [percent](JordanRobot.MotorDefinition.Model.Curve.md#JordanRobot.MotorDefinition.Model.Curve.GetPointByPercent(int).percent 'JordanRobot\.MotorDefinition\.Model\.Curve\.GetPointByPercent\(int\)\.percent')\.
 
+### Remarks
+Prefer this for quick lookups when exporting or rendering tables\.
+
 <a name='JordanRobot.MotorDefinition.Model.Curve.InitializeData(double,double)'></a>
 
 ## Curve\.InitializeData\(double, double\) Method
 
 Initializes the data with the default 101 points \(0% to 100%\) at 1% increments\.
-The file format can store 0\.\.101 points per series; this helper always generates the standard 1% curve\.
 
 ```csharp
 public void InitializeData(double maxRpm, double defaultTorque);
@@ -218,6 +228,9 @@ The maximum RPM of the motor\.
 `defaultTorque` [System\.Double](https://learn.microsoft.com/en-us/dotnet/api/system.double 'System\.Double')
 
 The default torque value for all points\.
+
+### Remarks
+The file format can store 0\.\.101 points per curve; this helper always generates the standard 1% curve\.
 
 <a name='JordanRobot.MotorDefinition.Model.Curve.OnPropertyChanged(string)'></a>
 
@@ -254,7 +267,7 @@ A dictionary mapping percent to data point\.
 #### Exceptions
 
 [System\.ArgumentException](https://learn.microsoft.com/en-us/dotnet/api/system.argumentexception 'System\.ArgumentException')  
-Thrown if the series contains duplicate percent values\.
+Thrown if the curve contains duplicate percent values\.
 
 <a name='JordanRobot.MotorDefinition.Model.Curve.TryGetPointByPercent(int,JordanRobot.MotorDefinition.Model.DataPoint)'></a>
 
@@ -287,8 +300,7 @@ True if found; otherwise false\.
 
 ## Curve\.ValidateDataIntegrity\(\) Method
 
-Validates that the series has a supported shape\.
-A valid series has 0\.\.101 points, non\-negative percent values, and a strictly increasing percent axis\.
+Validates that this curve has a supported shape\.
 
 ```csharp
 public bool ValidateDataIntegrity();
@@ -296,7 +308,10 @@ public bool ValidateDataIntegrity();
 
 #### Returns
 [System\.Boolean](https://learn.microsoft.com/en-us/dotnet/api/system.boolean 'System\.Boolean')  
-True if the series has valid data structure; otherwise false\.
+[true](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/bool 'https://docs\.microsoft\.com/en\-us/dotnet/csharp/language\-reference/builtin\-types/bool') if the curve has a valid data structure; otherwise [false](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/bool 'https://docs\.microsoft\.com/en\-us/dotnet/csharp/language\-reference/builtin\-types/bool')\.
+
+### Remarks
+A valid curve has 0\.\.101 points, non\-negative percent values, and a strictly increasing percent axis\.
 ### Events
 
 <a name='JordanRobot.MotorDefinition.Model.Curve.PropertyChanged'></a>

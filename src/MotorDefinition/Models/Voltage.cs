@@ -9,14 +9,17 @@ namespace JordanRobot.MotorDefinition.Model;
 
 /// <summary>
 /// Represents voltage-specific configuration and performance data for a motor/drive combination.
-/// Contains the curves for this specific voltage setting.
 /// </summary>
+/// <remarks>
+/// Each <see cref="Voltage"/> contains one or more <see cref="Curve"/> definitions representing different
+/// operating conditions (for example, peak vs. continuous).
+/// </remarks>
 public class Voltage : INotifyPropertyChanged
 {
     private double _voltage;
 
     /// <summary>
-    /// The operating voltage (V).
+    /// Gets or sets the operating voltage (V).
     /// </summary>
     [JsonPropertyName("voltage")]
     public double Value
@@ -39,56 +42,61 @@ public class Voltage : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Gets a display-friendly name for this voltage configuration (e.g., "208 V").
-    /// Useful for populating UI lists and combo-boxes.
+    /// Gets a display-friendly name for this voltage configuration (for example, "208 V").
     /// </summary>
+    /// <remarks>
+    /// Useful for populating UI lists and combo-boxes.
+    /// </remarks>
     [JsonIgnore]
     public string DisplayName => string.Create(CultureInfo.InvariantCulture, $"{Value:0.##} V");
 
     /// <summary>
-    /// The power output at this voltage (in the unit specified by Units.Power).
+    /// Gets or sets the power output at this voltage.
     /// </summary>
+    /// <remarks>
+    /// Expressed in the unit specified by the parent motor's <see cref="UnitSettings"/>.
+    /// </remarks>
     [JsonPropertyName("power")]
     public double Power { get; set; }
 
     /// <summary>
-    /// The maximum rotational speed at this voltage (RPM).
+    /// Gets or sets the maximum rotational speed at this voltage (RPM).
     /// </summary>
     [JsonPropertyName("maxSpeed")]
     public double MaxSpeed { get; set; }
 
     /// <summary>
-    /// The rated continuous operating speed at this voltage (RPM).
+    /// Gets or sets the rated continuous operating speed at this voltage (RPM).
     /// </summary>
     [JsonPropertyName("ratedSpeed")]
     public double RatedSpeed { get; set; }
 
     /// <summary>
-    /// The torque the motor can produce continuously at this voltage without overheating.
+    /// Gets or sets the rated continuous torque at this voltage.
     /// </summary>
     [JsonPropertyName("ratedContinuousTorque")]
     public double RatedContinuousTorque { get; set; }
 
     /// <summary>
-    /// The maximum torque the motor can produce for short periods at this voltage.
+    /// Gets or sets the rated peak torque at this voltage.
     /// </summary>
     [JsonPropertyName("ratedPeakTorque")]
     public double RatedPeakTorque { get; set; }
 
     /// <summary>
-    /// The current draw during continuous operation at rated torque (A).
+    /// Gets or sets the current draw during continuous operation at rated torque (A).
     /// </summary>
     [JsonPropertyName("continuousAmperage")]
     public double ContinuousAmperage { get; set; }
 
     /// <summary>
-    /// The maximum current draw during peak torque operation (A).
+    /// Gets or sets the maximum current draw during peak torque operation (A).
     /// </summary>
     [JsonPropertyName("peakAmperage")]
     public double PeakAmperage { get; set; }
 
     /// <summary>
-    /// The collection of curves for this voltage (e.g., "Peak", "Continuous").
+    /// Gets or sets the curves for this voltage configuration (for example, "Peak" and "Continuous").
     /// </summary>
     [JsonPropertyName("series")]
     public List<Curve> Curves { get; set; } = [];
@@ -125,18 +133,18 @@ public class Voltage : INotifyPropertyChanged
     /// <param name="name">The name for the new curve.</param>
     /// <param name="initializeTorque">The default torque value for all points.</param>
     /// <returns>The newly created curve.</returns>
-    /// <exception cref="InvalidOperationException">Thrown if a series with the same name already exists.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if a curve with the same name already exists.</exception>
     public Curve AddSeries(string name, double initializeTorque = 0)
     {
         if (GetSeriesByName(name) is not null)
         {
-            throw new InvalidOperationException($"A series with the name '{name}' already exists.");
+            throw new InvalidOperationException($"A curve with the name '{name}' already exists.");
         }
 
-        var series = new Curve(name);
-        series.InitializeData(MaxSpeed, initializeTorque);
-        Curves.Add(series);
-        return series;
+        var curve = new Curve(name);
+        curve.InitializeData(MaxSpeed, initializeTorque);
+        Curves.Add(curve);
+        return curve;
     }
 
     /// <summary>

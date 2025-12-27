@@ -8,9 +8,12 @@ using System.Text.Json.Serialization;
 namespace JordanRobot.MotorDefinition.Model;
 
 /// <summary>
-/// Represents a servo drive configuration for a motor.
-/// Contains voltage-specific configurations and their associated curves.
+/// Represents a drive configuration for a motor.
 /// </summary>
+/// <remarks>
+/// A drive contains one or more <see cref="Voltage"/> configurations, each of which contains one or more
+/// <see cref="Curve"/> definitions.
+/// </remarks>
 public class Drive : INotifyPropertyChanged
 {
     private string _name = string.Empty;
@@ -21,7 +24,7 @@ public class Drive : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     /// <summary>
-    /// The name or model identifier of the drive.
+    /// Gets or sets the name or model identifier of the drive.
     /// </summary>
     [JsonPropertyName("name")]
     public string Name
@@ -42,34 +45,38 @@ public class Drive : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// The manufacturer's part number for the servo drive.
+    /// Gets or sets the manufacturer's part number for the servo drive.
     /// </summary>
     [JsonPropertyName("partNumber")]
     public string PartNumber { get; set; } = string.Empty;
 
     /// <summary>
-    /// The manufacturer of the drive.
+    /// Gets or sets the manufacturer of the drive.
     /// </summary>
     [JsonPropertyName("manufacturer")]
     public string Manufacturer { get; set; } = string.Empty;
 
     /// <summary>
-    /// The collection of voltage configurations for this drive.
+    /// Gets or sets the collection of voltage configurations for this drive.
     /// </summary>
     [JsonPropertyName("voltages")]
     public List<Voltage> Voltages { get; set; } = [];
 
     /// <summary>
-    /// Gets display-friendly voltage names (e.g., "208 V").
-    /// Useful for populating UI lists and combo-boxes.
+    /// Gets display-friendly voltage names (for example, "208 V").
     /// </summary>
+    /// <remarks>
+    /// Useful for populating UI lists and combo-boxes.
+    /// </remarks>
     [JsonIgnore]
     public IEnumerable<string> VoltageNames => Voltages.Select(v => v.DisplayName);
 
     /// <summary>
     /// Gets the numeric voltage values.
-    /// Useful for populating UI lists and combo-boxes.
     /// </summary>
+    /// <remarks>
+    /// Useful for populating UI lists and combo-boxes.
+    /// </remarks>
     [JsonIgnore]
     public IEnumerable<double> VoltageValues => Voltages.Select(v => v.Value);
 

@@ -69,4 +69,5 @@ The library writes the schema version from `ServoMotor.CurrentSchemaVersion` whe
 - Documentation home: https://github.com/jordanrobot/MotorDefinition/tree/main/docs
 - Quick Start: https://github.com/jordanrobot/MotorDefinition/blob/main/docs/QuickStart.md
 - User Guide: https://github.com/jordanrobot/MotorDefinition/blob/main/docs/UserGuide.md
+- Terms and definitions: https://github.com/jordanrobot/MotorDefinition/blob/main/docs/TermsAndDefinitions.md
 - API documentation: https://github.com/jordanrobot/MotorDefinition/blob/main/docs/api/index.md

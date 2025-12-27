@@ -331,7 +331,7 @@ See ADR-0006 (`../../docs/adr/adr-0006-motor-file-schema-and-versioning.md`) for
   - [X] UserGuide.md
 - [X] Update README.md in src/MotorDefinition/
 - [X] Update README.md in /
-- [X] Update 00-terms-and-definitions.md in .github/planning/
+- [X] Move terms and definitions into docs/TermsAndDefinitions.md
 - [X] Update planning files (.github/planning/) not listed here that reference these old names
 - [X] Update adrs (docs/adr/) not listed here that reference these old names
 

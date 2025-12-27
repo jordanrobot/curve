@@ -19,7 +19,7 @@ Before making non-trivial code or XAML changes, Copilot agents should load and r
 - Relevant phase plan: `.github/planning/phase-N-plan.md` (if present).
 - Relevant phase tasks checklist: `.github/planning/phase-N-tasks.md` (if present).
 - Phase-specific bug/notes log: `.github/planning/phase-N-bugs-and-notes.md` (if present).
-- Terms and definitions: `.github/planning/00-terms-and-definitions.md`.
+- Terms and definitions: `docs/TermsAndDefinitions.md`.
 - Related ADRs referenced by the roadmap or phase docs (for example, motor property undo design, panel layout, file schema).
 
 ## Phase-Centric Workflow
@@ -64,7 +64,7 @@ For any new feature or phase-level work:
    - Reference ADR IDs and any relevant acceptance criteria or question labels whenever possible.
 
 7. **Keep terms consistent**
-   - When introducing new UI labels or domain concepts, update `.github/planning/00-terms-and-definitions.md` so future agents and humans share the same vocabulary.
+   - When introducing new UI labels or domain concepts, update `docs/TermsAndDefinitions.md` so future agents and humans share the same vocabulary.
 
 ## When Requirements Are Missing or Ambiguous
 

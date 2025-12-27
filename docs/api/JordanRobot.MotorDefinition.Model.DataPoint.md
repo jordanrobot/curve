@@ -69,8 +69,7 @@ public int DisplayRpm { get; }
 
 ## DataPoint\.Percent Property
 
-Percentage representing position along the motor's speed range\.
-Typically 0% = 0 RPM and 100% = MaxRpm, but values above 100 may be used for overspeed ranges\.
+Gets or sets the percent position along the motor's speed range\.
 
 ```csharp
 public int Percent { get; set; }
@@ -79,11 +78,15 @@ public int Percent { get; set; }
 #### Property Value
 [System\.Int32](https://learn.microsoft.com/en-us/dotnet/api/system.int32 'System\.Int32')
 
+### Remarks
+Typically 0% corresponds to 0 RPM and 100% corresponds to max speed, but values above 100% may be used
+to represent overspeed ranges\.
+
 <a name='JordanRobot.MotorDefinition.Model.DataPoint.Rpm'></a>
 
 ## DataPoint\.Rpm Property
 
-Rotational speed at this percentage point in revolutions per minute\.
+Gets or sets the rotational speed at this point \(RPM\)\.
 
 ```csharp
 public double Rpm { get; set; }
@@ -96,8 +99,7 @@ public double Rpm { get; set; }
 
 ## DataPoint\.Torque Property
 
-Torque value at this speed point\.
-Can be negative for regenerative braking scenarios\.
+Gets or sets the torque value at this point\.
 
 ```csharp
 public double Torque { get; set; }
@@ -105,3 +107,6 @@ public double Torque { get; set; }
 
 #### Property Value
 [System\.Double](https://learn.microsoft.com/en-us/dotnet/api/system.double 'System\.Double')
+
+### Remarks
+Torque may be negative for regenerative braking scenarios\.

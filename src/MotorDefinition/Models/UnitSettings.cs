@@ -28,8 +28,11 @@ public class UnitSettings : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     /// <summary>
-    /// Torque unit: "Nm", "lbf-ft", "lbf-in", or "oz-in".
+    /// Gets or sets the torque unit label.
     /// </summary>
+    /// <remarks>
+    /// Supported values include "Nm", "lbf-ft", "lbf-in", and "oz-in".
+    /// </remarks>
     [JsonPropertyName("torque")]
     public string Torque
     {
@@ -38,8 +41,11 @@ public class UnitSettings : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Speed unit: "rpm".
+    /// Gets or sets the speed unit label.
     /// </summary>
+    /// <remarks>
+    /// Supported values include "rpm".
+    /// </remarks>
     [JsonPropertyName("speed")]
     public string Speed
     {
@@ -48,8 +54,11 @@ public class UnitSettings : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Power unit: "kW", "W", or "hp".
+    /// Gets or sets the power unit label.
     /// </summary>
+    /// <remarks>
+    /// Supported values include "kW", "W", and "hp".
+    /// </remarks>
     [JsonPropertyName("power")]
     public string Power
     {
@@ -58,8 +67,11 @@ public class UnitSettings : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Weight unit: "kg", "g", "lbs", or "oz".
+    /// Gets or sets the weight unit label.
     /// </summary>
+    /// <remarks>
+    /// Supported values include "kg", "g", "lbs", and "oz".
+    /// </remarks>
     [JsonPropertyName("weight")]
     public string Weight
     {
@@ -68,8 +80,11 @@ public class UnitSettings : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Value unit: "V" or "kV".
+    /// Gets or sets the voltage unit label.
     /// </summary>
+    /// <remarks>
+    /// Supported values include "V" and "kV".
+    /// </remarks>
     [JsonPropertyName("voltage")]
     public string Voltage
     {
@@ -78,8 +93,11 @@ public class UnitSettings : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Current unit: "A" or "mA".
+    /// Gets or sets the current unit label.
     /// </summary>
+    /// <remarks>
+    /// Supported values include "A" and "mA".
+    /// </remarks>
     [JsonPropertyName("current")]
     public string Current
     {
@@ -88,8 +106,11 @@ public class UnitSettings : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Inertia unit: "kg-m^2" or "g-cm^2".
+    /// Gets or sets the inertia unit label.
     /// </summary>
+    /// <remarks>
+    /// Supported values include "kg-m^2" and "g-cm^2".
+    /// </remarks>
     [JsonPropertyName("inertia")]
     public string Inertia
     {
@@ -98,8 +119,11 @@ public class UnitSettings : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Torque constant unit: "Nm/A".
+    /// Gets or sets the torque constant unit label.
     /// </summary>
+    /// <remarks>
+    /// Supported values include "Nm/A".
+    /// </remarks>
     [JsonPropertyName("torqueConstant")]
     public string TorqueConstant
     {
@@ -108,8 +132,11 @@ public class UnitSettings : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Backlash unit: "arcmin" or "arcsec".
+    /// Gets or sets the backlash unit label.
     /// </summary>
+    /// <remarks>
+    /// Supported values include "arcmin" and "arcsec".
+    /// </remarks>
     [JsonPropertyName("backlash")]
     public string Backlash
     {
@@ -118,8 +145,11 @@ public class UnitSettings : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Response time unit for brake measurements.
+    /// Gets or sets the response time unit label.
     /// </summary>
+    /// <remarks>
+    /// Supported values include "ms" and "s".
+    /// </remarks>
     [JsonPropertyName("responseTime")]
     public string ResponseTime
     {
@@ -128,7 +158,7 @@ public class UnitSettings : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Percentage unit label.
+    /// Gets or sets the percentage unit label.
     /// </summary>
     [JsonPropertyName("percentage")]
     public string Percentage
@@ -138,7 +168,7 @@ public class UnitSettings : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Temperature unit label.
+    /// Gets or sets the temperature unit label.
     /// </summary>
     [JsonPropertyName("temperature")]
     public string Temperature

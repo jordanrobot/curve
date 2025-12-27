@@ -12,9 +12,12 @@ public class DataPoint
     private double _rpm;
 
     /// <summary>
-    /// Percentage representing position along the motor's speed range.
-    /// Typically 0% = 0 RPM and 100% = MaxRpm, but values above 100 may be used for overspeed ranges.
+    /// Gets or sets the percent position along the motor's speed range.
     /// </summary>
+    /// <remarks>
+    /// Typically 0% corresponds to 0 RPM and 100% corresponds to max speed, but values above 100% may be used
+    /// to represent overspeed ranges.
+    /// </remarks>
     [JsonPropertyName("percent")]
     public int Percent
     {
@@ -30,7 +33,7 @@ public class DataPoint
     }
 
     /// <summary>
-    /// Rotational speed at this percentage point in revolutions per minute.
+    /// Gets or sets the rotational speed at this point (RPM).
     /// </summary>
     [JsonPropertyName("rpm")]
     public double Rpm
@@ -47,9 +50,11 @@ public class DataPoint
     }
 
     /// <summary>
-    /// Torque value at this speed point.
-    /// Can be negative for regenerative braking scenarios.
+    /// Gets or sets the torque value at this point.
     /// </summary>
+    /// <remarks>
+    /// Torque may be negative for regenerative braking scenarios.
+    /// </remarks>
     [JsonPropertyName("torque")]
     public double Torque { get; set; }
 

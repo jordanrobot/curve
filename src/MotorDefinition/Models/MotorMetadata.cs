@@ -9,20 +9,23 @@ namespace JordanRobot.MotorDefinition.Model;
 public class MotorMetadata
 {
     /// <summary>
-    /// The date and time when the motor definition was created.
+    /// Gets or sets the date and time when the motor definition was created.
     /// </summary>
     [JsonPropertyName("created")]
     public DateTime Created { get; set; } = DateTime.UtcNow;
 
     /// <summary>
-    /// The date and time when the motor definition was last modified.
+    /// Gets or sets the date and time when the motor definition was last modified.
     /// </summary>
     [JsonPropertyName("modified")]
     public DateTime Modified { get; set; } = DateTime.UtcNow;
 
     /// <summary>
-    /// Optional notes about the motor definition (e.g., test conditions).
+    /// Gets or sets notes about the motor definition.
     /// </summary>
+    /// <remarks>
+    /// This can include test conditions or other free-form information.
+    /// </remarks>
     [JsonPropertyName("notes")]
     public string Notes { get; set; } = string.Empty;
 

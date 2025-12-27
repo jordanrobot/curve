@@ -18,7 +18,7 @@ Implements [System\.ComponentModel\.INotifyPropertyChanged](https://learn.micros
 
 ## UnitSettings\.Backlash Property
 
-Backlash unit: "arcmin" or "arcsec"\.
+Gets or sets the backlash unit label\.
 
 ```csharp
 public string Backlash { get; set; }
@@ -27,11 +27,14 @@ public string Backlash { get; set; }
 #### Property Value
 [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
 
+### Remarks
+Supported values include "arcmin" and "arcsec"\.
+
 <a name='JordanRobot.MotorDefinition.Model.UnitSettings.Current'></a>
 
 ## UnitSettings\.Current Property
 
-Current unit: "A" or "mA"\.
+Gets or sets the current unit label\.
 
 ```csharp
 public string Current { get; set; }
@@ -40,11 +43,14 @@ public string Current { get; set; }
 #### Property Value
 [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
 
+### Remarks
+Supported values include "A" and "mA"\.
+
 <a name='JordanRobot.MotorDefinition.Model.UnitSettings.Inertia'></a>
 
 ## UnitSettings\.Inertia Property
 
-Inertia unit: "kg\-m^2" or "g\-cm^2"\.
+Gets or sets the inertia unit label\.
 
 ```csharp
 public string Inertia { get; set; }
@@ -53,11 +59,14 @@ public string Inertia { get; set; }
 #### Property Value
 [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
 
+### Remarks
+Supported values include "kg\-m^2" and "g\-cm^2"\.
+
 <a name='JordanRobot.MotorDefinition.Model.UnitSettings.Percentage'></a>
 
 ## UnitSettings\.Percentage Property
 
-Percentage unit label\.
+Gets or sets the percentage unit label\.
 
 ```csharp
 public string Percentage { get; set; }
@@ -70,7 +79,7 @@ public string Percentage { get; set; }
 
 ## UnitSettings\.Power Property
 
-Power unit: "kW", "W", or "hp"\.
+Gets or sets the power unit label\.
 
 ```csharp
 public string Power { get; set; }
@@ -79,11 +88,14 @@ public string Power { get; set; }
 #### Property Value
 [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
 
+### Remarks
+Supported values include "kW", "W", and "hp"\.
+
 <a name='JordanRobot.MotorDefinition.Model.UnitSettings.ResponseTime'></a>
 
 ## UnitSettings\.ResponseTime Property
 
-Response time unit for brake measurements\.
+Gets or sets the response time unit label\.
 
 ```csharp
 public string ResponseTime { get; set; }
@@ -92,11 +104,14 @@ public string ResponseTime { get; set; }
 #### Property Value
 [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
 
+### Remarks
+Supported values include "ms" and "s"\.
+
 <a name='JordanRobot.MotorDefinition.Model.UnitSettings.Speed'></a>
 
 ## UnitSettings\.Speed Property
 
-Speed unit: "rpm"\.
+Gets or sets the speed unit label\.
 
 ```csharp
 public string Speed { get; set; }
@@ -104,6 +119,9 @@ public string Speed { get; set; }
 
 #### Property Value
 [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
+
+### Remarks
+Supported values include "rpm"\.
 
 <a name='JordanRobot.MotorDefinition.Model.UnitSettings.SupportedBacklashUnits'></a>
 
@@ -265,7 +283,7 @@ public static string[] SupportedWeightUnits { get; }
 
 ## UnitSettings\.Temperature Property
 
-Temperature unit label\.
+Gets or sets the temperature unit label\.
 
 ```csharp
 public string Temperature { get; set; }
@@ -278,7 +296,7 @@ public string Temperature { get; set; }
 
 ## UnitSettings\.Torque Property
 
-Torque unit: "Nm", "lbf\-ft", "lbf\-in", or "oz\-in"\.
+Gets or sets the torque unit label\.
 
 ```csharp
 public string Torque { get; set; }
@@ -287,11 +305,14 @@ public string Torque { get; set; }
 #### Property Value
 [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
 
+### Remarks
+Supported values include "Nm", "lbf\-ft", "lbf\-in", and "oz\-in"\.
+
 <a name='JordanRobot.MotorDefinition.Model.UnitSettings.TorqueConstant'></a>
 
 ## UnitSettings\.TorqueConstant Property
 
-Torque constant unit: "Nm/A"\.
+Gets or sets the torque constant unit label\.
 
 ```csharp
 public string TorqueConstant { get; set; }
@@ -300,11 +321,14 @@ public string TorqueConstant { get; set; }
 #### Property Value
 [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
 
+### Remarks
+Supported values include "Nm/A"\.
+
 <a name='JordanRobot.MotorDefinition.Model.UnitSettings.Voltage'></a>
 
 ## UnitSettings\.Voltage Property
 
-Value unit: "V" or "kV"\.
+Gets or sets the voltage unit label\.
 
 ```csharp
 public string Voltage { get; set; }
@@ -313,11 +337,14 @@ public string Voltage { get; set; }
 #### Property Value
 [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
 
+### Remarks
+Supported values include "V" and "kV"\.
+
 <a name='JordanRobot.MotorDefinition.Model.UnitSettings.Weight'></a>
 
 ## UnitSettings\.Weight Property
 
-Weight unit: "kg", "g", "lbs", or "oz"\.
+Gets or sets the weight unit label\.
 
 ```csharp
 public string Weight { get; set; }
@@ -325,6 +352,9 @@ public string Weight { get; set; }
 
 #### Property Value
 [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
+
+### Remarks
+Supported values include "kg", "g", "lbs", and "oz"\.
 ### Methods
 
 <a name='JordanRobot.MotorDefinition.Model.UnitSettings.OnPropertyChanged(string)'></a>

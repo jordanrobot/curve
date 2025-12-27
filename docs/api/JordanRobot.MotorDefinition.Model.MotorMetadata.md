@@ -16,7 +16,7 @@ Inheritance [System\.Object](https://learn.microsoft.com/en-us/dotnet/api/system
 
 ## MotorMetadata\.Created Property
 
-The date and time when the motor definition was created\.
+Gets or sets the date and time when the motor definition was created\.
 
 ```csharp
 public System.DateTime Created { get; set; }
@@ -29,7 +29,7 @@ public System.DateTime Created { get; set; }
 
 ## MotorMetadata\.Modified Property
 
-The date and time when the motor definition was last modified\.
+Gets or sets the date and time when the motor definition was last modified\.
 
 ```csharp
 public System.DateTime Modified { get; set; }
@@ -42,7 +42,7 @@ public System.DateTime Modified { get; set; }
 
 ## MotorMetadata\.Notes Property
 
-Optional notes about the motor definition \(e\.g\., test conditions\)\.
+Gets or sets notes about the motor definition\.
 
 ```csharp
 public string Notes { get; set; }
@@ -50,6 +50,9 @@ public string Notes { get; set; }
 
 #### Property Value
 [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
+
+### Remarks
+This can include test conditions or other free\-form information\.
 ### Methods
 
 <a name='JordanRobot.MotorDefinition.Model.MotorMetadata.UpdateModified()'></a>

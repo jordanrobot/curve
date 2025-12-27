@@ -3,14 +3,16 @@
 
 ## ServoMotor Class
 
-Represents a complete motor definition including all properties, drive configurations, and metadata\.
-Structure: Motor → Drive\(s\) → Value\(s\) → Curve
+Represents a complete motor definition including properties, drive configurations, and metadata\.
 
 ```csharp
 public class ServoMotor
 ```
 
 Inheritance [System\.Object](https://learn.microsoft.com/en-us/dotnet/api/system.object 'System\.Object') &#129106; ServoMotor
+
+### Remarks
+Structure: [ServoMotor](JordanRobot.MotorDefinition.Model.ServoMotor.md 'JordanRobot\.MotorDefinition\.Model\.ServoMotor') → [Drive](JordanRobot.MotorDefinition.Model.Drive.md 'JordanRobot\.MotorDefinition\.Model\.Drive') → [Voltage](JordanRobot.MotorDefinition.Model.Voltage.md 'JordanRobot\.MotorDefinition\.Model\.Voltage') → [Curve](JordanRobot.MotorDefinition.Model.Curve.md 'JordanRobot\.MotorDefinition\.Model\.Curve')\.
 ### Constructors
 
 <a name='JordanRobot.MotorDefinition.Model.ServoMotor.ServoMotor()'></a>
@@ -45,7 +47,7 @@ The name of the motor\.
 
 ## ServoMotor\.CurrentSchemaVersion Field
 
-The current schema version for motor definition files\.
+Specifies the current schema version for motor definition files\.
 
 ```csharp
 public const string CurrentSchemaVersion = "1.0.0";
@@ -59,7 +61,7 @@ public const string CurrentSchemaVersion = "1.0.0";
 
 ## ServoMotor\.BrakeAmperage Property
 
-The current draw of the brake \(if present\) \(A\)\.
+Gets or sets the current draw of the brake \(A\)\.
 
 ```csharp
 public double BrakeAmperage { get; set; }
@@ -68,11 +70,14 @@ public double BrakeAmperage { get; set; }
 #### Property Value
 [System\.Double](https://learn.microsoft.com/en-us/dotnet/api/system.double 'System\.Double')
 
+### Remarks
+Only applicable when [HasBrake](JordanRobot.MotorDefinition.Model.ServoMotor.md#JordanRobot.MotorDefinition.Model.ServoMotor.HasBrake 'JordanRobot\.MotorDefinition\.Model\.ServoMotor\.HasBrake') is [true](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/bool 'https://docs\.microsoft\.com/en\-us/dotnet/csharp/language\-reference/builtin\-types/bool')\.
+
 <a name='JordanRobot.MotorDefinition.Model.ServoMotor.BrakeBacklash'></a>
 
 ## ServoMotor\.BrakeBacklash Property
 
-The backlash of the brake mechanism\.
+Gets or sets the backlash of the brake mechanism\.
 
 ```csharp
 public double BrakeBacklash { get; set; }
@@ -85,7 +90,7 @@ public double BrakeBacklash { get; set; }
 
 ## ServoMotor\.BrakeEngageTimeDiode Property
 
-The brake engage time when using a diode\.
+Gets or sets the brake engage time when using a diode\.
 
 ```csharp
 public double BrakeEngageTimeDiode { get; set; }
@@ -98,7 +103,7 @@ public double BrakeEngageTimeDiode { get; set; }
 
 ## ServoMotor\.BrakeEngageTimeMov Property
 
-The brake engage time when using an MOV\.
+Gets or sets the brake engage time when using an MOV\.
 
 ```csharp
 public double BrakeEngageTimeMov { get; set; }
@@ -111,7 +116,7 @@ public double BrakeEngageTimeMov { get; set; }
 
 ## ServoMotor\.BrakeReleaseTime Property
 
-The release time of the brake\.
+Gets or sets the release time of the brake\.
 
 ```csharp
 public double BrakeReleaseTime { get; set; }
@@ -124,7 +129,7 @@ public double BrakeReleaseTime { get; set; }
 
 ## ServoMotor\.BrakeTorque Property
 
-The holding torque of the integral brake \(if present\)\.
+Gets or sets the holding torque of the integral brake\.
 
 ```csharp
 public double BrakeTorque { get; set; }
@@ -133,11 +138,14 @@ public double BrakeTorque { get; set; }
 #### Property Value
 [System\.Double](https://learn.microsoft.com/en-us/dotnet/api/system.double 'System\.Double')
 
+### Remarks
+Only applicable when [HasBrake](JordanRobot.MotorDefinition.Model.ServoMotor.md#JordanRobot.MotorDefinition.Model.ServoMotor.HasBrake 'JordanRobot\.MotorDefinition\.Model\.ServoMotor\.HasBrake') is [true](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/bool 'https://docs\.microsoft\.com/en\-us/dotnet/csharp/language\-reference/builtin\-types/bool')\.
+
 <a name='JordanRobot.MotorDefinition.Model.ServoMotor.BrakeVoltage'></a>
 
 ## ServoMotor\.BrakeVoltage Property
 
-The voltage requirement of the brake \(if present\) \(V\)\.
+Gets or sets the voltage requirement of the brake \(V\)\.
 
 ```csharp
 public double BrakeVoltage { get; set; }
@@ -145,6 +153,9 @@ public double BrakeVoltage { get; set; }
 
 #### Property Value
 [System\.Double](https://learn.microsoft.com/en-us/dotnet/api/system.double 'System\.Double')
+
+### Remarks
+Only applicable when [HasBrake](JordanRobot.MotorDefinition.Model.ServoMotor.md#JordanRobot.MotorDefinition.Model.ServoMotor.HasBrake 'JordanRobot\.MotorDefinition\.Model\.ServoMotor\.HasBrake') is [true](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/bool 'https://docs\.microsoft\.com/en\-us/dotnet/csharp/language\-reference/builtin\-types/bool')\.
 
 <a name='JordanRobot.MotorDefinition.Model.ServoMotor.DriveNames'></a>
 
@@ -164,8 +175,7 @@ public System.Collections.Generic.IEnumerable<string> DriveNames { get; }
 
 ## ServoMotor\.Drives Property
 
-The collection of drive configurations for this motor\.
-Each drive can have multiple voltage configurations with their own curve series\.
+Gets or sets the drive configurations for this motor\.
 
 ```csharp
 public System.Collections.Generic.List<JordanRobot.MotorDefinition.Model.Drive> Drives { get; set; }
@@ -174,12 +184,14 @@ public System.Collections.Generic.List<JordanRobot.MotorDefinition.Model.Drive> 
 #### Property Value
 [System\.Collections\.Generic\.List&lt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1 'System\.Collections\.Generic\.List\`1')[Drive](JordanRobot.MotorDefinition.Model.Drive.md 'JordanRobot\.MotorDefinition\.Model\.Drive')[&gt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1 'System\.Collections\.Generic\.List\`1')
 
+### Remarks
+Each drive can have multiple voltages with their own curves\.
+
 <a name='JordanRobot.MotorDefinition.Model.ServoMotor.FeedbackPpr'></a>
 
 ## ServoMotor\.FeedbackPpr Property
 
-The feedback device pulses per revolution \(PPR\)\.
-Used for encoder or resolver feedback resolution\.
+Gets or sets the feedback device pulses per revolution \(PPR\)\.
 
 ```csharp
 public int FeedbackPpr { get; set; }
@@ -188,11 +200,14 @@ public int FeedbackPpr { get; set; }
 #### Property Value
 [System\.Int32](https://learn.microsoft.com/en-us/dotnet/api/system.int32 'System\.Int32')
 
+### Remarks
+Used for encoder or resolver feedback resolution\.
+
 <a name='JordanRobot.MotorDefinition.Model.ServoMotor.HasBrake'></a>
 
 ## ServoMotor\.HasBrake Property
 
-Indicates whether the motor includes an integral holding brake\.
+Gets or sets whether the motor includes an integral holding brake\.
 
 ```csharp
 public bool HasBrake { get; set; }
@@ -205,7 +220,7 @@ public bool HasBrake { get; set; }
 
 ## ServoMotor\.Manufacturer Property
 
-The company that manufactures the motor\.
+Gets or sets the company that manufactures the motor\.
 
 ```csharp
 public string Manufacturer { get; set; }
@@ -218,7 +233,7 @@ public string Manufacturer { get; set; }
 
 ## ServoMotor\.MaxSpeed Property
 
-The theoretical maximum rotational speed of the motor \(RPM\)\.
+Gets or sets the theoretical maximum rotational speed of the motor \(RPM\)\.
 
 ```csharp
 public double MaxSpeed { get; set; }
@@ -231,7 +246,7 @@ public double MaxSpeed { get; set; }
 
 ## ServoMotor\.Metadata Property
 
-Metadata about the motor definition file\.
+Gets or sets metadata about the motor definition file\.
 
 ```csharp
 public JordanRobot.MotorDefinition.Model.MotorMetadata Metadata { get; set; }
@@ -244,7 +259,7 @@ public JordanRobot.MotorDefinition.Model.MotorMetadata Metadata { get; set; }
 
 ## ServoMotor\.MotorName Property
 
-The model name or identifier for the motor\.
+Gets or sets the model name or identifier for the motor\.
 
 ```csharp
 public string MotorName { get; set; }
@@ -257,7 +272,7 @@ public string MotorName { get; set; }
 
 ## ServoMotor\.PartNumber Property
 
-The manufacturer's part number for the motor\.
+Gets or sets the manufacturer's part number for the motor\.
 
 ```csharp
 public string PartNumber { get; set; }
@@ -270,7 +285,7 @@ public string PartNumber { get; set; }
 
 ## ServoMotor\.Power Property
 
-The theoretical maximum power output of the motor \(in the unit specified by Units\.Power\)\.
+Gets or sets the theoretical maximum power output of the motor\.
 
 ```csharp
 public double Power { get; set; }
@@ -279,11 +294,14 @@ public double Power { get; set; }
 #### Property Value
 [System\.Double](https://learn.microsoft.com/en-us/dotnet/api/system.double 'System\.Double')
 
+### Remarks
+Expressed in the unit specified by [Units](JordanRobot.MotorDefinition.Model.ServoMotor.md#JordanRobot.MotorDefinition.Model.ServoMotor.Units 'JordanRobot\.MotorDefinition\.Model\.ServoMotor\.Units')\.[Power](JordanRobot.MotorDefinition.Model.UnitSettings.md#JordanRobot.MotorDefinition.Model.UnitSettings.Power 'JordanRobot\.MotorDefinition\.Model\.UnitSettings\.Power')\.
+
 <a name='JordanRobot.MotorDefinition.Model.ServoMotor.RatedContinuousTorque'></a>
 
 ## ServoMotor\.RatedContinuousTorque Property
 
-The theoretical maximum torque the motor can produce continuously without overheating\.
+Gets or sets the theoretical maximum continuous torque for the motor\.
 
 ```csharp
 public double RatedContinuousTorque { get; set; }
@@ -296,7 +314,7 @@ public double RatedContinuousTorque { get; set; }
 
 ## ServoMotor\.RatedPeakTorque Property
 
-The theoretical maximum torque the motor can produce for short periods\.
+Gets or sets the theoretical maximum peak torque for the motor\.
 
 ```csharp
 public double RatedPeakTorque { get; set; }
@@ -309,7 +327,7 @@ public double RatedPeakTorque { get; set; }
 
 ## ServoMotor\.RatedSpeed Property
 
-The rated continuous operating speed of the motor \(RPM\)\.
+Gets or sets the rated continuous operating speed of the motor \(RPM\)\.
 
 ```csharp
 public double RatedSpeed { get; set; }
@@ -322,7 +340,7 @@ public double RatedSpeed { get; set; }
 
 ## ServoMotor\.RotorInertia Property
 
-The moment of inertia of the motor's rotor, affecting acceleration response\.
+Gets or sets the moment of inertia of the motor's rotor\.
 
 ```csharp
 public double RotorInertia { get; set; }
@@ -331,11 +349,14 @@ public double RotorInertia { get; set; }
 #### Property Value
 [System\.Double](https://learn.microsoft.com/en-us/dotnet/api/system.double 'System\.Double')
 
+### Remarks
+This affects acceleration response\.
+
 <a name='JordanRobot.MotorDefinition.Model.ServoMotor.SchemaVersion'></a>
 
 ## ServoMotor\.SchemaVersion Property
 
-Schema version for JSON compatibility\.
+Gets or sets the schema version for JSON compatibility\.
 
 ```csharp
 public string SchemaVersion { get; set; }
@@ -348,7 +369,7 @@ public string SchemaVersion { get; set; }
 
 ## ServoMotor\.Units Property
 
-The unit settings for this motor definition\.
+Gets or sets the unit settings for this motor definition\.
 
 ```csharp
 public JordanRobot.MotorDefinition.Model.UnitSettings Units { get; set; }
@@ -361,7 +382,7 @@ public JordanRobot.MotorDefinition.Model.UnitSettings Units { get; set; }
 
 ## ServoMotor\.Weight Property
 
-The mass of the motor \(in the unit specified by Units\.Weight\)\.
+Gets or sets the mass of the motor\.
 
 ```csharp
 public double Weight { get; set; }
@@ -369,6 +390,9 @@ public double Weight { get; set; }
 
 #### Property Value
 [System\.Double](https://learn.microsoft.com/en-us/dotnet/api/system.double 'System\.Double')
+
+### Remarks
+Expressed in the unit specified by [Units](JordanRobot.MotorDefinition.Model.ServoMotor.md#JordanRobot.MotorDefinition.Model.ServoMotor.Units 'JordanRobot\.MotorDefinition\.Model\.ServoMotor\.Units')\.[Weight](JordanRobot.MotorDefinition.Model.UnitSettings.md#JordanRobot.MotorDefinition.Model.UnitSettings.Weight 'JordanRobot\.MotorDefinition\.Model\.UnitSettings\.Weight')\.
 ### Methods
 
 <a name='JordanRobot.MotorDefinition.Model.ServoMotor.AddDrive(string)'></a>

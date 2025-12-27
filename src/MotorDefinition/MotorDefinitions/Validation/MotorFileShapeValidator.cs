@@ -14,6 +14,12 @@ internal static class MotorFileShapeValidator
     private const double AxisTolerance = 1e-9;
     private const int MaxSupportedPointCount = 101;
 
+    /// <summary>
+    /// Validates that a deserialized <see cref="VoltageFileDto"/> matches the expected persisted shape.
+    /// </summary>
+    /// <param name="voltage">The voltage DTO to validate.</param>
+    /// <param name="driveLabel">A human-readable label used for exception messages.</param>
+    /// <exception cref="InvalidOperationException">Thrown when required nodes are missing or arrays are inconsistent.</exception>
     public static void ValidateVoltageDto(VoltageFileDto voltage, string driveLabel)
     {
         if (voltage.Percent is null)
@@ -93,6 +99,11 @@ internal static class MotorFileShapeValidator
         }
     }
 
+    /// <summary>
+    /// Validates that a runtime <see cref="Voltage"/> can be serialized into the persisted series-map format.
+    /// </summary>
+    /// <param name="voltage">The runtime voltage configuration to validate.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the runtime model is missing curves or has inconsistent axes.</exception>
     public static void ValidateRuntimeVoltage(Voltage voltage)
     {
         if (voltage.Curves.Count == 0)

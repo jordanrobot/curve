@@ -139,7 +139,7 @@ Note:
 ### Implementation Steps (Incremental)
 
 ### [x] Step 0: Confirm naming + IDs
-- [x] Confirm panel display names match [.github/planning/00-terms-and-definitions.md](.github/planning/00-terms-and-definitions.md).
+- [x] Confirm panel display names match [docs/TermsAndDefinitions.md](../../../docs/TermsAndDefinitions.md).
 - [x] Lock down `PanelId` strings (must remain stable for persistence keys).
 
 ### [x] Step 1: Add descriptor model + persisted state shape

@@ -1,4 +1,4 @@
-[Docs Home](index.md) | [User Guide](UserGuide.md) | [API documentation](api/index.md)
+[Docs Home](index.md) | [User Guide](UserGuide.md) | [Terms and Definitions](TermsAndDefinitions.md) | [API documentation](api/index.md)
 
 ## Quick Start
 

@@ -4,7 +4,6 @@
 ## Voltage Class
 
 Represents voltage\-specific configuration and performance data for a motor/drive combination\.
-Contains the curve series for this specific voltage setting\.
 
 ```csharp
 public class Voltage : System.ComponentModel.INotifyPropertyChanged
@@ -13,6 +12,10 @@ public class Voltage : System.ComponentModel.INotifyPropertyChanged
 Inheritance [System\.Object](https://learn.microsoft.com/en-us/dotnet/api/system.object 'System\.Object') &#129106; Voltage
 
 Implements [System\.ComponentModel\.INotifyPropertyChanged](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.inotifypropertychanged 'System\.ComponentModel\.INotifyPropertyChanged')
+
+### Remarks
+Each [Voltage](JordanRobot.MotorDefinition.Model.Voltage.md 'JordanRobot\.MotorDefinition\.Model\.Voltage') contains one or more [Curve](JordanRobot.MotorDefinition.Model.Curve.md 'JordanRobot\.MotorDefinition\.Model\.Curve') definitions representing different
+operating conditions \(for example, peak vs\. continuous\)\.
 ### Constructors
 
 <a name='JordanRobot.MotorDefinition.Model.Voltage.Voltage()'></a>
@@ -47,7 +50,7 @@ The operating voltage\.
 
 ## Voltage\.ContinuousAmperage Property
 
-The current draw during continuous operation at rated torque \(A\)\.
+Gets or sets the current draw during continuous operation at rated torque \(A\)\.
 
 ```csharp
 public double ContinuousAmperage { get; set; }
@@ -60,7 +63,7 @@ public double ContinuousAmperage { get; set; }
 
 ## Voltage\.Curves Property
 
-The collection of curve series for this voltage configuration \(e\.g\., "Peak", "Continuous"\)\.
+Gets or sets the curves for this voltage configuration \(for example, "Peak" and "Continuous"\)\.
 
 ```csharp
 public System.Collections.Generic.List<JordanRobot.MotorDefinition.Model.Curve> Curves { get; set; }
@@ -73,8 +76,7 @@ public System.Collections.Generic.List<JordanRobot.MotorDefinition.Model.Curve> 
 
 ## Voltage\.DisplayName Property
 
-Gets a display\-friendly name for this voltage configuration \(e\.g\., "208 V"\)\.
-Useful for populating UI lists and combo\-boxes\.
+Gets a display\-friendly name for this voltage configuration \(for example, "208 V"\)\.
 
 ```csharp
 public string DisplayName { get; }
@@ -83,11 +85,14 @@ public string DisplayName { get; }
 #### Property Value
 [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
 
+### Remarks
+Useful for populating UI lists and combo\-boxes\.
+
 <a name='JordanRobot.MotorDefinition.Model.Voltage.MaxSpeed'></a>
 
 ## Voltage\.MaxSpeed Property
 
-The maximum rotational speed at this voltage \(RPM\)\.
+Gets or sets the maximum rotational speed at this voltage \(RPM\)\.
 
 ```csharp
 public double MaxSpeed { get; set; }
@@ -100,7 +105,7 @@ public double MaxSpeed { get; set; }
 
 ## Voltage\.PeakAmperage Property
 
-The maximum current draw during peak torque operation \(A\)\.
+Gets or sets the maximum current draw during peak torque operation \(A\)\.
 
 ```csharp
 public double PeakAmperage { get; set; }
@@ -113,7 +118,7 @@ public double PeakAmperage { get; set; }
 
 ## Voltage\.Power Property
 
-The power output at this voltage \(in the unit specified by Units\.Power\)\.
+Gets or sets the power output at this voltage\.
 
 ```csharp
 public double Power { get; set; }
@@ -122,11 +127,14 @@ public double Power { get; set; }
 #### Property Value
 [System\.Double](https://learn.microsoft.com/en-us/dotnet/api/system.double 'System\.Double')
 
+### Remarks
+Expressed in the unit specified by the parent motor's [UnitSettings](JordanRobot.MotorDefinition.Model.UnitSettings.md 'JordanRobot\.MotorDefinition\.Model\.UnitSettings')\.
+
 <a name='JordanRobot.MotorDefinition.Model.Voltage.RatedContinuousTorque'></a>
 
 ## Voltage\.RatedContinuousTorque Property
 
-The torque the motor can produce continuously at this voltage without overheating\.
+Gets or sets the rated continuous torque at this voltage\.
 
 ```csharp
 public double RatedContinuousTorque { get; set; }
@@ -139,7 +147,7 @@ public double RatedContinuousTorque { get; set; }
 
 ## Voltage\.RatedPeakTorque Property
 
-The maximum torque the motor can produce for short periods at this voltage\.
+Gets or sets the rated peak torque at this voltage\.
 
 ```csharp
 public double RatedPeakTorque { get; set; }
@@ -152,7 +160,7 @@ public double RatedPeakTorque { get; set; }
 
 ## Voltage\.RatedSpeed Property
 
-The rated continuous operating speed at this voltage \(RPM\)\.
+Gets or sets the rated continuous operating speed at this voltage \(RPM\)\.
 
 ```csharp
 public double RatedSpeed { get; set; }
@@ -165,7 +173,7 @@ public double RatedSpeed { get; set; }
 
 ## Voltage\.Value Property
 
-The operating voltage \(V\)\.
+Gets or sets the operating voltage \(V\)\.
 
 ```csharp
 public double Value { get; set; }
@@ -179,7 +187,7 @@ public double Value { get; set; }
 
 ## Voltage\.AddSeries\(string, double\) Method
 
-Adds a new series with the specified name\.
+Adds a new curve with the specified name\.
 
 ```csharp
 public JordanRobot.MotorDefinition.Model.Curve AddSeries(string name, double initializeTorque=0.0);
@@ -190,7 +198,7 @@ public JordanRobot.MotorDefinition.Model.Curve AddSeries(string name, double ini
 
 `name` [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
 
-The name for the new series\.
+The name for the new curve\.
 
 <a name='JordanRobot.MotorDefinition.Model.Voltage.AddSeries(string,double).initializeTorque'></a>
 
@@ -200,18 +208,18 @@ The default torque value for all points\.
 
 #### Returns
 [Curve](JordanRobot.MotorDefinition.Model.Curve.md 'JordanRobot\.MotorDefinition\.Model\.Curve')  
-The newly created series\.
+The newly created curve\.
 
 #### Exceptions
 
 [System\.InvalidOperationException](https://learn.microsoft.com/en-us/dotnet/api/system.invalidoperationexception 'System\.InvalidOperationException')  
-Thrown if a series with the same name already exists\.
+Thrown if a curve with the same name already exists\.
 
 <a name='JordanRobot.MotorDefinition.Model.Voltage.GetSeriesByName(string)'></a>
 
 ## Voltage\.GetSeriesByName\(string\) Method
 
-Gets a curve series by name\.
+Gets a curve by name\.
 
 ```csharp
 public JordanRobot.MotorDefinition.Model.Curve? GetSeriesByName(string name);
@@ -222,11 +230,11 @@ public JordanRobot.MotorDefinition.Model.Curve? GetSeriesByName(string name);
 
 `name` [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
 
-The name of the series to find\.
+The name of the curve to find\.
 
 #### Returns
 [Curve](JordanRobot.MotorDefinition.Model.Curve.md 'JordanRobot\.MotorDefinition\.Model\.Curve')  
-The matching series, or null if not found\.
+The matching curve, or null if not found\.
 
 <a name='JordanRobot.MotorDefinition.Model.Voltage.OnPropertyChanged(string)'></a>
 
