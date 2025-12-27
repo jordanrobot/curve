@@ -297,11 +297,11 @@ See ADR-0006 (`../../docs/adr/adr-0006-motor-file-schema-and-versioning.md`) for
 - [X] Visual indicator in directory list for dirty files
 
 ### 3.3 Save Prompts
-- [ ] Prompt to save when closing app with dirty file
+- [X] Prompt to save when closing app with dirty file
 - [X] Prompt to save when opening new file with dirty file active
 - [X] Dialog with Save / Don't Save / Cancel options
 - [X] Handle Cancel to abort the open operation
-- [ ] Handle Cancel to abort the close operation
+- [X] Handle Cancel to abort the close operation
 
 ### 3.4 Save Commands
 - [X] Save command overwrites current file
