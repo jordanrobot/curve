@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using JordanRobot.MotorDefinition.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -11,10 +12,14 @@ namespace CurveEditor.Views;
 /// </summary>
 public partial class AddVoltageDialog : Window
 {
+    private static readonly double[] PreferredVoltages = [208, 230, 240, 110, 120, 104, 430, 460];
+    
     /// <summary>
     /// Gets or sets the result of the dialog.
     /// </summary>
     public AddVoltageDialogResult? Result { get; private set; }
+
+    private List<Drive> _availableDrives = [];
 
     public AddVoltageDialog()
     {
@@ -38,16 +43,94 @@ public partial class AddVoltageDialog : Window
         double continuousTorque,
         double power)
     {
-        DriveComboBox.ItemsSource = availableDrives.ToList();
-        DriveComboBox.SelectedItem = selectedDrive ?? availableDrives.FirstOrDefault();
+        _availableDrives = availableDrives.ToList();
+        DriveComboBox.ItemsSource = _availableDrives;
+        DriveComboBox.SelectedItem = selectedDrive ?? _availableDrives.FirstOrDefault();
         
         MaxSpeedInput.Text = maxSpeed.ToString("F0");
         PeakTorqueInput.Text = peakTorque.ToString("F2");
         ContinuousTorqueInput.Text = continuousTorque.ToString("F2");
         PowerInput.Text = power.ToString("F0");
         
+        // Set smart default voltage based on what already exists in the selected drive
+        SetSmartDefaultVoltage();
+        
         UpdateContinuousTorqueFieldsEnabled();
         UpdatePeakTorqueFieldsEnabled();
+        ValidateVoltage();
+    }
+
+    private void SetSmartDefaultVoltage()
+    {
+        if (DriveComboBox.SelectedItem is not Drive selectedDrive)
+        {
+            VoltageInput.Text = "208";
+            return;
+        }
+
+        var existingVoltages = selectedDrive.Voltages.Select(v => v.Value).ToHashSet();
+        
+        // Find the first preferred voltage that doesn't exist in the drive
+        foreach (var voltage in PreferredVoltages)
+        {
+            if (!existingVoltages.Any(v => Math.Abs(v - voltage) < Drive.DefaultVoltageTolerance))
+            {
+                VoltageInput.Text = voltage.ToString("F0");
+                return;
+            }
+        }
+        
+        // If all preferred voltages exist, default to 208
+        VoltageInput.Text = "208";
+    }
+
+    private void OnDriveSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        SetSmartDefaultVoltage();
+        ValidateVoltage();
+    }
+
+    private void OnVoltageTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        ValidateVoltage();
+    }
+
+    private void ValidateVoltage()
+    {
+        if (DriveComboBox.SelectedItem is not Drive selectedDrive)
+        {
+            return;
+        }
+
+        if (!double.TryParse(VoltageInput.Text, out var voltage) || voltage <= 0)
+        {
+            // Invalid voltage value - don't show duplicate error
+            ValidationErrorText.IsVisible = false;
+            EnableInputControls(true);
+            return;
+        }
+
+        // Check if this voltage already exists in the selected drive
+        var isDuplicate = selectedDrive.Voltages.Any(v => Math.Abs(v.Value - voltage) < Drive.DefaultVoltageTolerance);
+        
+        if (isDuplicate)
+        {
+            ValidationErrorText.Text = $"A voltage of {voltage}V already exists for drive '{selectedDrive.Name}'. Please enter a different voltage or select a different drive.";
+            ValidationErrorText.IsVisible = true;
+            EnableInputControls(false);
+        }
+        else
+        {
+            ValidationErrorText.IsVisible = false;
+            EnableInputControls(true);
+        }
+    }
+
+    private void EnableInputControls(bool enable)
+    {
+        // Enable/disable all controls except Cancel button and Drive combo box
+        ContentPanel.IsEnabled = enable;
+        AddButton.IsEnabled = enable;
     }
 
     private void OnContinuousTorqueChecked(object? sender, RoutedEventArgs e)
@@ -60,15 +143,38 @@ public partial class AddVoltageDialog : Window
         UpdatePeakTorqueFieldsEnabled();
     }
 
+    private void OnCalculateCurveChecked(object? sender, RoutedEventArgs e)
+    {
+        // When calculate curve is checked, disable the manual torque/amperage checkboxes
+        var isCalculateEnabled = CalculateCurveCheckBox.IsChecked == true;
+        
+        if (isCalculateEnabled)
+        {
+            // Disable manual curve entry
+            AddContinuousTorqueCheckBox.IsEnabled = false;
+            AddPeakTorqueCheckBox.IsEnabled = false;
+            ContinuousTorquePanel.IsEnabled = false;
+            PeakTorquePanel.IsEnabled = false;
+        }
+        else
+        {
+            // Re-enable manual curve entry
+            AddContinuousTorqueCheckBox.IsEnabled = true;
+            AddPeakTorqueCheckBox.IsEnabled = true;
+            UpdateContinuousTorqueFieldsEnabled();
+            UpdatePeakTorqueFieldsEnabled();
+        }
+    }
+
     private void UpdateContinuousTorqueFieldsEnabled()
     {
-        var isEnabled = AddContinuousTorqueCheckBox.IsChecked == true;
+        var isEnabled = AddContinuousTorqueCheckBox.IsChecked == true && CalculateCurveCheckBox.IsChecked == false;
         ContinuousTorquePanel.IsEnabled = isEnabled;
     }
 
     private void UpdatePeakTorqueFieldsEnabled()
     {
-        var isEnabled = AddPeakTorqueCheckBox.IsChecked == true;
+        var isEnabled = AddPeakTorqueCheckBox.IsChecked == true && CalculateCurveCheckBox.IsChecked == false;
         PeakTorquePanel.IsEnabled = isEnabled;
     }
 
@@ -95,29 +201,66 @@ public partial class AddVoltageDialog : Window
             return;
         }
 
+        // Check for duplicate voltage
+        if (selectedDrive.Voltages.Any(v => Math.Abs(v.Value - voltage) < Drive.DefaultVoltageTolerance))
+        {
+            return;
+        }
+
+        var calculateCurve = CalculateCurveCheckBox.IsChecked == true;
+        
         // Validate curve-specific fields if curves are enabled
         var addContinuousTorque = AddContinuousTorqueCheckBox.IsChecked == true;
         var addPeakTorque = AddPeakTorqueCheckBox.IsChecked == true;
 
         double continuousTorque = 0;
         double continuousCurrent = 0;
-        if (addContinuousTorque)
-        {
-            if (!TryParseNonNegative(ContinuousTorqueInput.Text, out continuousTorque, "Continuous Torque must be a non-negative number.") ||
-                !TryParseNonNegative(ContinuousCurrentInput.Text, out continuousCurrent, "Continuous Current must be a non-negative number."))
-            {
-                return;
-            }
-        }
-
         double peakTorque = 0;
         double peakCurrent = 0;
-        if (addPeakTorque)
+
+        if (calculateCurve)
         {
-            if (!TryParseNonNegative(PeakTorqueInput.Text, out peakTorque, "Peak Torque must be a non-negative number.") ||
-                !TryParseNonNegative(PeakCurrentInput.Text, out peakCurrent, "Peak Current must be a non-negative number."))
+            // Calculate torque from power and speed
+            // Power (W) = Torque (Nm) * Speed (rad/s)
+            // Speed (rad/s) = RPM * 2π / 60
+            // Therefore: Torque (Nm) = Power (W) * 60 / (RPM * 2π)
+            
+            if (maxSpeed > 0)
             {
-                return;
+                var speedRadPerSec = maxSpeed * 2.0 * Math.PI / 60.0;
+                var calculatedTorque = power / speedRadPerSec;
+                
+                // For calculated curves, we create both peak and continuous with the same torque
+                // In a real motor, peak is typically higher, but without more data we use the calculated value
+                continuousTorque = calculatedTorque;
+                peakTorque = calculatedTorque;
+                addContinuousTorque = true;
+                addPeakTorque = true;
+                
+                // Amperage values are left at 0 since we don't have enough info to calculate them
+                continuousCurrent = 0;
+                peakCurrent = 0;
+            }
+        }
+        else
+        {
+            // Manual entry mode
+            if (addContinuousTorque)
+            {
+                if (!TryParseNonNegative(ContinuousTorqueInput.Text, out continuousTorque, "Continuous Torque must be a non-negative number.") ||
+                    !TryParseNonNegative(ContinuousCurrentInput.Text, out continuousCurrent, "Continuous Current must be a non-negative number."))
+                {
+                    return;
+                }
+            }
+
+            if (addPeakTorque)
+            {
+                if (!TryParseNonNegative(PeakTorqueInput.Text, out peakTorque, "Peak Torque must be a non-negative number.") ||
+                    !TryParseNonNegative(PeakCurrentInput.Text, out peakCurrent, "Peak Current must be a non-negative number."))
+                {
+                    return;
+                }
             }
         }
 
@@ -133,7 +276,7 @@ public partial class AddVoltageDialog : Window
             AddPeakTorque = addPeakTorque,
             PeakTorque = peakTorque,
             PeakCurrent = peakCurrent,
-            CalculateCurveFromPowerAndSpeed = CalculateCurveCheckBox.IsChecked == true
+            CalculateCurveFromPowerAndSpeed = calculateCurve
         };
 
         Close();
