@@ -110,9 +110,14 @@ public partial class CurveDataPanel : UserControl
         
         if (_dataGridScrollViewer is not null)
         {
-            // Found it! Attach handlers
+            // Attach scroll change handlers for syncing
             _dataGridScrollViewer.ScrollChanged += OnDataGridScrollChanged;
             HeaderScrollViewer.ScrollChanged += OnHeaderScrollChanged;
+            
+            // Intercept mouse wheel events on both controls to sync scrolling
+            HeaderScrollViewer.AddHandler(PointerWheelChangedEvent, OnHeaderPointerWheelChanged, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+            DataTable.AddHandler(PointerWheelChangedEvent, OnDataTablePointerWheelChanged, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+            
             _scrollSyncAttached = true;
             
             // Unsubscribe from LayoutUpdated since we're done
@@ -188,6 +193,72 @@ public partial class CurveDataPanel : UserControl
         }
     }
 
+    private void OnHeaderPointerWheelChanged(object? sender, PointerWheelEventArgs e)
+    {
+        // When mouse wheel is used over the header, scroll both header and data grid
+        if (_dataGridScrollViewer is null || HeaderScrollViewer is null)
+        {
+            return;
+        }
+
+        // Get the horizontal scroll delta (positive = scroll right, negative = scroll left)
+        var delta = e.Delta;
+        
+        // Only handle horizontal scrolling (when shift is held or touchpad horizontal scroll)
+        if (Math.Abs(delta.X) > 0.01)
+        {
+            // Calculate new offset (delta.X is opposite direction, so subtract)
+            var newOffset = HeaderScrollViewer.Offset.X - (delta.X * 50); // Multiply for smoother scrolling
+            newOffset = Math.Max(0, Math.Min(newOffset, HeaderScrollViewer.Extent.Width - HeaderScrollViewer.Viewport.Width));
+            
+            _isSyncing = true;
+            try
+            {
+                HeaderScrollViewer.Offset = new Vector(newOffset, HeaderScrollViewer.Offset.Y);
+                _dataGridScrollViewer.Offset = new Vector(newOffset, _dataGridScrollViewer.Offset.Y);
+            }
+            finally
+            {
+                _isSyncing = false;
+            }
+            
+            e.Handled = true;
+        }
+    }
+
+    private void OnDataTablePointerWheelChanged(object? sender, PointerWheelEventArgs e)
+    {
+        // When mouse wheel is used over the data table, scroll both header and data grid
+        if (_dataGridScrollViewer is null || HeaderScrollViewer is null)
+        {
+            return;
+        }
+
+        // Get the scroll delta
+        var delta = e.Delta;
+        
+        // Only handle horizontal scrolling (when shift is held or touchpad horizontal scroll)
+        if (Math.Abs(delta.X) > 0.01)
+        {
+            // Calculate new offset
+            var newOffset = _dataGridScrollViewer.Offset.X - (delta.X * 50);
+            newOffset = Math.Max(0, Math.Min(newOffset, _dataGridScrollViewer.Extent.Width - _dataGridScrollViewer.Viewport.Width));
+            
+            _isSyncing = true;
+            try
+            {
+                _dataGridScrollViewer.Offset = new Vector(newOffset, _dataGridScrollViewer.Offset.Y);
+                HeaderScrollViewer.Offset = new Vector(newOffset, HeaderScrollViewer.Offset.Y);
+            }
+            finally
+            {
+                _isSyncing = false;
+            }
+            
+            e.Handled = true;
+        }
+    }
+
     private void OnUnloaded(object? sender, RoutedEventArgs e)
     {
         // Unsubscribe from events to prevent memory leaks
@@ -218,6 +289,12 @@ public partial class CurveDataPanel : UserControl
             if (HeaderScrollViewer is not null)
             {
                 HeaderScrollViewer.ScrollChanged -= OnHeaderScrollChanged;
+                HeaderScrollViewer.RemoveHandler(PointerWheelChangedEvent, OnHeaderPointerWheelChanged);
+            }
+            
+            if (DataTable is not null)
+            {
+                DataTable.RemoveHandler(PointerWheelChangedEvent, OnDataTablePointerWheelChanged);
             }
             
             // Unsubscribe from LayoutUpdated if still attached
